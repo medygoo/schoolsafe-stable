@@ -7,6 +7,26 @@ exécution. Les choix techniques proposés restent distincts des règles produit
 
 ## Reprise en cinq minutes
 
+**ACTIVE — validation expérimentale BOLT-1 reçue le 19/09 :** commit/publication
+autorisés uniquement sur `bolt/workspace`. Vérifications ciblées PASS ; push
+suspendu faute d'authentification GitHub permettant le contrôle de non-déploiement.
+Voir le premier bloc du handoff. **Première tâche Bolt : export PNG CanvasGradient**,
+à corriger ensuite dans un lot dédié, sans affaiblir les permissions. Les défauts
+SQL, deux alertes statiques et Docker non validé restent ouverts. Le tableau
+précédent ci-dessous est conservé comme historique avant validation.
+
+**ACTIVE — 19/09, BOLT-1 : préparation locale terminée, validation attendue.**
+Branche `bolt/workspace`, aucun push/déploiement. Voir
+[le dossier Bolt](../../bolt/README.md) et le premier bloc du handoff.
+
+| Lot | Statut | Preuves et prochaine étape |
+| --- | --- | --- |
+| BOLT-1 | Préparé localement ; publication non autorisée | 54 retraits documentés ; JASPE navigateur et contrats passent ; cartes conservées, rendu/QR et ZIP synthétique passent ; PNG échoue aussi sur la base. Validation du propriétaire avant publication. |
+
+Les deux mandats ci-dessous de publication et préparation Stable sont
+**HISTORIQUES, REMPLACÉS par BOLT-1** ; leurs formulations anciennes restent
+conservées. Les défauts SQL, deux alertes statiques et Docker non validé demeurent.
+
 **ACTIVE — 19/09 : base de développement validée, publication autorisée uniquement
 sur `develop/codex-base` dans `medygoo/schoolsafe-stable`.** Conserver les 772
 fichiers et 14 exclusions ; pas de main, déploiement ni VPS. Après vérification

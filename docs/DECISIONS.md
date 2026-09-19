@@ -2,6 +2,25 @@
 
 Ce journal conserve les décisions durables. Il ne doit contenir ni secrets ni transcriptions brutes de conversations.
 
+## 19 septembre 2026 — branche Bolt, mandat actif
+
+**Complément validé par le propriétaire :** branche locale acceptée comme
+**expérimentale Bolt** ; autorisation de publier uniquement `bolt/workspace`
+vers `medygoo/schoolsafe-stable`, sans modifier la base ou `main`, sans déploiement.
+Conserver le manifeste des retraits et les preuves. Le bug `CanvasGradient` est
+la **première tâche Bolt**, pas un correctif à inclure dans la publication.
+La demande initiale ci-dessous est conservée comme historique ; la condition de
+non-déploiement demeure et son contrôle indisponible est explicité au handoff.
+
+Demande validée du propriétaire : préparer `bolt/workspace` sans retirer de
+fonction métier, puis présenter mesures, retraits et preuves **avant tout push**.
+Les références et artefacts retirés restent au commit stable
+`7d5cc89924319eb9c46d8a5a9cd0f3f729743834` ; aucun historique GitHub n'est supprimé
+ou réécrit. Aucun déploiement. Les anciens ordres de publication ne s'appliquent
+pas à ce lot. Le détail des retraits est proposé dans `docs/bolt/removed-files.md`.
+Ce mandat ne valide ni le fonctionnement global, ni la production, ni l'import
+Bolt lui-même ; il ne remplace pas les décisions Docker + Coolify ou Control séparé.
+
 | Date | Décision | Statut |
 |---|---|---|
 | 2026-09-12 | Supprimer définitivement les traces et dépendances 3D du projet, tout en conservant JASPE 2,5D. | Validée et appliquée au commit `43982cb` |

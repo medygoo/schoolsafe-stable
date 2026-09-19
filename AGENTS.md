@@ -1,5 +1,22 @@
 # Consignes de continuité SchoolSafe
 
+## Mandat prioritaire — 19 septembre 2026, BOLT-1
+
+**ACTIF — validation reçue :** `bolt/workspace` est validée comme branche
+expérimentale Bolt. Commit et push autorisés uniquement sur cette branche vers
+`medygoo/schoolsafe-stable`, après vérification des retraits et du non-déploiement.
+Ne modifier ni `develop/codex-base` ni `main`. Aucun déploiement ou VPS.
+La première tâche Bolt est le bug PNG `CanvasGradient` ; ne pas le corriger pendant
+la publication. Voir le handoff pour l'état de la vérification GitHub.
+
+**HISTORIQUE — préparation avant validation, remplacée par le mandat ci-dessus :**
+
+La branche locale `bolt/workspace` prépare un import allégé. **Aucun push avant
+validation du propriétaire**, aucun déploiement, Coolify ou VPS. Cette instruction
+suspend les ordres génériques de publication ci-dessous pour ce lot. La base
+`develop/codex-base` et son historique restent intacts. Lire `docs/bolt/README.md`
+et le premier bloc du handoff ; ne pas reprendre les anciens mandats de publication.
+
 Ce dépôt est la source de vérité commune pour tous les comptes ChatGPT/Codex et tous les assistants qui travaillent sur SchoolSafe.
 
 ## Avant toute intervention

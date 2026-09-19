@@ -1,5 +1,90 @@
 # Handoff courant SchoolSafe
 
+## 19 septembre 2026 — BOLT-1 validé expérimental ; publication suspendue au contrôle GitHub
+
+- Propriétaire : branche locale `bolt/workspace` validée comme **expérimentale**,
+  publication autorisée uniquement vers `medygoo/schoolsafe-stable`, même branche.
+  Ne pas modifier `develop/codex-base`, `main`, le VPS ou un déploiement.
+  Codex prend uniquement la revue finale, la documentation et le commit/publication.
+- Base : `7d5cc89924319eb9c46d8a5a9cd0f3f729743834`. Relecture distante :
+  `develop/codex-base` porte toujours ce SHA ; aucune référence `bolt/workspace`
+  ni `main` retournée. La copie stable demeure intacte.
+- Les 54 retraits ont été revérifiés : aucune dépendance runtime nécessaire
+  supprimée de JASPE, cartes, auth, ACCESS_LAW, migrations ou `school_id`.
+  Les 734 empreintes correspondent à la préparation déjà testée, avant ces
+  compléments documentaires. Les neuf contrôles ciblés assets/packaging/migrations
+  repassent. Aucun nouveau correctif produit. `removed-files.md` et `PROOFS.md`
+  sont conservés ; les preuves détaillées y distinguent les substituts du réel.
+- **Publication non effectuée :** la lecture Git fonctionne après sortie du
+  sandbox, mais `gh api` n'est pas authentifié, même hors sandbox ; aucun navigateur
+  disponible. Hooks, applications et déclenchements distants ne peuvent donc pas
+  être vérifiés. L'absence locale de workflow ne garantit pas le non-déploiement.
+  Arrêt avant push conformément à la condition du propriétaire. Ne pas extraire
+  de credentials ni modifier une protection pour contourner ce contrôle.
+- **Prochaine action de publication :** rendre disponible une session GitHub
+  authentifiée pour lire les automatismes, vérifier que `bolt/workspace` ne déclenche
+  aucun déploiement, relire les références distantes, puis pousser uniquement
+  `HEAD:refs/heads/bolt/workspace`, vérifier le SHA distant et arrêter.
+- **Première tâche Bolt après publication : corriger le bug `CanvasGradient`.**
+  Reproduire `node scripts/qa-bolt-runtime.mjs app/qa-bolt-cards.cjs`, trouver la
+  cause du `addColorStop` non fini, corriger dans un lot dédié, puis obtenir les
+  quatre PNG HD recto/verso badge/PVC avec dimensions et QR préservés. Ne pas
+  affaiblir l'assertion, les permissions ou le contrat Control. Ce bug n'est pas
+  corrigé dans le présent lot ; son échec existe aussi sur la base stable.
+- Maintenir séparément les défauts SQL d'installation, les deux alertes statiques
+  DeviceHub/isolation et l'absence de validation Docker réelle. Aucune validation
+  globale ni recette de production ; aucun push annoncé avant vérification réelle.
+
+## Historique — préparation locale avant validation, mandat remplacé ci-dessus
+
+## 19 septembre 2026 — BOLT-1, préparation locale terminée, validation attendue
+
+- Codex ; branche `bolt/workspace`, worktree distinct de la copie stable.
+  Base locale et distante relue : `7d5cc89924319eb9c46d8a5a9cd0f3f729743834`
+  sur `develop/codex-base`. Le push précédent a donc abouti malgré ETIMEDOUT.
+- Mandat actif : retirer seulement les fichiers sans usage nécessaire à Bolt,
+  conserver toutes les fonctions, actifs runtime, migrations et tests actifs.
+  Aucun push avant validation ; aucun déploiement, Coolify ou VPS.
+- Périmètre réservé : inventaire des assets/doublons/archives, retraits justifiés,
+  raccords de chemins strictement nécessaires, preuves JASPE/cartes et continuité.
+  La base stable et l'historique GitHub restent intacts. SQL, permissions et
+  fournisseurs ne sont pas à corriger dans ce lot.
+- Statut : 54 fichiers retirés de cette copie uniquement (26 725 477 octets),
+  quatre ressources utiles déplacées, liste exacte dans `docs/bolt/removed-files.md`.
+  Le manifeste `docs/bolt/files.txt` définit les 734 fichiers proposés (environ
+  86,6 Mio au lieu de 111,96 Mio), sans caches,
+  dépendances installées, captures de test ni données réelles. Scan final sans
+  motif sensible ni candidat non examiné ; 14 exclusions conservées. Aucun commit/push.
+- Raccords nécessaires : alias du doublon `chin2.png` vers le PNG identique
+  `originals/chin1.png`, clé logique inchangée ; nouveau cache Service Worker pour
+  évacuer l'ancien manifeste ; scripts de preuve rendus indépendants des archives.
+  Aucun moteur métier, permission, SQL ou contrat Control changé.
+- Preuves : 21 tests Node, 25 tests serveur et typage passent ; cinq parcours
+  navigateur JASPE avant/après, cache/75 ressources, auth bureau/mobile, contrats
+  JASPE, 39 tests session et 13 assertions refus ciblés passent. Voir les commandes,
+  substituts, limites et comparaison binaire dans `docs/bolt/PROOFS.md`.
+- **Cartes : usine intégralement conservée**, 66 fichiers frontend/assets et
+  serveur/SQL identiques. Rendu recto/verso et QR passent ; ZIP/manifestes vérifiés
+  avec adaptateurs synthétiques. L'export PNG échoue sur les quatre faces avec
+  `CanvasGradient` / `non-finite`, aussi bien sur la base stable que sur Bolt,
+  dans le studio en navigateur. Ce défaut préexistant reste à corriger séparément ;
+  ni export HD réussi ni chaîne réelle R2/Control ne sont déclarés validés.
+- **Défauts SQL maintenus :** `02_student_list.sql` (42P13 et statut d'inscription
+  à qualifier), setup natif (42501/RLS profiles, rôles/school_id/provisioning),
+  `03_auth_reset.sql` non qualifié. Aucun nouveau parcours PostgreSQL exécuté.
+  **Deux alertes statiques préexistantes** maintenues : DeviceHub (2 permissions)
+  et isolation Cards/DeviceHub/Family (20 détections). Tests non désactivés.
+  **Aucun build/démarrage Docker réel**, import Bolt, fournisseur JASPE réel ou
+  validation de production. Le gain concerne l'arbre des fichiers, pas l'historique Git.
+- **Prochaine action exacte :** le propriétaire examine `docs/bolt/README.md`,
+  les 54 retraits et les réserves, puis valide ou refuse la publication de
+  `bolt/workspace`. Attendre cette validation ; ne pas pousser automatiquement.
+  Pour Bolt ensuite : reproduire et traiter l'export PNG dans un lot ciblé,
+  puis qualifier les blocages SQL ci-dessus sur base locale synthétique et Docker
+  dans des lots séparés. Ne pas reconstruire JASPE, les cartes ou Control.
+
+## Historique — publication de la base, mandat remplacé par BOLT-1
+
 ## 19 septembre 2026 — base de développement validée, publication autorisée
 
 - Propriétaire : préparation locale validée comme **base de développement**.

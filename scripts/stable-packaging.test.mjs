@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
-import { scan } from '../docs/migration/2026-09-19-stable-preparation/scan-selection.mjs';
+import { scan } from './scan-selection.mjs';
 
 test('Docker preserves the server/app/shared sibling layout used by index.ts', () => {
   const recipe = fs.readFileSync('Dockerfile', 'utf8');

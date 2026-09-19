@@ -1,0 +1,392 @@
+{
+  "schema": 1,
+  "date": "2026-09-19",
+  "baseCommit": "7d5cc89924319eb9c46d8a5a9cd0f3f729743834",
+  "branch": "bolt/workspace",
+  "baseFiles": 772,
+  "baseBytes": 117400243,
+  "removed": [
+    {
+      "path": "app/assets/connexion-controle/ordinateur-accueil.png",
+      "bytes": 591010,
+      "sha256": "50c7be3f8244ef9c2b5d004a18ec9655cb6c296b4993fa9f13e6f80a5974e587",
+      "reason": "Historical login screenshots and their standalone comparison page."
+    },
+    {
+      "path": "app/assets/connexion-controle/ordinateur-saisie.png",
+      "bytes": 590454,
+      "sha256": "993734f319e0d63f28387e51cbac757c10550c14e8864c1f628a0fa661987352",
+      "reason": "Historical login screenshots and their standalone comparison page."
+    },
+    {
+      "path": "app/assets/connexion-controle/telephone-buste-accueil.png",
+      "bytes": 159255,
+      "sha256": "20253efe53bbf45d66adb84865aacdb6795440be21cb841327a2b502a6bef7ba",
+      "reason": "Historical login screenshots and their standalone comparison page."
+    },
+    {
+      "path": "app/assets/connexion-controle/telephone-buste-saisie.png",
+      "bytes": 74875,
+      "sha256": "6a712e80cd8a50d8fcbc25cd81ed6431315be14fab89a839dad68db7e53fbd66",
+      "reason": "Historical login screenshots and their standalone comparison page."
+    },
+    {
+      "path": "app/assets/connexion-controle/telephone-entier-accueil.png",
+      "bytes": 215609,
+      "sha256": "da7ecd5f1a06c828618d98647728fbcecfe2fbd932162f1c858ff94d76e0bb55",
+      "reason": "Historical login screenshots and their standalone comparison page."
+    },
+    {
+      "path": "app/assets/connexion-controle/telephone-entier-saisie.png",
+      "bytes": 73747,
+      "sha256": "02c20963c922e2f2703d4f89ff21d25f7f310ecc36055d8a5cc3f22813c3a132",
+      "reason": "Historical login screenshots and their standalone comparison page."
+    },
+    {
+      "path": "app/assets/jaspe2d/attente-v11/adossee-essai-opaque.png",
+      "bytes": 1706297,
+      "sha256": "bc2807c0883361f0bfcea52f89ead79fe56036ffb0ac2bf8fa60ba6b79704214",
+      "reason": "Retired waiting-pose experiments and their standalone review page; active v13 fallback retained."
+    },
+    {
+      "path": "app/assets/jaspe2d/attente-v11/chaise-essai-opaque.png",
+      "bytes": 1791033,
+      "sha256": "4dee4a2dd623a5d5f43a9306292967e2e1820b64dbf7c1b4cd29b75140547fe9",
+      "reason": "Retired waiting-pose experiments and their standalone review page; active v13 fallback retained."
+    },
+    {
+      "path": "app/assets/jaspe2d/attente-v11/lecture-pose.png",
+      "bytes": 886677,
+      "sha256": "bafcf78878d7e16720962ee2feaa24bc62a52c4056ce071cf0aae54aa4f87e46",
+      "reason": "Retired waiting-pose experiments and their standalone review page; active v13 fallback retained."
+    },
+    {
+      "path": "app/assets/jaspe2d/attente-v11/manifest.json",
+      "bytes": 956,
+      "sha256": "506cfe2c3f92cd3c75bf3f96f25acf460d3972da03a7a93241ba83111ef096f7",
+      "reason": "Retired waiting-pose experiments and their standalone review page; active v13 fallback retained."
+    },
+    {
+      "path": "app/assets/jaspe2d/attente-v11/prompts.json",
+      "bytes": 4892,
+      "sha256": "0aff96ab97b1c6194be23c1f6a6d29350cc54ad6db58592f4cd08b377af49654",
+      "reason": "Retired waiting-pose experiments and their standalone review page; active v13 fallback retained."
+    },
+    {
+      "path": "app/assets/jaspe2d/attente-v13/adossement-essai-heygen.webm",
+      "bytes": 3000954,
+      "sha256": "1a0727a78f90972c21c84351e7c3a5f678b8f6df5ee21e0494230e7e75f1f328",
+      "reason": "Historical pose/video experiment or validation artifact; not used by the application or active QA."
+    },
+    {
+      "path": "app/assets/jaspe2d/attente-v13/chaise-detouree.png",
+      "bytes": 1018936,
+      "sha256": "511f2e56ea52af97fd596345f925a4684a6753ae4fd36fbcf6709e691eac624b",
+      "reason": "Historical pose/video experiment or validation artifact; not used by the application or active QA."
+    },
+    {
+      "path": "app/assets/jaspe2d/attente-v13/controle.json",
+      "bytes": 5021,
+      "sha256": "3acf3af7e2600ef60f5ae01cb7fdbcb4033fc97ca821d3061c554cdf9b9c7c9d",
+      "reason": "Historical pose/video experiment or validation artifact; not used by the application or active QA."
+    },
+    {
+      "path": "app/assets/jaspe2d/v12/chin2.png",
+      "bytes": 1593664,
+      "sha256": "b7621372998d3cc024d1083add38e61285d607331c98c19760d2da2ee6f9a197",
+      "reason": "Byte-identical to originals/chin1.png; preserve logical images/chin2.png key via manifest URL alias."
+    },
+    {
+      "path": "app/assets/jaspe2d/v12/paupières-fermées.png",
+      "bytes": 1559852,
+      "sha256": "a638e4f41852234595451ae28b5b6b56f5ab15d399892cfbeecf9c93560b6f3e",
+      "reason": "Byte-identical unused filename; active v12 manifest already uses eyelids-closed.png."
+    },
+    {
+      "path": "app/assets/jaspe2d/verification-v14.json",
+      "bytes": 2639,
+      "sha256": "ea42f09c9bc45018b9cab4f8b8d3f1b7b867ecbafd23b0f0a698cf260b2ff46d",
+      "reason": "Historical pose/video experiment or validation artifact; not used by the application or active QA."
+    },
+    {
+      "path": "app/connexion-apercus.html",
+      "bytes": 3290,
+      "sha256": "271e24dffb4b911dca84543735611b34c33d564078a49d9359932cd5f824aedd",
+      "reason": "Historical login screenshots and their standalone comparison page."
+    },
+    {
+      "path": "app/jaspe-attente.html",
+      "bytes": 8662,
+      "sha256": "f912fde01eacb74e1d39a20586a9eca8f8afecfeae0cec7e67888f5b7e19eb9f",
+      "reason": "Retired waiting-pose experiments and their standalone review page; active v13 fallback retained."
+    },
+    {
+      "path": "app/schoolsafe-hero-reference.png",
+      "bytes": 1728484,
+      "sha256": "e8164a97af0f1c0480a21d0e85606ec03f8a9f849b04617bee836906169edabf",
+      "reason": "Unused historical hero reference."
+    },
+    {
+      "path": "docs/design/jaspe-assise-v1/index.html",
+      "bytes": 3533,
+      "sha256": "6e647c3a62d19594d0d70a9095fa02fc18e9c2f80a658945e8e5c8f042ea4e7f",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/jaspe-assise-v1/jaspe-assise-accueil-clair-v1.png",
+      "bytes": 1516164,
+      "sha256": "f558fdcf751bb86cdac59924e877e3d12cccdfcefea6f43767dc3b60007dd667",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/jaspe-assise-v1/jaspe-assise-accueil-sombre-v1.png",
+      "bytes": 1548499,
+      "sha256": "2101b5c7097bc92308f17d2c191d7c5525deefcba6f88e5c207385246795a548",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/jaspe-assise-v1/prompts.json",
+      "bytes": 6004,
+      "sha256": "646d51069a6841d31ee78ea88cefe86becbfe40e928e8a757b08010b39c4f3e5",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/jaspe-assise-v1/verification.json",
+      "bytes": 1391,
+      "sha256": "fd676dd529943ade47e604a31e7d51e8c8ac66572cfb3b1da7c333e243f1884a",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/jaspe-cartable-v1/cartable-clair-non-valide.png",
+      "bytes": 1611130,
+      "sha256": "01041c591950fd71be1a1ae85aff6e0df18db65ffc04a8d79a4edd5aa74e5886",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/jaspe-cartable-v1/layout-1440-check.png",
+      "bytes": 393748,
+      "sha256": "816c9a7d40372b214d8f7d2fd56d2ebd3440b65e37cce348c363f1099b5a654b",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/jaspe-cartable-v1/layout-320-check.png",
+      "bytes": 135536,
+      "sha256": "5c564717af2661db2443876a233c52504a20d885f2c80df36887405e7042b35b",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/jaspe-cartable-v1/layout-390-check.png",
+      "bytes": 163145,
+      "sha256": "9d860bbafbcd456e89a1a1f4ae6874b4291f09f310430687c3152f15b03ea3cb",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/jaspe-cartable-v1/layout-mobile-check.png",
+      "bytes": 167873,
+      "sha256": "8e907262bad35efd188025d01d0ab9d2fcbf6f60c044d9c9c487586490db37be",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/jaspe-cartable-v1/prompts.json",
+      "bytes": 3878,
+      "sha256": "3dd4d3aff52567e7e0de5585852040c08c4eec71ccf3396dadd4c4c2d737c535",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/jaspe-cartable-v1/reference-placement-mobile.png",
+      "bytes": 1531467,
+      "sha256": "20ff28062e53905df260ced70cc490adf5b54853480c7bec1bef3d282327620c",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/jaspe-sans-table-v1/jaspe-sans-table-390-dark.png",
+      "bytes": 80521,
+      "sha256": "b6507b9ec537a549af27a8051809bd7bda6b63e8ae7e2a20a73cf47ecf27f4af",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/jaspe-sans-table-v1/jaspe-sans-table-390-light.png",
+      "bytes": 83718,
+      "sha256": "0c4f1060e19693ddd376878316eb1fadf71ac5ac6b7bc090a3932c0f63a4ab24",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/references/schoolsafe-desktop-2026-09-13.png",
+      "bytes": 1509288,
+      "sha256": "1a00922444356ceeeb8b8b3216b5e054eda60dd05e0f8a48f6fc9a2fdd41fe10",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/design/references/schoolsafe-mobile-2026-09-13.png",
+      "bytes": 1531467,
+      "sha256": "20ff28062e53905df260ced70cc490adf5b54853480c7bec1bef3d282327620c",
+      "reason": "Historical mockup, screenshot or generation artifact; no runtime dependency."
+    },
+    {
+      "path": "docs/migration/2026-09-19-base-stable/README.md",
+      "bytes": 34686,
+      "sha256": "95eb487b127f1bb5aa89325bbbc95293f5e0c4c387610e01a3b9ae1591e3056c",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-base-stable/dependencies.json",
+      "bytes": 264790,
+      "sha256": "ecbe664e611fcd36591c467bb0baee55e276ccaed12030743e56733ac2214966",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-base-stable/files.csv",
+      "bytes": 259377,
+      "sha256": "b34cd387a8e271083e410307245b9f212a85d8b5b2548afb50d7e69e52a02dca",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-base-stable/files.json",
+      "bytes": 470063,
+      "sha256": "026a5b574befa613d2c0ee180dadeaa54a41924a968eff24049a24308d4415fe",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-base-stable/generate-manifest.mjs",
+      "bytes": 28824,
+      "sha256": "e5d3261b53fdef2d1527e5229f239088cf3d957c03fc8efad3a5c5fab237a7a5",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-base-stable/worktree-review.csv",
+      "bytes": 33783,
+      "sha256": "54ef5df8665eda712fb9ea3defe292a3ba71a88bceb78aeddbb4aa15c5b247fe",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-stable-preparation/CONTROL_EXTRACTION_PLAN.md",
+      "bytes": 2967,
+      "sha256": "b9106d53ea7a967b7d6d36f1413f8b9c035d019b9b1e6d8fe5957fd193c9d73d",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-stable-preparation/ERRORS.md",
+      "bytes": 7644,
+      "sha256": "faf4c1458123d63a6e995cdb37e8117706c9d1acfae9fa64afc8fc64bb737e4c",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-stable-preparation/IMAGES.md",
+      "bytes": 2062,
+      "sha256": "1df5c8390be40b315f93f632f6720048394bba1a2a415d5a7b18865bc42abad4",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-stable-preparation/PUSH.md",
+      "bytes": 4892,
+      "sha256": "ddcb492200871fcf59c987798aa30677aff2ed50161bc19ea80d5de35427dcbf",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-stable-preparation/README.md",
+      "bytes": 7761,
+      "sha256": "3f4528420ed4286ed282944ef74941b69169048e3e35541ff3c8bc29cf72b87e",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-stable-preparation/final-files.json",
+      "bytes": 256139,
+      "sha256": "e234b9b52602ef1776cd75c4111b15bdc03de3e918e828c13b08e72ebc3427ea",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-stable-preparation/final-files.txt",
+      "bytes": 31056,
+      "sha256": "c930c59bad6ceb5ca1b38cde36968fd815cc925cc98081191050e2d0ab92249c",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-stable-preparation/prepare-stable.mjs",
+      "bytes": 3872,
+      "sha256": "0a56e511b2f044974f130c188dfc0d36fe2e72bb0d61a0b5c56431c4b2f65b98",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-stable-preparation/scan-reviewed-literals.json",
+      "bytes": 4479,
+      "sha256": "e275bc419efe8183e76a66fac955ec09ff38ece425e557a01f78579daea2b6de",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-stable-preparation/scan-selection.mjs",
+      "bytes": 3407,
+      "sha256": "58fc70f14c042b047a7cd72f7a9756c5bcbe50d3e1c3f5604013f3e86435790c",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-stable-preparation/selection.mjs",
+      "bytes": 4169,
+      "sha256": "a173ae10881e7c0988be8447a30df3afc1b29ddb112f1fbee955ea3f64eca3ae",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    },
+    {
+      "path": "docs/migration/2026-09-19-stable-preparation/verify-stable.mjs",
+      "bytes": 1837,
+      "sha256": "f6d001d135bbc9ef8b181c6dfe50bc73b64cbd892369c11203246d536fec702f",
+      "reason": "Historical preparation artifact; retained at the base commit. Active scanner and Control/image notes relocated."
+    }
+  ],
+  "exclusions": [
+    {
+      "path": ".claude/launch.json",
+      "reason": "Contenu potentiellement sensible non consulté ; exclu de tout import automatique."
+    },
+    {
+      "path": ".claude/settings.local.json",
+      "reason": "Contenu potentiellement sensible non consulté ; exclu de tout import automatique."
+    },
+    {
+      "path": "ChatGPT Image 13 sept. 2026, 08_02_07 (1).png",
+      "reason": "Doublon SHA-256 de docs/design/references/schoolsafe-mobile-2026-09-13.png ; original local préservé."
+    },
+    {
+      "path": "ChatGPT Image 13 sept. 2026, 08_03_44.png",
+      "reason": "Doublon SHA-256 de docs/design/references/schoolsafe-desktop-2026-09-13.png ; original local préservé."
+    },
+    {
+      "path": "app/vendor/test-write.txt",
+      "reason": "Sonde écriture : texte test ; aucune référence source trouvée."
+    },
+    {
+      "path": "app/vendor/write-test.txt",
+      "reason": "Sonde écriture : texte test ; aucune référence source trouvée."
+    },
+    {
+      "path": "database/baseline/v1/review/SECRETS_APPLICATION.md",
+      "reason": "Contenu potentiellement sensible non consulté ; exclu de tout import automatique."
+    },
+    {
+      "path": "debug.log",
+      "reason": "Contenu potentiellement sensible non consulté ; exclu de tout import automatique."
+    },
+    {
+      "path": "app/login-kid-1.jpg",
+      "reason": "Image usage not established; see IMAGES.md. Original retained."
+    },
+    {
+      "path": "app/login-kid-2.jpg",
+      "reason": "Image usage not established; see IMAGES.md. Original retained."
+    },
+    {
+      "path": "app/login-kid-3.jpg",
+      "reason": "Image usage not established; see IMAGES.md. Original retained."
+    },
+    {
+      "path": "app/login-kid-4.jpg",
+      "reason": "Image usage not established; see IMAGES.md. Original retained."
+    },
+    {
+      "path": "app/login-kid-5.jpg",
+      "reason": "Image usage not established; see IMAGES.md. Original retained."
+    },
+    {
+      "path": "app/login-kid-6.jpg",
+      "reason": "Image usage not established; see IMAGES.md. Original retained."
+    }
+  ]
+}

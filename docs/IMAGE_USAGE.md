@@ -1,5 +1,12 @@
 # Six portraits de connexion — décision de copie
 
+**Complément BOLT-1, 19/09/2026 :** la décision d'exclure les six portraits reste
+inchangée. Le texte historique ci-dessous décrit la copie stable. Sur Bolt,
+`app/assets/connexion-controle/` est retiré : il contient six captures de contrôle
+de la connexion, utilisées seulement par `connexion-apercus.html`, lui aussi
+archivé. Ce ne sont pas les sprites runtime de JASPE. Les assets du personnage,
+la connexion réelle et leurs tests sont conservés ; voir `bolt/PROOFS.md`.
+
 Revue du 19 septembre 2026 : `app/login-kid-1.jpg` à `login-kid-6.jpg`,
 lus visuellement et inspectés sans extraction de données personnelles.
 

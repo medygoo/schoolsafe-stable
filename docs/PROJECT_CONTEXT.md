@@ -4,6 +4,20 @@ Dernière mise à jour de la continuité : 16 septembre 2026.
 
 ## Point d'entrée pour la reprise
 
+- **ACTIVE — validation BOLT-1 reçue le 19/09/2026 :** `bolt/workspace` est une
+  branche expérimentale, autorisée à publication seule vers SchoolSafe Stable.
+  La vérification des retraits passe ; le push reste suspendu faute d'accès aux
+  réglages GitHub de déploiement. Lire le premier bloc du handoff. Première tâche
+  Bolt ensuite : bug PNG `CanvasGradient`, conservé sans correction dans ce lot.
+  Le mandat « attente de validation » ci-dessous est désormais **HISTORIQUE**.
+
+- **ACTIVE — 19/09/2026, BOLT-1 :** branche locale `bolt/workspace` allégée,
+  en attente de validation avant push. Voir `bolt/README.md` et le premier bloc
+  du handoff. JASPE et cartes conservées ; export PNG préexistant en échec,
+  SQL et Docker restent à qualifier. Aucune publication ni exploitation autorisée
+  dans ce lot. Les deux mandats de publication/préparation ci-dessous sont
+  **HISTORIQUES, REMPLACÉS par BOLT-1** ; leurs anciens libellés sont conservés.
+
 - **ACTIVE — 19/09/2026 : base de développement validée ; publication autorisée
   uniquement sur `medygoo/schoolsafe-stable`, branche `develop/codex-base`.**
   Aucun push sur main, déploiement ou VPS. Défauts SQL ouverts et absence de

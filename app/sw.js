@@ -1,5 +1,5 @@
 var CACHE_PREFIX = "schoolsafe-v2-";
-var CACHE_NAME = CACHE_PREFIX + "a51-session-denials-2026-09-19";
+var CACHE_NAME = CACHE_PREFIX + "bolt-assets-2026-09-19";
 var CORE_PATHS = [
   "./",
   "./index.html",

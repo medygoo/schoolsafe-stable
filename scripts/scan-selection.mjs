@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { selectFiles, selectedBytes, privatePath } from './selection.mjs';
+const privatePath = p => /(?:^|\/)(?:\.git|\.claude|\.worktrees|node_modules|\.env(?:\.[^/]*)?|credentials\.json|secrets\.json)(?:\/|$)|\.(?:pem|key|p12|pfx|log|dump|backup)$/.test(p)
+  || p.endsWith('/SECRETS_APPLICATION.md');
 
 const rules = [
   ['private-key', /-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY-----/g],
@@ -46,9 +47,12 @@ export function scan(entries) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const root = path.resolve(process.argv[2] || '.');
-  const { files } = selectFiles(root);
-  const result = scan(files.map(p => ({ path: p, bytes: selectedBytes(root, p).bytes })));
+  const root = process.cwd();
+  const files = fs.readFileSync(process.argv[2] || 'docs/bolt/files.txt', 'utf8').trim().split(/\r?\n/);
+  for (const p of files) {
+    if (privatePath(p) || path.isAbsolute(p) || p.split(/[\\/]/).includes('..')) throw new Error('Unsafe scan path: ' + p);
+  }
+  const result = scan(files.map(p => ({ path: p, bytes: fs.readFileSync(path.join(root, p)) })));
   console.log(JSON.stringify(result, null, 2));
   if (result.findings.length || result.literalCandidates.length || result.metadataCandidates.length) process.exitCode = 1;
 }

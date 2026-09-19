@@ -1,26 +1,14 @@
 // Real browser over the exact selected bytes, no external API or real account.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import path from 'node:path';
-import http from 'node:http';
 import { chromium } from 'playwright';
-import { selectFiles, selectedBytes } from '../docs/migration/2026-09-19-stable-preparation/selection.mjs';
-const root = process.cwd();
-const selected = new Set(selectFiles(root).files);
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2' };
-const server = http.createServer((req, res) => {
-  const requestPath = new URL(req.url, 'http://localhost').pathname;
-  const file = requestPath === '/shared/permissions.json' ? 'shared/permissions.json' : `app/${requestPath === '/' ? 'index.html' : requestPath.slice(1)}`;
-  if (!selected.has(file)) { res.writeHead(404); res.end(); return; }
-  res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
-  res.end(selectedBytes(root, file).bytes);
-});
-await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+import { startPreview } from './qa-static-preview.mjs';
+const preview = await startPreview();
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  const base = `http://127.0.0.1:${server.address().port}`;
-  const output = '.migration-staging/auth-evidence';
+  const base = new URL(preview.url).origin;
+  const output = process.env.BOLT_QA_OUTPUT || '.migration-staging/auth-evidence';
   fs.mkdirSync(output, { recursive: true });
   for (const width of [1440, 390]) {
     const context = await browser.newContext({ viewport: { width, height: 900 }, serviceWorkers: 'block' });
@@ -53,5 +41,5 @@ try {
   }
 } finally {
   await browser?.close();
-  await new Promise(resolve => server.close(resolve));
+  await preview.close();
 }
