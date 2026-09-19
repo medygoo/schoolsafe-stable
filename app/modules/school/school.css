@@ -1,0 +1,13 @@
+.school-module { padding: 1rem; }
+.school-tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border, #ddd); margin-bottom: 1rem; }
+.school-tabs button { padding: 0.5rem 1rem; background: transparent; border: none; cursor: pointer; }
+.school-tabs button.active { border-bottom: 2px solid var(--primary, #071a3d); font-weight: bold; }
+.school-form { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+.school-form .form-section { border: 1px solid var(--border, #ddd); border-radius: 8px; padding: 1rem; }
+.school-form label { display: block; margin: 0.5rem 0; }
+.school-form input, .school-form textarea, .school-form select { width: 100%; padding: 0.5rem; }
+.school-table { width: 100%; border-collapse: collapse; }
+.school-table th, .school-table td { padding: 0.75rem; border-bottom: 1px solid var(--border, #ddd); text-align: left; }
+.school-role-badge { background: #eee; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem; margin-right: 0.25rem; }
+.school-status.active { color: green; }
+.school-status.inactive { color: red; }

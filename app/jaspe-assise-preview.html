@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JASPE — mouvements au bureau</title>
+  <link rel="stylesheet" href="./styles/modules/jaspe-seated.css">
+  <script src="./modules/jaspe2d/seated-companion.js" defer></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f5f8fc; color: #142c48; font-family: system-ui, sans-serif; }
+    main { max-width: 1480px; margin: auto; padding: clamp(18px, 4vw, 52px); }
+    .eyebrow { font-size: 12px; font-weight: 750; letter-spacing: .13em; color: #4671a5; text-transform: uppercase; }
+    h1 { margin: 9px 0; font-size: clamp(28px, 4vw, 43px); letter-spacing: -.04em; }
+    p { color: #52677e; line-height: 1.6; }
+    .actions { display: flex; flex-wrap: wrap; gap: 9px; margin: 24px 0; }
+    button { font: inherit; font-size: 14px; border: 1px solid #cbdced; border-radius: 12px; padding: 11px 16px; background: white; color: #274f80; cursor: pointer; }
+    button[aria-pressed="true"] { background: #2458a4; color: white; border-color: #2458a4; }
+    button:focus-visible, input:focus-visible { outline: 3px solid #5898ea; outline-offset: 3px; }
+    .comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    figure { margin: 0; overflow: hidden; border: 1px solid #dbe4ef; border-radius: 20px; background: white; }
+    figcaption { padding: 16px 20px; display: flex; justify-content: space-between; font-size: 14px; }
+    figcaption span { color: #607994; }
+    .voice { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 10px; }
+    input { min-width: 0; flex: 1 1 300px; border: 1px solid #cbdced; border-radius: 12px; padding: 12px 15px; font: inherit; font-size: 14px; color: #254466; }
+    .note { font-size: 13px; max-width: 850px; }
+    #status { min-height: 24px; font-size: 14px; }
+    @media (max-width: 780px) { .comparison { grid-template-columns: 1fr; } .actions { gap: 7px; } button { padding: 10px 12px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">SchoolSafe · JASPE en mouvement</div>
+    <h1>Un geste, une séquence.</h1>
+    <p>Assise ou debout derrière son bureau, JASPE accompagne ses explications de gestes. Choisissez une action pour voir les deux versions.</p>
+    <div class="actions" aria-label="Actions de Jaspe">
+      <button type="button" data-action="idle" aria-pressed="true">Se rasseoir · repos</button>
+      <button type="button" data-action="speak" aria-pressed="false">Parler · une main</button>
+      <button type="button" data-action="speakBoth" aria-pressed="false">Parler · deux mains</button>
+      <button type="button" data-action="standExplain" aria-pressed="false">Se lever et expliquer</button>
+      <button type="button" data-action="think" aria-pressed="false">Réfléchir · cheveux</button>
+      <button type="button" data-action="smile" aria-pressed="false">Sourire</button>
+      <button type="button" data-action="read" aria-pressed="false">Lire en souriant</button>
+      <button type="button" id="pause" aria-pressed="false">Pause</button>
+    </div>
+    <section class="comparison" aria-label="Mouvements en clair et sombre">
+      <figure><div id="light" class="jaspe-seated" data-theme="light"></div><figcaption><b>Version claire</b><span>4 images par action</span></figcaption></figure>
+      <figure><div id="dark" class="jaspe-seated" data-theme="dark"></div><figcaption><b>Version sombre</b><span>4 images par action</span></figcaption></figure>
+    </section>
+    <form class="voice" id="voiceForm">
+      <input id="voiceText" aria-label="Phrase à faire lire par Jaspe" maxlength="500" value="Bonjour ! Je suis Jaspe. Je vous accompagne dans SchoolSafe, avec le sourire.">
+      <button type="submit">Écouter Jaspe parler</button>
+      <button type="button" id="stopVoice">Arrêter la voix</button>
+    </form>
+    <p id="status" role="status">Choisissez un mouvement.</p>
+    <p class="note">Les mouvements réduits de votre appareil sont respectés. La voix utilise celle disponible dans le navigateur.
+      Les images de bouche accompagnent la parole ; elles ne sont pas synchronisées phonème par phonème.</p>
+  </main>
+  <script>
+    addEventListener("DOMContentLoaded", function () {
+      var players = [SchoolSafeJaspeSeated.mount(document.getElementById("light"), { theme: "light", autoRead: false }), SchoolSafeJaspeSeated.mount(document.getElementById("dark"), { theme: "dark", autoRead: false })];
+      var status = document.getElementById("status"), paused = false, utterance = null, selected = "idle";
+      function stopVoice() {
+        if (utterance) utterance.onstart = utterance.onend = utterance.onerror = null;
+        utterance = null;
+        if (window.speechSynthesis) speechSynthesis.cancel();
+      }
+      function choose(action) {
+        selected = action;
+        paused = false;
+        document.getElementById("pause").setAttribute("aria-pressed", "false");
+        document.getElementById("pause").textContent = "Pause";
+        players.forEach(function (player) { player.setActive(true); player.setAction(action); });
+        document.querySelectorAll("[data-action]").forEach(function (button) { button.setAttribute("aria-pressed", String(button.dataset.action === action)); });
+      }
+      document.querySelectorAll("[data-action]").forEach(function (button) {
+        button.addEventListener("click", function () { stopVoice(); choose(button.dataset.action); status.textContent = button.textContent; });
+      });
+      document.getElementById("pause").addEventListener("click", function () {
+        paused = !paused;
+        stopVoice();
+        players.forEach(function (player) { player.setActive(!paused); if (!paused) player.setAction(selected); });
+        this.setAttribute("aria-pressed", String(paused));
+        this.textContent = paused ? "Reprendre" : "Pause";
+      });
+      document.getElementById("voiceForm").addEventListener("submit", function (event) {
+        event.preventDefault();
+        if (!window.speechSynthesis) { status.textContent = "La lecture vocale n’est pas disponible dans ce navigateur."; return; }
+        var text = document.getElementById("voiceText").value.trim();
+        if (!text) return;
+        stopVoice();
+        utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "fr-FR";
+        var voiceAction = selected === "standExplain" ? "standExplain" : selected === "speakBoth" ? "speakBoth" : "speak";
+        utterance.onstart = function () { choose(voiceAction); status.textContent = "Jaspe parle…"; };
+        utterance.onend = function () { utterance = null; choose("smile"); status.textContent = "Lecture terminée."; };
+        utterance.onerror = function () { utterance = null; choose("idle"); status.textContent = "Lecture vocale interrompue ou indisponible."; };
+        speechSynthesis.speak(utterance);
+      });
+      document.getElementById("stopVoice").addEventListener("click", function () { stopVoice(); choose("idle"); status.textContent = "Voix arrêtée."; });
+      document.addEventListener("visibilitychange", function () { if (document.hidden) { stopVoice(); choose("idle"); } });
+      addEventListener("pagehide", function () { stopVoice(); players.forEach(function (player) { player.destroy(); }); });
+      if (location.hash === "#deux-mains") document.querySelector('[data-action="speakBoth"]').click();
+      if (location.hash === "#debout") document.querySelector('[data-action="standExplain"]').click();
+    });
+  </script>
+</body>
+</html>

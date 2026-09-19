@@ -1,0 +1,17 @@
+{
+  "trial_version": "schoolsafe-trial-v1",
+  "requires_baseline": "schoolsafe-vps-v1",
+  "constants": {
+    "trial_days": 14,
+    "grace_days": 7
+  },
+  "arbitration": "A1 conversion en place ; B1 grâce puis suppression (suppression = action opérateur, jamais automatique en v1)",
+  "units": [
+    {
+      "order": 1,
+      "name": "trial",
+      "file": "01_trial.sql",
+      "sha256": "d87c8017900e2dbbc53dc444d01678b4e459f22b96ba77c462aef63ebd073ba4"
+    }
+  ]
+}

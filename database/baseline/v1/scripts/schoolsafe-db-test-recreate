@@ -1,0 +1,620 @@
+#!/bin/bash -p
+set -Eeuo pipefail
+IFS=$' \t\n'
+umask 077
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export LC_ALL=C
+
+unset CDPATH ENV BASH_ENV
+unset DOCKER_HOST DOCKER_CONTEXT DOCKER_TLS_VERIFY
+unset DOCKER_CERT_PATH DOCKER_API_VERSION
+
+readonly SELF='/usr/local/sbin/schoolsafe-db-test-recreate'
+readonly DOCKER='/usr/bin/docker'
+readonly DOCKER_HOST_URI='unix:///var/run/docker.sock'
+readonly FLOCK='/usr/bin/flock'
+readonly INSTALL='/usr/bin/install'
+readonly SHA256SUM='/usr/bin/sha256sum'
+readonly MV='/usr/bin/mv'
+readonly DATE='/usr/bin/date'
+
+readonly CONTAINER='schoolsafe-postgres-test'
+readonly OLD_CONTAINER='schoolsafe-postgres-test-pre-r1'
+readonly NETWORK='schoolsafe-test-internal'
+readonly VOLUME='schoolsafe-pg-test-data'
+readonly SECRET='/etc/schoolsafe-db/test/secrets/postgres_bootstrap_password'
+readonly LOCK_FILE='/run/schoolsafe-db-test-recreate.lock'
+readonly BACKUP_DIR='/var/backups/schoolsafe/test/pre-recreate'
+readonly EXPECTED_REPO_DIGEST='postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0'
+
+ROLLBACK_ACTIVE=0
+
+docker_cmd() {
+  "$DOCKER" --host "$DOCKER_HOST_URI" "$@"
+}
+
+die() {
+  printf 'ERROR: %s\n' "$*" >&2
+  exit 1
+}
+
+assert_secure_root_directory() {
+  local path="$1"
+  local mode=''
+
+  [[ -d "$path" && ! -L "$path" ]] \
+    || die "Unsafe directory: $path"
+
+  [[ "$(stat -c '%u:%g' -- "$path")" = '0:0' ]] \
+    || die "Directory must be root:root: $path"
+
+  mode="$(stat -c '%a' -- "$path")"
+  (( (8#$mode & 022) == 0 )) \
+    || die "Directory is writable by group or other: $path"
+}
+
+ensure_private_backup_directory() {
+  local path="$1"
+
+  if [[ ! -e "$path" && ! -L "$path" ]]; then
+    "$INSTALL" -d --owner=root --group=root --mode=0700 -- "$path"
+  fi
+
+  [[ -d "$path" && ! -L "$path" ]] \
+    || die "Unsafe backup directory: $path"
+
+  [[ "$(stat -c '%u:%g' -- "$path")" = '0:0' ]] \
+    || die "Backup directory must be root:root: $path"
+
+  [[ "$(stat -c '%a' -- "$path")" = '700' ]] \
+    || die "Backup directory mode must be 700: $path"
+}
+
+container_networks() {
+  docker_cmd inspect \
+    --format '{{range $name, $_ := .NetworkSettings.Networks}}{{println $name}}{{end}}' \
+    "$1"
+}
+
+active_volume_users() {
+  docker_cmd ps --filter "volume=$VOLUME" --format '{{.Names}}'
+}
+
+port_bindings() {
+  docker_cmd inspect \
+    --format '{{json .HostConfig.PortBindings}}' \
+    "$1"
+}
+
+wait_healthy() {
+  local name="$1"
+  local state=''
+  local attempt
+
+  for ((attempt = 1; attempt <= 30; attempt++)); do
+    if ! state="$(docker_cmd inspect \
+      --format '{{.State.Running}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' \
+      "$name")"; then
+      return 1
+    fi
+
+    case "$state" in
+      'true|healthy')
+        return 0
+        ;;
+      'true|starting')
+        sleep 4
+        ;;
+      *)
+        return 1
+        ;;
+    esac
+  done
+
+  return 1
+}
+
+rollback_on_exit() {
+  local code=$?
+  local rollback_failed=0
+  local restored=0
+  local running=''
+
+  trap - EXIT INT TERM
+  set +e
+
+  if [[ "$code" -eq 0 || "$ROLLBACK_ACTIVE" -ne 1 ]]; then
+    exit "$code"
+  fi
+
+  printf '%s\n' \
+    'ROLLBACK: restoring previous PostgreSQL TEST container.' >&2
+
+  if docker_cmd inspect "$OLD_CONTAINER" >/dev/null 2>&1; then
+    if docker_cmd inspect "$CONTAINER" >/dev/null 2>&1; then
+      docker_cmd stop --time 60 "$CONTAINER" >/dev/null 2>&1 || true
+
+      running="$(docker_cmd inspect \
+        --format '{{.State.Running}}' "$CONTAINER" 2>/dev/null)"
+
+      if [[ "$running" = 'false' ]]; then
+        docker_cmd rm "$CONTAINER" >/dev/null 2>&1 \
+          || rollback_failed=1
+      else
+        rollback_failed=1
+      fi
+    fi
+
+    if ! docker_cmd inspect "$CONTAINER" >/dev/null 2>&1; then
+      if docker_cmd rename "$OLD_CONTAINER" "$CONTAINER" >/dev/null 2>&1; then
+        restored=1
+      else
+        rollback_failed=1
+      fi
+    else
+      rollback_failed=1
+    fi
+  elif docker_cmd inspect "$CONTAINER" >/dev/null 2>&1; then
+    restored=1
+  else
+    rollback_failed=1
+  fi
+
+  if [[ "$restored" -eq 1 ]]; then
+    running="$(docker_cmd inspect \
+      --format '{{.State.Running}}' "$CONTAINER" 2>/dev/null)"
+
+    if [[ "$running" != 'true' ]]; then
+      docker_cmd start "$CONTAINER" >/dev/null 2>&1 \
+        || rollback_failed=1
+    fi
+
+    if [[ "$rollback_failed" -eq 0 ]] \
+      && ! wait_healthy "$CONTAINER"; then
+      rollback_failed=1
+    fi
+  fi
+
+  if [[ "$rollback_failed" -eq 0 ]] \
+    && [[ "$(active_volume_users 2>/dev/null)" != "$CONTAINER" ]]; then
+    rollback_failed=1
+  fi
+
+  if [[ "$rollback_failed" -ne 0 ]]; then
+    printf '%s\n' \
+      'ROLLBACK FAILED: do not start another PostgreSQL container; manual intervention required.' \
+      >&2
+    exit 125
+  fi
+
+  printf '%s\n' \
+    'ROLLBACK: previous PostgreSQL TEST container restored and healthy.' >&2
+
+  exit "$code"
+}
+
+[[ $# -eq 0 ]] || die 'This command accepts no arguments.'
+[[ "$(id -u)" -eq 0 ]] || die 'Root execution required.'
+
+[[ -f "$SELF" && ! -L "$SELF" ]] \
+  || die 'The installed script must be a regular non-symlink file.'
+
+[[ "$(readlink -f -- "$0")" = "$SELF" ]] \
+  || die 'Run only the installed SchoolSafe script.'
+
+[[ "$(stat -c '%u:%g' -- "$SELF")" = '0:0' ]] \
+  || die 'Installed script owner must be root:root.'
+
+[[ "$(stat -c '%a' -- "$SELF")" = '750' ]] \
+  || die 'Installed script mode must be 750.'
+
+[[ -x "$DOCKER" ]] || die 'Docker CLI missing.'
+[[ -x "$FLOCK" ]] || die 'flock is unavailable.'
+[[ -x "$INSTALL" ]] || die 'install is unavailable.'
+[[ -x "$SHA256SUM" ]] || die 'sha256sum is unavailable.'
+[[ -x "$MV" ]] || die 'mv is unavailable.'
+[[ -x "$DATE" ]] || die 'date is unavailable.'
+[[ -S /var/run/docker.sock ]] || die 'Local Docker socket missing.'
+
+[[ -d /run && ! -L /run ]] || die '/run must be a real directory.'
+[[ "$(stat -c '%u' -- /run)" = '0' ]] || die '/run owner UID must be 0.'
+
+RUN_MODE="$(stat -c '%a' -- /run)"
+(( (8#$RUN_MODE & 022) == 0 )) \
+  || die '/run must not be writable by group or other.'
+
+if [[ -e "$LOCK_FILE" || -L "$LOCK_FILE" ]]; then
+  [[ -f "$LOCK_FILE" && ! -L "$LOCK_FILE" ]] \
+    || die 'Existing lock must be a regular non-symlink file.'
+
+  [[ "$(stat -c '%u:%g' -- "$LOCK_FILE")" = '0:0' ]] \
+    || die 'Existing lock owner must be root:root.'
+
+  [[ "$(stat -c '%a' -- "$LOCK_FILE")" = '600' ]] \
+    || die 'Existing lock mode must be 600.'
+
+  [[ "$(stat -c '%h' -- "$LOCK_FILE")" = '1' ]] \
+    || die 'Existing lock must have exactly one hard link.'
+else
+  (
+    set -o noclobber
+    : >"$LOCK_FILE"
+  ) || die 'Unable to create the root-only lock file.'
+fi
+
+[[ -f "$LOCK_FILE" && ! -L "$LOCK_FILE" ]] \
+  || die 'Lock file changed before opening.'
+
+[[ "$(stat -c '%u:%g' -- "$LOCK_FILE")" = '0:0' ]] \
+  || die 'Lock owner changed before opening.'
+
+[[ "$(stat -c '%a' -- "$LOCK_FILE")" = '600' ]] \
+  || die 'Lock mode changed before opening.'
+
+LOCK_PATH_ID="$(stat -Lc '%d:%i' -- "$LOCK_FILE")"
+exec 9<>"$LOCK_FILE"
+LOCK_FD_ID="$(stat -Lc '%d:%i' -- "/proc/$$/fd/9")"
+
+[[ "$LOCK_PATH_ID" = "$LOCK_FD_ID" ]] \
+  || die 'Lock file was replaced while opening.'
+
+"$FLOCK" -n 9 || die 'Another TEST recreation is already running.'
+
+[[ -s "$SECRET" && -f "$SECRET" && ! -L "$SECRET" ]] \
+  || die 'Secret must be a non-empty regular non-symlink file.'
+
+[[ "$(readlink -f -- "$SECRET")" = "$SECRET" ]] \
+  || die 'Secret path is not canonical.'
+
+[[ "$(stat -c '%a' -- "$SECRET")" = '600' ]] \
+  || die 'Secret permissions must be 600.'
+
+[[ "$(stat -c '%u:%g' -- "$SECRET")" = '0:0' ]] \
+  || die 'Secret owner must be root:root.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{.State.Running}}' "$CONTAINER")" = 'true' ]] \
+  || die 'Current TEST container is not running.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{.State.Health.Status}}' "$CONTAINER")" = 'healthy' ]] \
+  || die 'Current TEST container is not healthy.'
+
+if docker_cmd inspect "$OLD_CONTAINER" >/dev/null 2>&1; then
+  die 'Backup container name already exists.'
+fi
+
+docker_cmd network inspect "$NETWORK" >/dev/null
+docker_cmd volume inspect "$VOLUME" >/dev/null
+
+CURRENT_PORTS="$(port_bindings "$CONTAINER")"
+[[ "$CURRENT_PORTS" = 'null' || "$CURRENT_PORTS" = '{}' ]] \
+  || die 'Current TEST container publishes a port.'
+
+[[ "$(container_networks "$CONTAINER")" = "$NETWORK" ]] \
+  || die 'Current container is not isolated to the TEST network.'
+
+[[ "$(active_volume_users)" = "$CONTAINER" ]] \
+  || die 'The TEST volume is used by another running container.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{printf "%s|%s|%t" .Type .Name .RW}}{{end}}{{end}}' \
+  "$CONTAINER")" = "volume|$VOLUME|true" ]] \
+  || die 'Unexpected PostgreSQL data mount.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{range .Mounts}}{{if eq .Destination "/run/secrets/postgres_bootstrap_password"}}{{printf "%s|%s|%t" .Type .Source .RW}}{{end}}{{end}}' \
+  "$CONTAINER")" = "bind|$SECRET|false" ]] \
+  || die 'Unexpected secret mount.'
+
+CURRENT_ENV="$(docker_cmd inspect \
+  --format '{{range .Config.Env}}{{println .}}{{end}}' "$CONTAINER")"
+
+[[ "$(grep -Fxc 'POSTGRES_USER=schoolsafe_bootstrap' <<<"$CURRENT_ENV")" = '1' ]] \
+  || die 'Unexpected POSTGRES_USER.'
+
+[[ "$(grep -Fxc 'POSTGRES_DB=schoolsafe_test' <<<"$CURRENT_ENV")" = '1' ]] \
+  || die 'Unexpected POSTGRES_DB.'
+
+[[ "$(grep -Fxc \
+  'POSTGRES_PASSWORD_FILE=/run/secrets/postgres_bootstrap_password' \
+  <<<"$CURRENT_ENV")" = '1' ]] \
+  || die 'Unexpected POSTGRES_PASSWORD_FILE.'
+
+[[ "$(grep -Fxc \
+  'PGDATA=/var/lib/postgresql/data/pgdata' \
+  <<<"$CURRENT_ENV")" = '1' ]] \
+  || die 'Unexpected PGDATA.'
+
+IMAGE_ID="$(docker_cmd inspect --format '{{.Image}}' "$CONTAINER")"
+
+[[ "$IMAGE_ID" =~ ^sha256:[0-9a-f]{64}$ ]] \
+  || die 'Unexpected Docker image ID.'
+
+docker_cmd image inspect "$IMAGE_ID" >/dev/null
+
+docker_cmd image inspect \
+  --format '{{range .RepoDigests}}{{println .}}{{end}}' "$IMAGE_ID" |
+  grep -Fx "$EXPECTED_REPO_DIGEST" >/dev/null \
+  || die 'PostgreSQL image digest mismatch.'
+
+docker_cmd exec "$CONTAINER" sh -ceu '
+export PGPASSWORD="$(cat /run/secrets/postgres_bootstrap_password)"
+
+psql_cmd() {
+  psql -X --set=ON_ERROR_STOP=1 \
+    --username schoolsafe_bootstrap \
+    --dbname schoolsafe_test \
+    --tuples-only --no-align \
+    --command "$1"
+}
+
+test "$(psql_cmd "show server_version_num;")" = "170011"
+test "$(psql_cmd "show data_directory;")" = "/var/lib/postgresql/data/pgdata"
+test "$(psql_cmd "select current_database();")" = "schoolsafe_test"
+'
+
+assert_secure_root_directory /var
+
+if [[ ! -e /var/backups && ! -L /var/backups ]]; then
+  "$INSTALL" -d --owner=root --group=root --mode=0750 -- /var/backups
+fi
+assert_secure_root_directory /var/backups
+
+ensure_private_backup_directory /var/backups/schoolsafe
+ensure_private_backup_directory /var/backups/schoolsafe/test
+ensure_private_backup_directory "$BACKUP_DIR"
+
+TIMESTAMP="$("$DATE" -u +'%Y%m%dT%H%M%SZ')"
+readonly TIMESTAMP
+
+BACKUP_BASENAME="schoolsafe_test_pre_recreate_${TIMESTAMP}.dump"
+BACKUP_INCOMPLETE="$BACKUP_DIR/${BACKUP_BASENAME}.incomplete"
+BACKUP_FILE="$BACKUP_DIR/$BACKUP_BASENAME"
+SHA_BASENAME="${BACKUP_BASENAME}.sha256"
+SHA_INCOMPLETE="$BACKUP_DIR/${SHA_BASENAME}.incomplete"
+SHA_FILE="$BACKUP_DIR/$SHA_BASENAME"
+
+readonly BACKUP_BASENAME BACKUP_INCOMPLETE BACKUP_FILE
+readonly SHA_BASENAME SHA_INCOMPLETE SHA_FILE
+
+for candidate in \
+  "$BACKUP_INCOMPLETE" \
+  "$BACKUP_FILE" \
+  "$SHA_INCOMPLETE" \
+  "$SHA_FILE"; do
+  [[ ! -e "$candidate" && ! -L "$candidate" ]] \
+    || die "Backup target already exists: $candidate"
+done
+
+printf 'Creating validated TEST backup: %s\n' "$BACKUP_FILE"
+
+docker_cmd exec "$CONTAINER" sh -ceu '
+export PGPASSWORD="$(cat /run/secrets/postgres_bootstrap_password)"
+exec pg_dump \
+  --format=custom \
+  --no-password \
+  --username=schoolsafe_bootstrap \
+  --dbname=schoolsafe_test
+' >"$BACKUP_INCOMPLETE"
+
+[[ -s "$BACKUP_INCOMPLETE" ]] \
+  || die 'pg_dump produced an empty archive.'
+
+[[ -f "$BACKUP_INCOMPLETE" && ! -L "$BACKUP_INCOMPLETE" ]] \
+  || die 'Dump output is not a regular file.'
+
+[[ "$(stat -c '%u:%g' -- "$BACKUP_INCOMPLETE")" = '0:0' ]] \
+  || die 'Dump owner must be root:root.'
+
+[[ "$(stat -c '%a' -- "$BACKUP_INCOMPLETE")" = '600' ]] \
+  || die 'Dump mode must be 600.'
+
+docker_cmd exec --interactive "$CONTAINER" \
+  pg_restore --list <"$BACKUP_INCOMPLETE" >/dev/null
+
+"$MV" -- "$BACKUP_INCOMPLETE" "$BACKUP_FILE"
+
+(
+  cd -- "$BACKUP_DIR"
+  "$SHA256SUM" -- "$BACKUP_BASENAME" >"${SHA_BASENAME}.incomplete"
+  "$SHA256SUM" --check --status "${SHA_BASENAME}.incomplete"
+)
+
+"$MV" -- "$SHA_INCOMPLETE" "$SHA_FILE"
+
+[[ -s "$BACKUP_FILE" && -f "$BACKUP_FILE" && ! -L "$BACKUP_FILE" ]] \
+  || die 'Validated dump file is missing.'
+
+[[ "$(stat -c '%u:%g' -- "$BACKUP_FILE")" = '0:0' ]] \
+  || die 'Validated dump owner must be root:root.'
+
+[[ "$(stat -c '%a' -- "$BACKUP_FILE")" = '600' ]] \
+  || die 'Validated dump mode must be 600.'
+
+[[ -s "$SHA_FILE" && -f "$SHA_FILE" && ! -L "$SHA_FILE" ]] \
+  || die 'SHA-256 file is missing.'
+
+[[ "$(stat -c '%u:%g' -- "$SHA_FILE")" = '0:0' ]] \
+  || die 'SHA-256 file owner must be root:root.'
+
+[[ "$(stat -c '%a' -- "$SHA_FILE")" = '600' ]] \
+  || die 'SHA-256 file mode must be 600.'
+
+(
+  cd -- "$BACKUP_DIR"
+  "$SHA256SUM" --check --status "$SHA_BASENAME"
+) || die 'Final SHA-256 verification failed.'
+
+BACKUP_SHA256="$("$SHA256SUM" "$BACKUP_FILE")"
+BACKUP_SHA256="${BACKUP_SHA256%% *}"
+readonly BACKUP_SHA256
+
+trap rollback_on_exit EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+ROLLBACK_ACTIVE=1
+
+printf '%s\n' 'Stopping current PostgreSQL TEST safely...'
+docker_cmd stop --time 60 "$CONTAINER"
+
+printf 'Preserving previous container as %s...\n' "$OLD_CONTAINER"
+docker_cmd rename "$CONTAINER" "$OLD_CONTAINER"
+
+printf '%s\n' 'Starting corrected PostgreSQL TEST container...'
+
+docker_cmd run --detach \
+  --pull=never \
+  --name "$CONTAINER" \
+  --restart unless-stopped \
+  --network "$NETWORK" \
+  --mount "source=$VOLUME,target=/var/lib/postgresql/data" \
+  --mount "type=bind,src=$SECRET,dst=/run/secrets/postgres_bootstrap_password,readonly" \
+  --env POSTGRES_USER=schoolsafe_bootstrap \
+  --env POSTGRES_DB=schoolsafe_test \
+  --env POSTGRES_PASSWORD_FILE=/run/secrets/postgres_bootstrap_password \
+  --env PGDATA=/var/lib/postgresql/data/pgdata \
+  --env TZ=UTC \
+  --env PGTZ=UTC \
+  --cpus 0.50 \
+  --memory 2g \
+  --memory-reservation 1g \
+  --shm-size 256m \
+  --pids-limit 256 \
+  --security-opt no-new-privileges:true \
+  --stop-timeout 60 \
+  --health-cmd 'pg_isready --username schoolsafe_bootstrap --dbname schoolsafe_test' \
+  --health-interval 10s \
+  --health-timeout 5s \
+  --health-retries 5 \
+  --health-start-period 30s \
+  --log-driver json-file \
+  --log-opt max-size=10m \
+  --log-opt max-file=5 \
+  --label traefik.enable=false \
+  --label schoolsafe.environment=test \
+  "$IMAGE_ID" \
+  -c shared_preload_libraries=pg_stat_statements \
+  -c compute_query_id=auto \
+  -c pg_stat_statements.max=5000 \
+  -c pg_stat_statements.track=top \
+  -c pg_stat_statements.track_utility=on \
+  -c pg_stat_statements.track_planning=off \
+  -c pg_stat_statements.save=on \
+  -c max_connections=40 \
+  -c shared_buffers=512MB \
+  -c effective_cache_size=1280MB \
+  -c work_mem=4MB \
+  -c maintenance_work_mem=128MB \
+  -c statement_timeout=30s \
+  -c idle_in_transaction_session_timeout=30s \
+  -c lock_timeout=5s \
+  -c password_encryption=scram-sha-256 \
+  -c log_destination=stderr \
+  -c logging_collector=off \
+  -c log_statement=none \
+  -c log_min_duration_statement=500 \
+  -c log_parameter_max_length=0 \
+  -c log_parameter_max_length_on_error=0 \
+  -c log_connections=on \
+  -c log_disconnections=on \
+  -c log_checkpoints=on \
+  -c log_lock_waits=on \
+  -c deadlock_timeout=1s \
+  -c log_temp_files=10485760 \
+  -c log_min_error_statement=error \
+  -c 'log_line_prefix=%m [%p] %q%u@%d/%a '
+
+wait_healthy "$CONTAINER" \
+  || die 'New PostgreSQL TEST container is not healthy.'
+
+NEW_PORTS="$(port_bindings "$CONTAINER")"
+[[ "$NEW_PORTS" = 'null' || "$NEW_PORTS" = '{}' ]] \
+  || die 'New TEST container publishes a port.'
+
+[[ "$(container_networks "$CONTAINER")" = "$NETWORK" ]] \
+  || die 'New container is not isolated to the TEST network.'
+
+[[ "$(active_volume_users)" = "$CONTAINER" ]] \
+  || die 'The TEST volume has multiple active users.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{printf "%s|%s|%t" .Type .Name .RW}}{{end}}{{end}}' \
+  "$CONTAINER")" = "volume|$VOLUME|true" ]] \
+  || die 'New container data mount mismatch.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{range .Mounts}}{{if eq .Destination "/run/secrets/postgres_bootstrap_password"}}{{printf "%s|%s|%t" .Type .Source .RW}}{{end}}{{end}}' \
+  "$CONTAINER")" = "bind|$SECRET|false" ]] \
+  || die 'New container secret mount mismatch.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{.State.Running}}' "$OLD_CONTAINER")" = 'false' ]] \
+  || die 'Backup container must remain stopped.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{index .Config.Labels "schoolsafe.environment"}}' \
+  "$CONTAINER")" = 'test' ]] \
+  || die 'New container is not labelled as TEST.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{.HostConfig.NanoCpus}}' "$CONTAINER")" = '500000000' ]] \
+  || die 'CPU limit mismatch.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{.HostConfig.Memory}}' "$CONTAINER")" = '2147483648' ]] \
+  || die 'Memory limit mismatch.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{.HostConfig.MemoryReservation}}' "$CONTAINER")" = '1073741824' ]] \
+  || die 'Memory reservation mismatch.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{.HostConfig.PidsLimit}}' "$CONTAINER")" = '256' ]] \
+  || die 'PIDs limit mismatch.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{.HostConfig.ShmSize}}' "$CONTAINER")" = '268435456' ]] \
+  || die 'Shared-memory limit mismatch.'
+
+[[ "$(docker_cmd inspect \
+  --format '{{range .HostConfig.SecurityOpt}}{{println .}}{{end}}' \
+  "$CONTAINER")" = 'no-new-privileges:true' ]] \
+  || die 'no-new-privileges mismatch.'
+
+docker_cmd exec "$CONTAINER" sh -ceu '
+export PGPASSWORD="$(cat /run/secrets/postgres_bootstrap_password)"
+
+psql_cmd() {
+  psql -X --set=ON_ERROR_STOP=1 \
+    --username schoolsafe_bootstrap \
+    --dbname schoolsafe_test \
+    --tuples-only --no-align \
+    --command "$1"
+}
+
+test "$(psql_cmd "show server_version_num;")" = "170011"
+test "$(psql_cmd "show shared_preload_libraries;")" = "pg_stat_statements"
+test "$(psql_cmd "show compute_query_id;")" = "auto"
+test "$(psql_cmd "show log_destination;")" = "stderr"
+test "$(psql_cmd "show logging_collector;")" = "off"
+test "$(psql_cmd "show log_min_duration_statement;")" = "500ms"
+test "$(psql_cmd "show log_parameter_max_length;")" = "0"
+test "$(psql_cmd "show log_parameter_max_length_on_error;")" = "0"
+test "$(psql_cmd "select count(*) from pg_catalog.pg_extension where extname = '\''pg_stat_statements'\'';")" = "0"
+'
+
+ROLLBACK_ACTIVE=0
+trap - EXIT INT TERM
+
+printf '\n%s\n' 'SCHOOLSAFE DB TEST RECREATION: PASS'
+printf 'container=%s\n' "$CONTAINER"
+printf '%s\n' 'health=healthy'
+printf 'volume=%s\n' "$VOLUME"
+printf 'network=%s\n' "$NETWORK"
+printf '%s\n' 'postgres_port_published=no'
+printf '%s\n' 'pg_stat_statements_preloaded=yes'
+printf '%s\n' 'pg_stat_statements_extension_installed=no'
+printf 'backup_file=%s\n' "$BACKUP_FILE"
+printf 'backup_sha256=%s\n' "$BACKUP_SHA256"
+printf 'backup_container=%s\n' "$OLD_CONTAINER"

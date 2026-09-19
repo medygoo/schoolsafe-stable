@@ -1,0 +1,708 @@
+/* ============================================================
+   SchoolSafe V2 — Auth screen styles
+   Scopé .auth-screen, tokens --ss-* uniquement.
+   ============================================================ */
+
+.auth-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  overflow: hidden;
+  color: var(--ss-slate-50);
+  background: var(--ss-navy-950);
+}
+
+/* Un écran auth inactif doit rester hors du flux (comme les autres .screen),
+   sinon il occupe 100svh au-dessus du workspace et décale le tableau de bord. */
+.auth-screen:not(.active) {
+  position: fixed;
+  inset: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Média de fond + shade
+   -------------------------------------------------------------------------- */
+.auth-media,
+.auth-shade {
+  position: absolute;
+  inset: 0;
+}
+
+.auth-media {
+  overflow: hidden;
+}
+
+.auth-image {
+  position: absolute;
+  inset: -3%;
+  width: 106%;
+  height: 106%;
+  object-fit: cover;
+  object-position: 40% 18%;
+  opacity: 0;
+  filter: blur(7px);
+  transform: scale(1.03);
+  transition: opacity 1.25s ease;
+}
+
+.auth-image.visible {
+  opacity: 1;
+  animation: imageDrift 8s ease-in-out forwards;
+}
+
+.auth-shade {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--ss-navy-950) 70%, transparent) 0%, color-mix(in srgb, var(--ss-navy-950) 18%, transparent) 48%, color-mix(in srgb, var(--ss-navy-950) 46%, transparent) 100%),
+    linear-gradient(0deg, color-mix(in srgb, var(--ss-navy-950) 58%, transparent), transparent 56%);
+}
+
+/* --------------------------------------------------------------------------
+   Topbar
+   -------------------------------------------------------------------------- */
+.auth-topbar {
+  position: absolute;
+  z-index: 3;
+  top: max(var(--ss-space-4), env(safe-area-inset-top));
+  left: var(--ss-space-6);
+  right: var(--ss-space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-screen .brand-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ss-space-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: var(--ss-text-xl);
+  font-weight: var(--ss-font-extrabold);
+  cursor: pointer;
+}
+
+.auth-screen .brand-button img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.auth-screen .brand-button strong {
+  color: var(--ss-gold-400);
+}
+
+.auth-screen .brand-button:focus-visible {
+  outline: 3px solid var(--ss-blue-300);
+  outline-offset: 2px;
+  border-radius: var(--ss-radius-sm);
+}
+
+.auth-screen .language-switch {
+  display: flex;
+  height: 36px;
+  padding: 3px;
+  border: 1px solid color-mix(in srgb, var(--ss-slate-50) 32%, transparent);
+  border-radius: var(--ss-radius-sm);
+  background: color-mix(in srgb, var(--ss-navy-950) 24%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.auth-screen .language-switch button {
+  min-width: 42px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: color-mix(in srgb, var(--ss-slate-50) 66%, transparent);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-extrabold);
+  cursor: pointer;
+  transition: color var(--ss-transition-fast), background var(--ss-transition-fast);
+}
+
+.auth-screen .language-switch button.selected {
+  color: var(--ss-navy-950);
+  background: var(--ss-slate-50);
+}
+
+.auth-screen .language-switch button:focus-visible {
+  outline: 2px solid var(--ss-blue-300);
+  outline-offset: 1px;
+}
+
+/* --------------------------------------------------------------------------
+   Layout principal
+   -------------------------------------------------------------------------- */
+.auth-layout {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(400px, 420px) 420px;
+  gap: var(--ss-space-6);
+  align-items: center;
+  width: min(1320px, calc(100% - var(--ss-space-12)));
+  height: 100%;
+  margin: 0 auto;
+  padding: var(--ss-space-8) 0;
+  transition: grid-template-columns 320ms ease, gap 320ms ease;
+}
+
+.auth-screen.auth-is-typing .auth-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(460px, 540px);
+}
+
+.auth-screen.auth-is-typing .auth-jaspe-anchor {
+  display: none;
+}
+
+.auth-jaspe-anchor {
+  align-self: center;
+  width: 100%;
+  min-height: min(430px, 56svh);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Message gauche
+   -------------------------------------------------------------------------- */
+.auth-message {
+  align-self: end;
+  padding-bottom: var(--ss-space-12);
+}
+
+.auth-message .eyebrow {
+  display: block;
+  margin-bottom: var(--ss-space-2);
+  color: var(--ss-gold-300);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.auth-message h1 {
+  max-width: 670px;
+  margin: var(--ss-space-4) 0 var(--ss-space-3);
+  font-size: var(--ss-text-4xl);
+  font-weight: var(--ss-font-bold);
+  line-height: var(--ss-leading-tight);
+}
+
+.auth-message p {
+  max-width: 540px;
+  margin: 0;
+  color: color-mix(in srgb, var(--ss-slate-50) 76%, transparent);
+  font-size: var(--ss-text-base);
+  line-height: var(--ss-leading-normal);
+}
+
+/* --------------------------------------------------------------------------
+   Panneau de connexion
+   -------------------------------------------------------------------------- */
+.auth-screen .login-panel {
+  padding: var(--ss-space-6);
+  border: 1px solid color-mix(in srgb, var(--ss-slate-50) 24%, transparent);
+  border-radius: var(--ss-radius);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ss-navy-950) 48%, transparent), color-mix(in srgb, var(--ss-navy-950) 34%, transparent));
+  box-shadow: var(--ss-shadow-xl);
+  backdrop-filter: blur(10px) saturate(115%);
+  -webkit-backdrop-filter: blur(10px) saturate(115%);
+}
+
+.auth-screen .panel-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--ss-space-3);
+  margin-bottom: var(--ss-space-5);
+}
+
+.auth-screen .panel-brand img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.auth-screen .panel-brand div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.auth-screen .panel-brand b {
+  color: var(--ss-slate-50);
+  font-size: var(--ss-text-xl);
+}
+
+.auth-screen .panel-brand span {
+  color: color-mix(in srgb, var(--ss-slate-50) 68%, transparent);
+  font-size: var(--ss-text-sm);
+}
+
+/* --------------------------------------------------------------------------
+   Méthode de connexion (e-mail / téléphone)
+   -------------------------------------------------------------------------- */
+.auth-screen .login-method {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ss-space-1);
+  margin-bottom: var(--ss-space-4);
+  padding: var(--ss-space-1);
+  border: 1px solid color-mix(in srgb, var(--ss-slate-50) 20%, transparent);
+  border-radius: var(--ss-radius-sm);
+  background: color-mix(in srgb, var(--ss-navy-950) 32%, transparent);
+}
+
+.auth-screen .login-method button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ss-space-1);
+  min-height: 40px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: color-mix(in srgb, var(--ss-slate-50) 70%, transparent);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-extrabold);
+  cursor: pointer;
+  transition: color var(--ss-transition-fast), background var(--ss-transition-fast);
+}
+
+.auth-screen .login-method button.selected {
+  color: var(--ss-navy-950);
+  background: color-mix(in srgb, var(--ss-slate-50) 94%, transparent);
+  box-shadow: var(--ss-shadow-sm);
+}
+
+.auth-screen .login-method button:focus-visible {
+  outline: 2px solid var(--ss-blue-300);
+  outline-offset: 1px;
+}
+
+.auth-screen .login-method button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* --------------------------------------------------------------------------
+   Champs DS adaptés au fond sombre
+   -------------------------------------------------------------------------- */
+.auth-screen .ss-field {
+  /* Rythme compact du panneau, avec les cibles tactiles communes de 44 px. */
+  gap: var(--ss-space-1);
+  margin-bottom: var(--ss-space-3);
+}
+
+.auth-screen .ss-field.hidden {
+  display: none;
+}
+
+.auth-screen .ss-label {
+  color: var(--ss-slate-50);
+}
+
+.auth-screen .ss-input-shell {
+  border-color: color-mix(in srgb, var(--ss-slate-50) 28%, transparent);
+  background: color-mix(in srgb, var(--ss-slate-50) 12%, transparent);
+  color: var(--ss-slate-50);
+}
+
+.auth-screen .ss-input-shell:focus-within {
+  border-color: color-mix(in srgb, var(--ss-slate-50) 70%, transparent);
+  background: color-mix(in srgb, var(--ss-slate-50) 18%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ss-slate-50) 10%, transparent);
+}
+
+.auth-screen .ss-input-shell .ss-input {
+  color: var(--ss-slate-50);
+}
+
+.auth-screen .ss-input-shell .ss-input::placeholder {
+  color: color-mix(in srgb, var(--ss-slate-50) 50%, transparent);
+}
+
+.auth-screen .ss-input-shell svg {
+  color: color-mix(in srgb, var(--ss-slate-50) 72%, transparent);
+}
+
+.auth-screen .ss-select {
+  border-color: color-mix(in srgb, var(--ss-slate-50) 26%, transparent);
+  background: color-mix(in srgb, var(--ss-navy-950) 50%, transparent);
+  color: var(--ss-slate-50);
+}
+
+.auth-screen .ss-select option {
+  color: var(--ss-text-primary);
+  background: var(--ss-bg-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Coquille téléphone
+   -------------------------------------------------------------------------- */
+.auth-screen .phone-shell {
+  gap: 0;
+}
+
+.auth-screen .dial-code {
+  padding-right: var(--ss-space-3);
+  margin-right: var(--ss-space-3);
+  border-right: 1px solid color-mix(in srgb, var(--ss-slate-50) 24%, transparent);
+  color: var(--ss-slate-50);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-extrabold);
+}
+
+/* --------------------------------------------------------------------------
+   Label row + text button
+   -------------------------------------------------------------------------- */
+.auth-screen .label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: var(--ss-space-3);
+  margin-bottom: var(--ss-space-1);
+}
+
+.auth-screen .text-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ss-gold-300);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-extrabold);
+  cursor: pointer;
+}
+
+.auth-screen .text-button:hover {
+  color: var(--ss-gold-400);
+}
+
+.auth-screen .text-button:focus-visible {
+  outline: 2px solid var(--ss-blue-300);
+  outline-offset: 2px;
+  border-radius: var(--ss-radius-sm);
+}
+
+/* --------------------------------------------------------------------------
+   Checkbox "Rester connecté"
+   -------------------------------------------------------------------------- */
+.auth-screen .check-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ss-space-2);
+  margin: var(--ss-space-4) 0;
+  color: color-mix(in srgb, var(--ss-slate-50) 76%, transparent);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-semibold);
+}
+
+.auth-screen .check-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ss-navy-900);
+}
+
+/* --------------------------------------------------------------------------
+   Bouton de connexion
+   -------------------------------------------------------------------------- */
+.auth-screen .login-button {
+  width: 100%;
+  color: var(--ss-slate-50);
+  background: var(--ss-navy-900);
+}
+
+.auth-screen .login-button:hover {
+  background: var(--ss-navy-800);
+}
+
+/* --------------------------------------------------------------------------
+   Accès démo
+   -------------------------------------------------------------------------- */
+.auth-screen .demo-access {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ss-space-1);
+  min-height: 28px;
+  margin-top: var(--ss-space-2);
+  color: color-mix(in srgb, var(--ss-slate-50) 72%, transparent);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-bold);
+}
+
+.auth-screen .demo-access svg {
+  width: 16px;
+  height: 16px;
+}
+
+.auth-screen .demo-access--button {
+  width: 100%;
+  padding: var(--ss-space-2) var(--ss-space-3);
+  background: color-mix(in srgb, var(--ss-slate-50) 10%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--ss-slate-50) 45%, transparent);
+  border-radius: var(--ss-radius-md);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.auth-screen .demo-access--button:hover,
+.auth-screen .demo-access--button:focus-visible {
+  background: color-mix(in srgb, var(--ss-slate-50) 18%, transparent);
+  border-color: color-mix(in srgb, var(--ss-slate-50) 70%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-screen .demo-access--button {
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Sélecteur de rôle démo
+   -------------------------------------------------------------------------- */
+.auth-screen .demo-role-field {
+  margin-top: var(--ss-space-2);
+}
+
+.auth-screen .demo-role-field .ss-label {
+  margin-bottom: var(--ss-space-1);
+  color: color-mix(in srgb, var(--ss-slate-50) 80%, transparent);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-extrabold);
+}
+
+/* --------------------------------------------------------------------------
+   First install + preview profile
+   -------------------------------------------------------------------------- */
+.auth-screen .first-install {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ss-space-3);
+  margin-top: var(--ss-space-4);
+  padding-top: var(--ss-space-4);
+  border-top: 1px solid color-mix(in srgb, var(--ss-slate-50) 18%, transparent);
+  color: color-mix(in srgb, var(--ss-slate-50) 70%, transparent);
+  font-size: var(--ss-text-sm);
+}
+
+.auth-screen .first-install button {
+  padding: var(--ss-space-1) 0;
+  border: 0;
+  background: transparent;
+  color: var(--ss-gold-300);
+  font-weight: var(--ss-font-extrabold);
+  cursor: pointer;
+}
+
+.auth-screen .first-install button:hover {
+  color: var(--ss-gold-400);
+}
+
+.auth-screen .preview-profile-button {
+  width: 100%;
+  min-height: 42px;
+  margin-top: var(--ss-space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ss-space-1);
+  border: 1px solid color-mix(in srgb, var(--ss-slate-50) 20%, transparent);
+  border-radius: var(--ss-radius-sm);
+  background: color-mix(in srgb, var(--ss-slate-50) 8%, transparent);
+  color: color-mix(in srgb, var(--ss-slate-50) 88%, transparent);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-extrabold);
+  cursor: pointer;
+  transition: color var(--ss-transition-fast), background var(--ss-transition-fast);
+}
+
+.auth-screen .preview-profile-button:hover {
+  color: var(--ss-slate-50);
+  background: color-mix(in srgb, var(--ss-slate-50) 14%, transparent);
+}
+
+.auth-screen .preview-profile-button:focus-visible {
+  outline: 2px solid var(--ss-blue-300);
+  outline-offset: 2px;
+}
+
+.auth-screen .preview-profile-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+.auth-footer {
+  position: absolute;
+  z-index: 3;
+  left: var(--ss-space-6);
+  right: var(--ss-space-6);
+  bottom: max(var(--ss-space-4), env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: space-between;
+  color: color-mix(in srgb, var(--ss-slate-50) 72%, transparent);
+  font-size: var(--ss-text-sm);
+}
+
+.auth-footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ss-space-1);
+}
+
+.auth-footer svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .auth-layout {
+    grid-template-columns: 280px minmax(0, 1fr);
+    width: min(780px, calc(100% - var(--ss-space-8)));
+    align-content: center;
+    gap: var(--ss-space-5);
+  }
+
+  .auth-message {
+    display: none;
+  }
+
+  .auth-shade {
+    background: linear-gradient(0deg, color-mix(in srgb, var(--ss-navy-950) 72%, transparent), color-mix(in srgb, var(--ss-navy-950) 8%, transparent) 70%, color-mix(in srgb, var(--ss-navy-950) 32%, transparent));
+  }
+
+  .auth-screen .login-panel {
+    margin-top: var(--ss-space-10);
+  }
+
+  .auth-jaspe-anchor {
+    min-height: 500px;
+  }
+
+  .auth-screen.auth-is-typing .auth-layout {
+    grid-template-columns: minmax(0, 560px);
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .auth-topbar {
+    left: var(--ss-space-4);
+    right: var(--ss-space-4);
+  }
+
+  .auth-screen .brand-button span {
+    display: none;
+  }
+
+  .auth-layout {
+    grid-template-columns: 160px minmax(0, 1fr);
+    gap: var(--ss-space-2);
+    width: calc(100% - var(--ss-space-5));
+    align-items: end;
+    padding-bottom: 88px;
+  }
+
+  .auth-screen .login-panel {
+    margin: 0;
+    padding: var(--ss-space-4);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ss-navy-950) 44%, transparent), color-mix(in srgb, var(--ss-navy-950) 30%, transparent));
+  }
+
+  .auth-screen:not(.auth-is-typing) .login-panel {
+    padding-inline: var(--ss-space-3);
+  }
+
+  .auth-screen:not(.auth-is-typing) .login-method button {
+    gap: 2px;
+    font-size: var(--ss-text-xs);
+  }
+
+  .auth-screen:not(.auth-is-typing) .login-method button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .auth-screen:not(.auth-is-typing) .ss-select,
+  .auth-screen:not(.auth-is-typing) .first-install,
+  .auth-screen:not(.auth-is-typing) .preview-profile-button {
+    font-size: var(--ss-text-xs);
+  }
+
+  .auth-screen .label-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .auth-jaspe-anchor {
+    min-height: 520px;
+    align-self: center;
+  }
+
+  .auth-screen.auth-is-typing .auth-layout {
+    grid-template-columns: minmax(0, 1fr);
+    width: calc(100% - var(--ss-space-5));
+  }
+
+  .auth-footer {
+    left: var(--ss-space-4);
+    right: var(--ss-space-4);
+    font-size: var(--ss-text-xs);
+  }
+}
+
+@media (max-width: 600px) {
+  .auth-screen {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .auth-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 440px auto;
+    align-items: start;
+    align-content: start;
+    width: calc(100% - var(--ss-space-5));
+    height: auto;
+    min-height: 100svh;
+    gap: var(--ss-space-3);
+    padding-top: 76px;
+    padding-bottom: 88px;
+  }
+
+  .auth-jaspe-anchor {
+    min-height: 440px;
+    align-self: start;
+  }
+
+  .auth-screen:not(.auth-is-typing) .login-panel {
+    width: 100%;
+  }
+
+  .auth-screen.auth-is-typing .auth-layout {
+    grid-template-rows: auto;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Animations
+   -------------------------------------------------------------------------- */
+@keyframes imageDrift {
+  from { transform: scale(1.03); }
+  to { transform: scale(1.085); }
+}
+
+/* INC-7 : choix explicite du profil/�cole (nouvel �cran, apr�s connexion) */
+.profile-choice-list { display: grid; gap: .6rem; margin: 1rem 0; }
+.profile-choice-item { display: flex; align-items: center; gap: .6rem; text-align: left; }
+.profile-choice-item span { opacity: .75; font-size: .85rem; }

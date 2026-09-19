@@ -1,0 +1,13 @@
+{
+  "license_version": "schoolsafe-license-v1",
+  "requires_baseline": "schoolsafe-vps-v1",
+  "authority": "SchoolSafe Control signe (Ed25519) ; le backend revérifie chaque lecture ; fail-closed partout",
+  "units": [
+    {
+      "order": 1,
+      "name": "license",
+      "file": "01_license.sql",
+      "sha256": "b21e4ad7d5c2550419014890d23c305913aad433ca60e48fadf0d6b4004d8ee1"
+    }
+  ]
+}

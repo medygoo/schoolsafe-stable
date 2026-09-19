@@ -1,0 +1,60 @@
+.student-card-preparation { display: grid; gap: 20px; min-width: 0; color: var(--ss-text, #0f172a); }
+.student-card-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+.student-card-heading span:first-child, .student-card-checklist > header span { color: #b7791f; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.student-card-heading h2 { margin: 4px 0 6px; font-size: clamp(25px, 3vw, 34px); }
+.student-card-heading p { margin: 0; color: var(--ss-text-muted, #64748b); }
+.student-card-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr); gap: 22px; min-width: 0; }
+.student-card-preview { width: min(100%, 620px); aspect-ratio: 1.58 / 1; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; border: 1px solid #1e3a8a; border-radius: 22px; background: #f8fafc; box-shadow: 0 22px 50px #0f172a2b; color: #0f172a; }
+.student-card-preview > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; background: #173a8a; color: #fff; }
+.student-card-preview > header > span { color: #fbbf24; font-size: 12px; font-weight: 900; letter-spacing: .08em; }
+.student-card-brand { display: flex; align-items: center; gap: 9px; }
+.student-card-brand img { width: 36px; height: 36px; object-fit: contain; border-radius: 9px; background: #fff; }
+.student-card-brand span { display: grid; }
+.student-card-brand small { color: #bfdbfe; }
+.student-card-preview__body { display: grid; grid-template-columns: minmax(90px, 130px) minmax(0, 1fr) minmax(90px, 120px); align-items: center; gap: 16px; padding: 20px; min-width: 0; }
+.student-card-photo { aspect-ratio: 3 / 4; display: grid; place-items: center; align-content: center; gap: 8px; overflow: hidden; border: 2px solid #bfdbfe; border-radius: 16px; background: #dbeafe; color: #173a8a; }
+.student-card-photo span { font-size: 28px; font-weight: 900; }
+.student-card-photo small { max-width: 80px; text-align: center; font-size: 9px; font-weight: 800; }
+.student-card-photo img { width: 100%; height: 100%; object-fit: cover; }
+.student-card-data { min-width: 0; }
+.student-card-data > span { color: #475569; font-size: 12px; font-weight: 700; }
+.student-card-data h3 { margin: 5px 0 12px; font-size: clamp(20px, 2.5vw, 30px); overflow-wrap: anywhere; }
+.student-card-data dl { display: grid; gap: 7px; margin: 0; }
+.student-card-data dl div { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 8px; }
+.student-card-data dt { color: #64748b; }
+.student-card-data dd { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
+.student-card-qr { display: grid; place-items: center; gap: 5px; text-align: center; color: #173a8a; }
+.student-card-qr svg { width: 62px; height: 62px; }
+.student-card-qr b { font-size: 10px; }
+.student-card-qr small { color: #64748b; font-size: 9px; }
+.student-card-preview > footer { display: flex; justify-content: space-between; gap: 10px; padding: 10px 18px; background: #e2e8f0; font-size: 11px; }
+.student-card-preview > footer b { color: #991b1b; }
+.student-card-checklist { min-width: 0; padding: 20px; border: 1px solid var(--ss-border, #dbe3ef); border-radius: 18px; background: var(--ss-surface, #fff); }
+.student-card-checklist h3 { margin: 4px 0 14px; }
+.student-card-checklist ul { display: grid; gap: 8px; margin: 0 0 16px; padding: 0; list-style: none; }
+.student-card-checklist li { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 11px; background: var(--ss-surface-raised, #f8fafc); }
+.student-card-checklist li svg { flex: 0 0 auto; width: 19px; }
+.student-card-checklist li.ok svg { color: #059669; }
+.student-card-checklist li.missing svg { color: #d97706; }
+.student-card-checklist li span { display: grid; min-width: 0; }
+.student-card-checklist li small { color: var(--ss-text-muted, #64748b); overflow-wrap: anywhere; }
+.student-card-status { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 14px; }
+.student-card-boundary, .student-card-jaspe, .student-card-block { display: flex; align-items: flex-start; gap: 13px; padding: 15px 17px; border-radius: 15px; }
+.student-card-boundary { width: min(100%, 620px); margin-top: 16px; border: 1px solid #94a3b8; background: var(--ss-surface, #fff); }
+.student-card-boundary p, .student-card-jaspe p, .student-card-block p { margin: 4px 0 0; line-height: 1.5; }
+.student-card-jaspe { border: 1px solid #c4b5fd; background: #f5f3ff; color: #4c1d95; }
+.student-card-block--draft { border: 1px solid #ef444466; background: #fef2f2; color: #991b1b; }
+.student-card-block h3 { margin: 5px 0 0; }
+.student-card-readonly { color: var(--ss-text-muted, #64748b); }
+[data-theme="dark"] .student-card-jaspe { background: #2e1065; color: #ddd6fe; }
+[data-theme="dark"] .student-card-block--draft { background: #450a0a; color: #fecaca; }
+@media (max-width: 900px) { .student-card-layout { grid-template-columns: 1fr; } }
+@media (max-width: 560px) {
+  .student-card-heading { flex-direction: column; }
+  .student-card-preview { aspect-ratio: auto; min-height: 420px; }
+  .student-card-preview__body { grid-template-columns: 82px minmax(0, 1fr); padding: 14px; gap: 12px; }
+  .student-card-qr { grid-column: 1 / -1; grid-template-columns: auto auto; justify-content: center; }
+  .student-card-qr svg { width: 42px; height: 42px; }
+  .student-card-qr small { grid-column: 1 / -1; }
+  .student-card-data dl div { grid-template-columns: 62px minmax(0, 1fr); }
+}

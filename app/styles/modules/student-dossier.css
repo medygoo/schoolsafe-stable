@@ -1,0 +1,67 @@
+.student-central-dossier { display: grid; gap: 18px; min-width: 0; color: var(--ss-text, #0f172a); }
+.student-dossier-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(260px, auto); align-items: center; gap: 18px; padding: 24px; border-radius: 20px; background: #173a8a; color: #fff; }
+.student-dossier-photo { display: grid; place-items: center; width: 76px; height: 76px; border: 3px solid #ffffff66; border-radius: 22px; background: #fff; color: #173a8a; font-size: 24px; font-weight: 900; }
+.student-dossier-identity > span { color: #fbbf24; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.student-dossier-identity h2 { margin: 4px 0 8px; font-size: clamp(24px, 3vw, 34px); overflow-wrap: anywhere; }
+.student-dossier-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.student-dossier-tags > b { padding: 5px 9px; border-radius: 8px; background: #ffffff1f; }
+.student-dossier-card-action { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 10px; border: 1px solid #ffffff55; border-radius: 9px; background: #fff; color: #173a8a; font-weight: 800; cursor: pointer; }
+.student-dossier-card-action svg { width: 17px; }
+.student-dossier-hero dl { display: grid; gap: 8px; margin: 0; }
+.student-dossier-hero dl div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 10px; }
+.student-dossier-hero dt { color: #bfdbfe; }
+.student-dossier-hero dd { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
+.student-dossier-lock, .student-dossier-jaspe, .student-dossier-unavailable, .student-dossier-future { display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px; border-radius: 16px; }
+.student-dossier-lock { border: 1px solid #f59e0b66; background: #fffbeb; color: #92400e; }
+.student-dossier-lock p, .student-dossier-jaspe p, .student-dossier-unavailable p, .student-dossier-future p { margin: 4px 0 0; line-height: 1.5; }
+.student-dossier-layout { display: grid; grid-template-columns: minmax(210px, 260px) minmax(0, 1fr); gap: 18px; min-width: 0; }
+.student-dossier-nav { display: grid; align-content: start; grid-template-columns: 1fr; gap: 7px; min-width: 0; }
+.student-dossier-nav button { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 54px; padding: 10px 12px; border: 1px solid var(--ss-border, #dbe3ef); border-radius: 13px; background: var(--ss-surface, #fff); color: inherit; text-align: left; cursor: pointer; }
+.student-dossier-nav button.active { border-color: #2563eb; background: #eff6ff; color: #1e3a8a; box-shadow: inset 3px 0 #2563eb; }
+.student-dossier-nav svg { flex: 0 0 auto; width: 19px; }
+.student-dossier-nav span { display: grid; min-width: 0; }
+.student-dossier-nav b, .student-dossier-nav small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.student-dossier-nav small { color: var(--ss-text-muted, #64748b); }
+.student-dossier-content { min-width: 0; }
+.student-dossier-panel { min-height: 360px; padding: 22px; border: 1px solid var(--ss-border, #dbe3ef); border-radius: 18px; background: var(--ss-surface, #fff); }
+.student-dossier-panel > header span { color: #b7791f; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.student-dossier-panel > header h3 { margin: 4px 0 18px; font-size: 24px; }
+.student-dossier-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.student-dossier-facts div, .student-dossier-summary article { padding: 14px; border: 1px solid var(--ss-border, #e2e8f0); border-radius: 13px; background: var(--ss-surface-raised, #f8fafc); }
+.student-dossier-facts dt, .student-dossier-summary small { color: var(--ss-text-muted, #64748b); }
+.student-dossier-facts dd { margin: 5px 0 0; font-weight: 800; overflow-wrap: anywhere; }
+.student-dossier-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.student-dossier-summary article { display: grid; gap: 6px; }
+.student-dossier-summary article span { color: var(--ss-text-muted, #64748b); }
+.student-dossier-future { border: 1px dashed #94a3b8; background: var(--ss-surface-raised, #f8fafc); }
+.student-dossier-future span { display: inline-block; margin-top: 12px; color: #92400e; font-size: 12px; font-weight: 900; }
+.student-dossier-unavailable { border: 1px solid #ef444466; background: #fef2f2; color: #991b1b; }
+.student-dossier-history { display: grid; gap: 12px; padding-left: 20px; }
+.student-dossier-history li { padding: 12px; border-left: 3px solid #2563eb; }
+.student-dossier-history span { display: block; margin-top: 4px; color: var(--ss-text-muted, #64748b); }
+.student-dossier-jaspe { border: 1px solid #c4b5fd; background: #f5f3ff; color: #4c1d95; }
+.student-dossier-honest { color: var(--ss-text-muted, #64748b); }
+[data-theme="dark"] .student-dossier-nav button.active { background: #172554; color: #dbeafe; }
+[data-theme="dark"] .student-dossier-lock { background: #422006; color: #fde68a; }
+[data-theme="dark"] .student-dossier-unavailable { background: #450a0a; color: #fecaca; }
+[data-theme="dark"] .student-dossier-jaspe { background: #2e1065; color: #ddd6fe; }
+@media (max-width: 820px) {
+  .student-dossier-hero { grid-template-columns: auto minmax(0, 1fr); padding: 18px; }
+  .student-dossier-hero dl { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .student-dossier-hero dl div { display: block; }
+  .student-dossier-layout { grid-template-columns: 1fr; }
+  .student-dossier-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .student-dossier-nav button { align-items: flex-start; }
+  .student-dossier-nav span { min-width: 0; }
+}
+@media (max-width: 520px) {
+  .student-dossier-hero { grid-template-columns: 60px minmax(0, 1fr); gap: 12px; }
+  .student-dossier-photo { width: 58px; height: 58px; border-radius: 17px; font-size: 19px; }
+  .student-dossier-hero dl { grid-template-columns: 1fr 1fr; }
+  .student-dossier-hero dl div:last-child { grid-column: 1 / -1; }
+  .student-dossier-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .student-dossier-nav button { min-height: 64px; padding: 9px; }
+  .student-dossier-nav b, .student-dossier-nav small { overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: anywhere; }
+  .student-dossier-panel { min-height: 300px; padding: 16px; }
+  .student-dossier-facts, .student-dossier-summary { grid-template-columns: 1fr; }
+}

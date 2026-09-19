@@ -1,0 +1,46 @@
+.document-center-module { min-width: 0; }
+.document-center-module-header { background: var(--ss-gradient-module); }
+.document-center-content { min-width: 0; padding: var(--ss-space-5); }
+.document-center { min-width: 0; color: var(--ss-text-primary); background: var(--ss-bg-canvas); }
+.document-center__notice { display: flex; align-items: flex-start; gap: .75rem; border: 1px solid var(--ss-warning-border); border-radius: var(--ss-radius); padding: .9rem 1rem; background: var(--ss-warning-bg); color: var(--ss-warning-text); }
+.document-center__notice svg { flex: 0 0 1.25rem; }
+.document-center__notice strong, .document-center__notice span { display: block; }
+.document-center__notice span { margin-top: .2rem; color: var(--ss-text-secondary); font-size: var(--ss-text-sm); }
+.document-center__filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-top: 1rem; border: 1px solid var(--ss-border-default); border-radius: var(--ss-radius-lg); padding: 1rem; background: var(--ss-bg-primary); box-shadow: var(--ss-shadow-sm); }
+.document-center__filters label { display: grid; min-width: 0; gap: .35rem; color: var(--ss-text-secondary); font-size: var(--ss-text-sm); font-weight: 700; }
+.document-center__filters select, .document-center__filters input { width: 100%; min-width: 0; min-height: 44px; border: 1px solid var(--ss-border-default); border-radius: var(--ss-radius-sm); padding: .55rem .65rem; background: var(--ss-bg-secondary); color: var(--ss-text-primary); }
+.document-center__filters button { align-self: end; min-height: 44px; }
+.document-center__summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin: 1rem 0; color: var(--ss-text-secondary); font-size: var(--ss-text-sm); }
+.document-center__summary strong { color: var(--ss-text-primary); }
+.document-center__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; min-width: 0; }
+.document-card { display: flex; min-width: 0; flex-direction: column; border: 1px solid var(--ss-border-default); border-radius: var(--ss-radius-lg); padding: 1rem; background: var(--ss-bg-primary); box-shadow: var(--ss-shadow-sm); }
+.document-card header { display: flex; min-width: 0; align-items: center; gap: .75rem; }
+.document-card header > div { min-width: 0; }
+.document-card__icon { display: grid; flex: 0 0 2.6rem; width: 2.6rem; height: 2.6rem; place-items: center; border-radius: .8rem; background: var(--ss-info-bg); color: var(--ss-info-text); }
+.document-card small { color: var(--ss-text-accent); font-weight: 800; text-transform: uppercase; }
+.document-card h3 { margin: .15rem 0 0; overflow-wrap: anywhere; }
+.document-card > p { color: var(--ss-text-secondary); font-size: var(--ss-text-sm); }
+.document-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; margin: 0; }
+.document-card dl div { min-width: 0; border-radius: .65rem; padding: .55rem; background: var(--ss-bg-secondary); }
+.document-card dt { color: var(--ss-text-tertiary); font-size: var(--ss-text-xs); }
+.document-card dd { margin: .15rem 0 0; overflow-wrap: anywhere; font-size: var(--ss-text-sm); font-weight: 700; }
+.document-card__formats { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .8rem; }
+.document-card__formats span { border-radius: 999px; padding: .25rem .5rem; background: var(--ss-bg-tertiary); color: var(--ss-text-secondary); font-size: .68rem; font-weight: 800; }
+.document-card footer { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: auto; padding-top: 1rem; }
+.document-card footer button { display: inline-flex; min-height: 44px; align-items: center; gap: .3rem; border: 1px solid var(--ss-border-default); border-radius: .65rem; padding: .45rem .6rem; background: var(--ss-bg-secondary); color: var(--ss-text-primary); font-weight: 700; cursor: pointer; }
+.document-card footer button:hover { border-color: var(--ss-info-border); color: var(--ss-text-link); }
+.document-card footer svg { width: 1rem; }
+.document-center__empty { grid-column: 1 / -1; border: 1px dashed var(--ss-border-strong); border-radius: var(--ss-radius-lg); padding: 2.5rem 1rem; background: var(--ss-bg-primary); text-align: center; }
+.document-center__empty svg { width: 2rem; height: 2rem; color: var(--ss-text-link); }
+.document-center__empty h3 { margin: .7rem 0 .25rem; }
+.document-center__empty p { max-width: 38rem; margin: 0 auto; color: var(--ss-text-secondary); }
+.document-center__history { margin-top: 1rem; border: 1px solid var(--ss-border-default); border-radius: var(--ss-radius-lg); padding: 1rem; background: var(--ss-bg-primary); }
+.document-center__history header { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+.document-center__history header span { color: var(--ss-text-accent); font-size: var(--ss-text-xs); font-weight: 800; text-transform: uppercase; }
+.document-center__history h3 { margin: .15rem 0; }
+.document-center__history header small, .document-center__history-empty { color: var(--ss-text-secondary); }
+.document-center__history [data-document-history-item] { display: flex; align-items: center; justify-content: space-between; gap: .75rem; border-top: 1px solid var(--ss-border-default); padding: .7rem 0; }
+.document-center__history [data-document-history-item] strong, .document-center__history [data-document-history-item] span { display: block; }
+.document-center__history [data-document-history-item] span, .document-center__history time { color: var(--ss-text-secondary); font-size: var(--ss-text-sm); }
+@media (max-width: 1100px) { .document-center__filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .document-center__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .document-center-content { padding: 1rem; } .document-center__filters, .document-center__grid { grid-template-columns: 1fr; } .document-center__notice, .document-center__history header { flex-direction: column; } .document-card dl { grid-template-columns: 1fr; } .document-card footer button { flex: 1 1 calc(50% - .45rem); justify-content: center; } }

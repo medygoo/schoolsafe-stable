@@ -1,0 +1,33 @@
+{
+  "version": 11,
+  "generatedWith": "built-in image_gen",
+  "reference": "../originals/rest.png",
+  "originalsUnchanged": 105,
+  "clipsReady": false,
+  "images": [
+    {
+      "file": "adossee-essai-opaque.png",
+      "sha256": "bc2807c0883361f0bfcea52f89ead79fe56036ffb0ac2bf8fa60ba6b79704214",
+      "pngColorType": 2,
+      "hasAlphaChannel": false,
+      "playable": false,
+      "status": "key-pose-draft"
+    },
+    {
+      "file": "chaise-essai-opaque.png",
+      "sha256": "4dee4a2dd623a5d5f43a9306292967e2e1820b64dbf7c1b4cd29b75140547fe9",
+      "pngColorType": 2,
+      "hasAlphaChannel": false,
+      "playable": false,
+      "status": "key-pose-draft"
+    },
+    {
+      "file": "lecture-pose.png",
+      "sha256": "bafcf78878d7e16720962ee2feaa24bc62a52c4056ce071cf0aae54aa4f87e46",
+      "pngColorType": 6,
+      "hasAlphaChannel": true,
+      "playable": false,
+      "status": "key-pose-draft"
+    }
+  ]
+}

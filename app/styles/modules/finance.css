@@ -1,0 +1,734 @@
+.finance-module .finance-content {
+  color: var(--ss-text-primary);
+  background: var(--ss-bg-primary);
+}
+
+.finance-module .finance-content :is(h2, h3, h4, b, strong, dd) {
+  color: var(--ss-text-primary);
+}
+
+.finance-module :is(
+  .finance-overview > header,
+  .family-finance > header,
+  .finance-report-head,
+  .finance-panel,
+  .finance-fee-form,
+  .payment-form,
+  .family-receipts,
+  .receipt-register
+) {
+  color: var(--ss-text-primary);
+  border-color: var(--ss-border-default);
+  background: var(--ss-bg-primary);
+  box-shadow: var(--ss-shadow-sm);
+}
+
+.finance-module :is(
+  .finance-panel > header,
+  .finance-fee-form > header,
+  .payment-form > header,
+  .family-receipts > header
+) {
+  color: var(--ss-text-primary);
+  border-color: var(--ss-border-subtle);
+  background: var(--ss-bg-secondary);
+}
+
+.finance-module :is(
+  .finance-overview > header p,
+  .finance-panel > header p,
+  .finance-report-head p,
+  .family-finance > header p,
+  .finance-fee-form p,
+  .payment-form p,
+  .student-finance-card small,
+  .student-finance-card p,
+  .finance-empty
+) {
+  color: var(--ss-text-secondary);
+}
+
+.finance-module :is(
+  .finance-overview > header span:first-child,
+  .finance-panel > header span,
+  .finance-report-head > div > span,
+  .family-finance > header > div > span,
+  .finance-panel > header > b
+) {
+  color: var(--ss-info-text);
+}
+
+.finance-module :is(.finance-fee-form label, .payment-form label, .finance-student-picker, .family-student-picker) {
+  color: var(--ss-text-secondary);
+}
+
+.finance-module :is(
+  .finance-fee-form input,
+  .finance-fee-form select,
+  .finance-fee-form textarea,
+  .payment-form input,
+  .payment-form select,
+  .payment-form textarea,
+  .finance-student-picker select,
+  .family-student-picker select
+) {
+  min-height: 44px;
+  color: var(--ss-text-primary);
+  border-color: var(--ss-border-strong);
+  background: var(--ss-bg-secondary);
+}
+
+.finance-module .student-finance-card {
+  border-color: var(--ss-border-subtle);
+  background: var(--ss-bg-secondary);
+}
+
+.finance-module .student-finance-facts div {
+  color: var(--ss-text-primary);
+  border-color: var(--ss-border-default);
+  background: var(--ss-bg-secondary);
+}
+
+.finance-module .student-finance-facts dt {
+  color: var(--ss-text-secondary);
+}
+
+.finance-module .student-finance-facts dd {
+  color: var(--ss-text-primary);
+}
+
+.finance-module :is(.finance-audit-note, .finance-readonly) {
+  color: var(--ss-text-primary);
+  border-color: var(--ss-info-border);
+  background: var(--ss-info-bg);
+}
+
+.finance-module .finance-status-boundary {
+  color: var(--ss-text-primary);
+  border-color: var(--ss-success-border);
+  background: var(--ss-success-bg);
+}
+
+.finance-module .finance-table th {
+  color: var(--ss-text-secondary);
+  background: var(--ss-bg-secondary);
+}
+
+.finance-module .finance-table td {
+  color: var(--ss-text-primary);
+  border-color: var(--ss-border-subtle);
+}
+
+.finance-module .balance-summary article,
+.finance-module .family-finance-summary > div,
+.finance-module .family-finance-summary > article {
+  color: var(--ss-text-primary);
+  border-color: var(--ss-border-default);
+  background: var(--ss-bg-secondary);
+}
+
+.finance-module :is(.balance-summary small, .family-finance-summary small) {
+  color: var(--ss-text-secondary);
+}
+
+.finance-module .recording-only {
+  color: var(--ss-success-text);
+  background: var(--ss-success-bg);
+}
+
+.finance-module :is(.closure-chip, .receipt-waiting) {
+  color: var(--ss-warning-text);
+  background: var(--ss-warning-bg);
+}
+
+.finance-overview,
+.finance-dashboard-shortcuts {
+  display: grid;
+  gap: var(--ss-space-4);
+}
+
+.finance-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--ss-space-3);
+}
+
+.finance-dashboard-metric {
+  min-width: 0;
+  min-height: 112px;
+  display: flex;
+  align-items: center;
+  gap: var(--ss-space-3);
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-border-subtle);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-surface-raised);
+  color: var(--ss-text-primary);
+}
+
+.finance-dashboard-metric > span {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--ss-radius-md);
+  color: var(--ss-text-link);
+  background: var(--ss-info-bg);
+}
+
+.finance-dashboard-metric small,
+.finance-dashboard-metric b {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.finance-dashboard-metric small {
+  color: var(--ss-text-secondary);
+  line-height: 1.35;
+}
+
+.finance-dashboard-metric b {
+  margin-top: var(--ss-space-1);
+  font-size: var(--ss-text-base);
+}
+
+.finance-dashboard-shortcuts {
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-border-subtle);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-surface-raised);
+}
+
+.finance-dashboard-shortcuts > header h3,
+.finance-dashboard-shortcuts > header span {
+  margin: 0;
+}
+
+.finance-dashboard-shortcuts > header span {
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.finance-dashboard-shortcuts > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ss-space-2);
+}
+
+.finance-dashboard-action {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ss-space-2);
+  padding: var(--ss-space-2) var(--ss-space-4);
+  border: 1px solid var(--ss-border-strong);
+  border-radius: var(--ss-radius-md);
+  background: var(--ss-bg-primary);
+  color: var(--ss-text-primary);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.finance-dashboard-action:hover,
+.finance-dashboard-action:focus-visible {
+  border-color: var(--ss-text-link);
+  outline: none;
+}
+
+.finance-backend-note {
+  margin: 0 var(--ss-space-4) var(--ss-space-4);
+  color: var(--ss-warning-text);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-bold);
+}
+
+.finance-assignment-workflow,
+.finance-assignment-drafts {
+  display: grid;
+  gap: var(--ss-space-4);
+}
+
+.finance-workflow-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--ss-space-2);
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-surface-raised);
+  color: var(--ss-text-brand);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-extrabold);
+}
+
+.finance-obligation-statuses {
+  display: grid;
+  gap: var(--ss-space-2);
+  padding: var(--ss-space-4);
+}
+
+.finance-obligation-statuses > span {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ss-space-3);
+  border-bottom: 1px solid var(--ss-border-subtle);
+}
+
+.finance-assignment-drafts > header {
+  color: var(--ss-text-primary);
+}
+
+.finance-assignment-drafts > header span {
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-extrabold);
+  text-transform: uppercase;
+}
+
+.finance-assignment-drafts > header h3 {
+  margin: var(--ss-space-1) 0 0;
+}
+
+.finance-assignment-draft {
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-warning-border);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-warning-bg);
+  color: var(--ss-text-primary);
+}
+
+.finance-assignment-draft > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ss-space-3);
+}
+
+.finance-assignment-draft h4,
+.finance-assignment-draft p {
+  margin: var(--ss-space-1) 0 0;
+}
+
+.finance-assignment-draft small {
+  color: var(--ss-warning-text);
+  font-weight: var(--ss-font-bold);
+}
+
+.finance-receipt-links {
+  display: grid;
+  gap: var(--ss-space-2);
+  margin: 0;
+  padding: var(--ss-space-4);
+  list-style: none;
+}
+
+.finance-receipt-links li {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ss-space-3);
+  padding-bottom: var(--ss-space-2);
+  border-bottom: 1px solid var(--ss-border-subtle);
+}
+
+.finance-receipt-links span {
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-sm);
+}
+
+.finance-exemption-drafts {
+  display: grid;
+  gap: var(--ss-space-3);
+}
+
+.finance-exemption-drafts > header span {
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-extrabold);
+  text-transform: uppercase;
+}
+
+.finance-exemption-drafts > header h3 {
+  margin: var(--ss-space-1) 0 0;
+}
+
+.finance-exemption-draft {
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-warning-border);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-warning-bg);
+  color: var(--ss-text-primary);
+}
+
+.finance-exemption-draft > header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ss-space-3);
+}
+
+.finance-exemption-draft h4,
+.finance-exemption-draft p {
+  margin: var(--ss-space-1) 0 0;
+}
+
+.finance-exemption-draft small {
+  color: var(--ss-warning-text);
+  font-weight: var(--ss-font-bold);
+}
+
+.finance-payment-confirmation,
+.finance-receipt-preview,
+.finance-cancellation-drafts {
+  display: grid;
+  gap: var(--ss-space-4);
+  padding: var(--ss-space-5);
+  border: 1px solid var(--ss-border-subtle);
+  border-radius: var(--ss-radius-xl);
+  background: var(--ss-surface-raised);
+  color: var(--ss-text-primary);
+}
+
+.finance-payment-confirmation {
+  border-color: var(--ss-warning-border);
+  background: var(--ss-warning-bg);
+}
+
+.finance-receipt-preview {
+  border-color: var(--ss-info-border);
+  background: var(--ss-info-bg);
+}
+
+.finance-payment-confirmation > header,
+.finance-receipt-preview > header,
+.finance-cancellation-draft > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ss-space-3);
+}
+
+.finance-payment-confirmation h3,
+.finance-receipt-preview h3,
+.finance-cancellation-draft h4,
+.finance-cancellation-drafts h3 {
+  margin: var(--ss-space-1) 0 0;
+}
+
+.finance-payment-confirmation > header span,
+.finance-receipt-preview > header span,
+.finance-cancellation-drafts > header span,
+.finance-cancellation-draft > header span {
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-extrabold);
+  letter-spacing: 0.04em;
+}
+
+.finance-cancellation-draft {
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-warning-border);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-warning-bg);
+}
+
+.finance-cancellation-draft p {
+  margin: var(--ss-space-3) 0;
+}
+
+.receipt-register td .ss-button {
+  width: 100%;
+  margin-top: var(--ss-space-2);
+}
+
+.fee-control-panel {
+  display: grid;
+  gap: var(--ss-space-5);
+  padding: var(--ss-space-5);
+  color: var(--ss-text-primary);
+}
+
+.fee-control-hero,
+.fee-control-campaigns > header,
+.fee-control-management > header,
+.fee-control-scan > header,
+.fee-control-history > header,
+.fee-control-campaign-draft > header,
+.fee-control-minimal-result > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ss-space-4);
+}
+
+.fee-control-hero,
+.fee-control-campaigns,
+.fee-control-management,
+.fee-control-scan,
+.fee-control-history,
+.fee-control-scanner-boundary {
+  padding: var(--ss-space-5);
+  border: 1px solid var(--ss-border-subtle);
+  border-radius: var(--ss-radius-xl);
+  background: var(--ss-surface-raised);
+}
+
+.fee-control-hero h2,
+.fee-control-campaigns h3,
+.fee-control-management h3,
+.fee-control-scan h3,
+.fee-control-history h3,
+.fee-control-campaign-draft h4,
+.fee-control-minimal-result h3 {
+  margin: var(--ss-space-1) 0 0;
+}
+
+.fee-control-campaign-grid,
+.fee-control-campaign-drafts {
+  display: grid;
+  gap: var(--ss-space-3);
+  margin-top: var(--ss-space-4);
+}
+
+.fee-control-campaign {
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-bg-primary);
+}
+
+.fee-control-campaign label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ss-space-3);
+  cursor: pointer;
+}
+
+.fee-control-campaign label span {
+  display: grid;
+  gap: var(--ss-space-1);
+}
+
+.fee-control-campaign em,
+.fee-control-campaign small {
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-sm);
+  font-style: normal;
+}
+
+.fee-control-campaign dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ss-space-3);
+  margin: var(--ss-space-4) 0;
+}
+
+.fee-control-campaign dt {
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-xs);
+}
+
+.fee-control-campaign dd {
+  margin: var(--ss-space-1) 0 0;
+  font-weight: var(--ss-font-bold);
+}
+
+.fee-control-campaign-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ss-space-3);
+  margin-top: var(--ss-space-4);
+}
+
+.fee-control-campaign-form label,
+.fee-control-scan form label {
+  display: grid;
+  gap: var(--ss-space-2);
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-bold);
+}
+
+.fee-control-campaign-form input,
+.fee-control-campaign-form select,
+.fee-control-scan form input {
+  min-height: 44px;
+}
+
+.fee-control-campaign-form .ss-button {
+  align-self: end;
+}
+
+.fee-control-campaign-draft,
+.fee-control-minimal-result {
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-warning-border);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-warning-bg);
+}
+
+.fee-control-scan form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--ss-space-3);
+  margin-top: var(--ss-space-4);
+}
+
+.fee-control-result:not(:empty) {
+  margin-top: var(--ss-space-4);
+}
+
+.finance-canteen-link,
+.finance-canteen-drafts {
+  display: grid;
+  gap: var(--ss-space-4);
+}
+
+.finance-canteen-link > header,
+.finance-canteen-draft > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ss-space-3);
+}
+
+.finance-canteen-link > header h3,
+.finance-canteen-drafts > header h3,
+.finance-canteen-draft h4 {
+  margin: var(--ss-space-1) 0 0;
+}
+
+.finance-canteen-link-form {
+  display: grid;
+  gap: var(--ss-space-4);
+}
+
+.finance-canteen-draft {
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-warning-border);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-warning-bg);
+  color: var(--ss-text-primary);
+}
+
+.finance-canteen-draft p {
+  margin: var(--ss-space-3) 0;
+}
+
+.finance-canteen-draft small {
+  color: var(--ss-warning-text);
+  font-weight: var(--ss-font-bold);
+}
+
+.finance-remediation-link,
+.finance-remediation-drafts {
+  display: grid;
+  gap: var(--ss-space-4);
+}
+
+.finance-remediation-link > header,
+.finance-remediation-draft > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ss-space-3);
+}
+
+.finance-remediation-link h3,
+.finance-remediation-draft h4 {
+  margin: var(--ss-space-1) 0 0;
+}
+
+.finance-remediation-link-form {
+  display: grid;
+  gap: var(--ss-space-4);
+}
+
+.finance-form-error {
+  padding: var(--ss-space-3);
+  margin-bottom: var(--ss-space-4);
+  border: 1px solid var(--ss-error-border);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-error-bg);
+  color: var(--ss-error-text);
+  font-weight: var(--ss-font-bold);
+}
+
+.finance-remediation-draft {
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-warning-border);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-warning-bg);
+}
+
+.finance-remediation-draft p {
+  margin: var(--ss-space-3) 0;
+}
+
+.finance-remediation-draft small {
+  color: var(--ss-warning-text);
+  font-weight: var(--ss-font-bold);
+}
+
+@media (max-width: 1180px) {
+  .finance-dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .finance-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-dashboard-action {
+    width: 100%;
+  }
+
+  .finance-workflow-steps svg {
+    transform: rotate(90deg);
+  }
+
+  .finance-payment-confirmation > header,
+  .finance-receipt-preview > header,
+  .finance-cancellation-draft > header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .fee-control-panel {
+    padding: var(--ss-space-3);
+  }
+
+  .fee-control-hero,
+  .fee-control-campaigns > header,
+  .fee-control-management > header,
+  .fee-control-scan > header,
+  .fee-control-history > header,
+  .fee-control-campaign-draft > header,
+  .fee-control-minimal-result > header {
+    flex-direction: column;
+  }
+
+  .fee-control-campaign dl,
+  .fee-control-campaign-form,
+  .fee-control-scan form {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-canteen-link > header,
+  .finance-canteen-draft > header,
+  .finance-remediation-link > header,
+  .finance-remediation-draft > header {
+    flex-direction: column;
+  }
+}

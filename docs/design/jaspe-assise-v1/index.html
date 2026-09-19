@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JASPE — première pose assise</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f6f8fb; color: #142c48; font-family: system-ui, sans-serif; }
+    main { max-width: 1500px; margin: auto; padding: clamp(20px, 4vw, 56px); }
+    header { margin-bottom: 28px; }
+    .eyebrow { color: #4671a5; font-size: 12px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 10px 0; font-size: clamp(28px, 4vw, 44px); letter-spacing: -.04em; }
+    header p { margin: 0; max-width: 720px; color: #52677e; line-height: 1.65; }
+    .comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    figure { margin: 0; overflow: hidden; border: 1px solid #dbe4ef; border-radius: 20px; background: white; }
+    figure img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; }
+    figcaption { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 20px; }
+    h2 { margin: 0 0 4px; font-size: 18px; }
+    figcaption p { margin: 0; color: #64778d; font-size: 13px; }
+    a { color: #2458a4; font-size: 14px; text-underline-offset: 4px; white-space: nowrap; }
+    a:focus-visible { outline: 3px solid #3d8bed; outline-offset: 5px; }
+    .note { padding: 24px 0; max-width: 880px; color: #52677e; font-size: 14px; line-height: 1.75; }
+    .note strong { color: #142c48; }
+    footer { border-top: 1px solid #dbe4ef; padding-top: 18px; font-size: 12px; color: #64778d; }
+    @media (max-width: 780px) { .comparison { grid-template-columns: 1fr; gap: 20px; } }
+    @media (max-width: 370px) { figcaption { padding: 16px; flex-wrap: wrap; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="eyebrow">SchoolSafe · Recherche visuelle 01</div>
+      <h1>JASPE, à son bureau.</h1>
+      <p>Une première pose d’accueil et d’écoute, créée à partir de notre JASPE.
+        Le bureau masque naturellement le bas du corps.</p>
+    </header>
+    <section class="comparison" aria-label="Comparaison des fonds clair et sombre">
+      <figure>
+        <img src="jaspe-assise-accueil-clair-v1.png" width="1536" height="1024"
+          alt="JASPE assise, la joue posée sur sa main, devant un bureau en bois avec un livre et des crayons, sur fond bleu pâle.">
+        <figcaption>
+          <div><h2>Fond clair</h2><p>Pose d’accueil · version 1</p></div>
+          <a href="jaspe-assise-accueil-clair-v1.png">Ouvrir l’image</a>
+        </figcaption>
+      </figure>
+      <figure>
+        <img src="jaspe-assise-accueil-sombre-v1.png" width="1536" height="1024"
+          alt="La même pose assise de JASPE, avec son bureau, sur fond bleu nuit.">
+        <figcaption>
+          <div><h2>Fond sombre</h2><p>Pose d’accueil · version 1</p></div>
+          <a href="jaspe-assise-accueil-sombre-v1.png">Ouvrir l’image</a>
+        </figcaption>
+      </figure>
+    </section>
+    <p class="note"><strong>Les mouvements sont maintenant disponibles :</strong>
+      <a href="http://127.0.0.1:4176/jaspe-assise-preview.html">ouvrir l’aperçu animé</a>.
+      Les images ci-dessus conservent la première pose de référence. L’animation
+      utilise des planches séparées par action, en clair et sombre.</p>
+    <footer>16 septembre 2026 · Illustration 2D · <a href="README.md">Détails et provenance</a></footer>
+  </main>
+</body>
+</html>

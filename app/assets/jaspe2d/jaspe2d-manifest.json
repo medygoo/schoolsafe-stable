@@ -1,0 +1,120 @@
+{
+  "schema": 1,
+  "date": "2026-09-07",
+  "character": "JASPE 2.5D (v12 verrouillée)",
+  "packs": {
+    "pack1": {
+      "idle": {
+        "file": "pack1/idle.webp",
+        "bytes": 29924,
+        "sha256": "ffd85877a6d473fa03a224b492a28084c75bbb7b8f35da79364d1e80d96a8c4d"
+      },
+      "wave": {
+        "file": "pack1/wave.webp",
+        "bytes": 32358,
+        "sha256": "d952505909fc681a7f03d4b9a997b9fd7937335fba55e825b5c718a8268c8c24"
+      }
+    },
+    "pack2": {
+      "listening": {
+        "file": "pack2/listening.webp",
+        "bytes": 32466,
+        "sha256": "7c5e76a9a1323f758adee560fe783a3f4398414b7eb4a02d694e680250ae8d43"
+      },
+      "thinking": {
+        "file": "pack2/thinking.webp",
+        "bytes": 30734,
+        "sha256": "e1247f475b9f81984ba0da76a88017f5c0c8a4a668f7ea5f952eed1f80ce72b3"
+      },
+      "speaking": {
+        "file": "pack2/speaking.webp",
+        "bytes": 32676,
+        "sha256": "a019e00d87008fea4c3857b8ba639a8b8a16c837bf42ab9ea5a3202b5ecb9e06"
+      }
+    },
+    "pack3": {
+      "smile": {
+        "file": "pack3/smile.webp",
+        "bytes": 33918,
+        "sha256": "de95ee11806588eaf307ccfa856e5ea98db6c996494696a8763100928845254c"
+      },
+      "explain": {
+        "file": "pack3/explain.webp",
+        "bytes": 33858,
+        "sha256": "4371feebc423c2d983199334379f23582cd2fb579a76f8ab0998d7079955392d"
+      },
+      "congratulate": {
+        "file": "pack3/congratulate.webp",
+        "bytes": 30682,
+        "sha256": "9aa0c954638d1b6c19f58ccdf6b6328c199c44b17399517e310bc97a324d6e35"
+      },
+      "warn": {
+        "file": "pack3/warn.webp",
+        "bytes": 33618,
+        "sha256": "56371514f395cc1ce2ab1cd96cf26bcf1355d9901e28875b398f7877b37e34ee"
+      },
+      "surprised": {
+        "file": "pack3/surprised.webp",
+        "bytes": 34200,
+        "sha256": "06327f43f0146cc4dde4407283b3080900fba51618a0c1bf81aa853412282bf2"
+      },
+      "reflect": {
+        "file": "pack3/reflect.webp",
+        "bytes": 29710,
+        "sha256": "6234b56ed488a659538aaf9f8def7ecc15d865cf60a57b9370b2bce36ed38d61"
+      }
+    },
+    "pack4": {
+      "shy": {
+        "file": "pack4/shy.webp",
+        "bytes": 32478,
+        "sha256": "6341f01bec0c42e13ba190fef509861d7e3150aa7ae0609cd088bb1c3269efbe"
+      },
+      "proud": {
+        "file": "pack4/proud.webp",
+        "bytes": 31718,
+        "sha256": "93f2f0670637b8fecb0d1a387df6cbc95ad000637aaf118fdeb4a5f14fdacf8d"
+      },
+      "sad": {
+        "file": "pack4/sad.webp",
+        "bytes": 29384,
+        "sha256": "0d0102dd1482b7bce00e26cf770f7643f1bac8460cf7799225f5e12954ba5ec3"
+      },
+      "laughing": {
+        "file": "pack4/laughing.webp",
+        "bytes": 33390,
+        "sha256": "0cdb3b7e7ce4a927dcadf3b7179721c51958050b9665efd977426e70b1fea2bc"
+      },
+      "grateful": {
+        "file": "pack4/grateful.webp",
+        "bytes": 29878,
+        "sha256": "dc6604abbb8a7678f85a38224368bea99a63471508e90304af3a530ba8a9ff3d"
+      },
+      "relieved": {
+        "file": "pack4/relieved.webp",
+        "bytes": 32320,
+        "sha256": "b4603a5b746c5ceea46120354ccd1754b07042b4d09eb7f942c49672b00fde01"
+      },
+      "embarrassed": {
+        "file": "pack4/embarrassed.webp",
+        "bytes": 31368,
+        "sha256": "599f02aa2f3aa1c0d5455078d89d2dee08ecd12fc17d2290e34b47df4423dc70"
+      },
+      "confused": {
+        "file": "pack4/confused.webp",
+        "bytes": 31714,
+        "sha256": "6104715c4f9bbf03c767c32b84a7b1d3a0f39f8b7be005ee0232a458bd2e1b77"
+      },
+      "worried": {
+        "file": "pack4/worried.webp",
+        "bytes": 29032,
+        "sha256": "9e1a31b5c62a1ee4c169efc6679f8fe46e46480daa80a54213e974a5c34ce72d"
+      },
+      "tired": {
+        "file": "pack4/tired.webp",
+        "bytes": 29806,
+        "sha256": "4ed2477322c5922974b08d25a29c4000d57599710fcf64fadbf5d6386a0f429b"
+      }
+    }
+  }
+}

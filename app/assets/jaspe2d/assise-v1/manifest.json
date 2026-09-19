@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "date": "2026-09-16",
+  "grid": {
+    "columns": 2,
+    "rows": 2,
+    "frameWidth": 768,
+    "frameHeight": 512
+  },
+  "background": "opaque, theme-specific",
+  "files": [
+    {
+      "file": "lecture-clair.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1773855,
+      "sha256": "b97cf2fd60f00b634b45d1a58e3aab397a2c1e864567629d6ac8617c463e5418"
+    },
+    {
+      "file": "lecture-sombre.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1674942,
+      "sha256": "2c6bbde2f066049b81a5b311a65cd1492c4cacfddc0e32e8009ff30b2a4b9efa"
+    },
+    {
+      "file": "parole-clair.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1747743,
+      "sha256": "17c2043f9b3ca6b2aca800183ef4b13ffd7c07f4c79966b01adec2d4f20322e9"
+    },
+    {
+      "file": "parole-deux-mains-clair.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1758149,
+      "sha256": "a71380c14de97b9a217fd550eb6b7a93365d31854d4547b97ff8a930fb35254f"
+    },
+    {
+      "file": "parole-deux-mains-sombre.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1670414,
+      "sha256": "3678dce5e6f6f049239537d32932596965853ce65ff4ea6456a2f5bbd548b6ef"
+    },
+    {
+      "file": "parole-sombre.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1671561,
+      "sha256": "c0b0719c100f0f6ff24062ba9930d5618c505f59bead1adecf0e89bb44939ad8"
+    },
+    {
+      "file": "reflexion-clair.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1737950,
+      "sha256": "f1e460e12272e525c771018dfbb500446aecca6293996eb40a6a94b6298d682f"
+    },
+    {
+      "file": "reflexion-sombre.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1645252,
+      "sha256": "f093b67ffe103071a780cf86c42f763a501eff445212c74d7f7d703be2b8b387"
+    },
+    {
+      "file": "sourire-clair.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1723108,
+      "sha256": "0f8a54c8a0666f19e6fe3602a1f05537a05dbffb0447051811f67de46f318bd4"
+    },
+    {
+      "file": "sourire-sombre.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1663026,
+      "sha256": "e5bcf1db00af144a57c89329211f6f00fdb69cb615fe30234b947c5d0048d3cb"
+    },
+    {
+      "file": "se-lever-clair.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1730905,
+      "sha256": "7941e8d39ed0aef461628464375ed3537b960401ed8b6932924b724d77003863"
+    },
+    {
+      "file": "se-lever-sombre.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1640862,
+      "sha256": "21a9c68dea3aa62428f458a7db7ce69bf0afaf70e45b70eea7f17e7c1cf836fb"
+    },
+    {
+      "file": "debout-parole-clair.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1722254,
+      "sha256": "2c06c3d04ad6f2093fe388eaf12a63c8bdc445e81ad466acd71992e41455c3d1"
+    },
+    {
+      "file": "debout-parole-sombre.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 1620687,
+      "sha256": "0b8e0bda403664905cf94c26cfc9e8509391dda3c88c1b39073cf42862c936ee"
+    }
+  ]
+}

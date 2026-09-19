@@ -1,0 +1,719 @@
+/* ============================================================
+   SchoolSafe V2 — Setup wizard screen styles
+   Scopé .setup-screen, tokens --ss-* uniquement.
+   ============================================================ */
+
+/* --------------------------------------------------------------------------
+   Layout racine
+   -------------------------------------------------------------------------- */
+.setup-screen {
+  display: grid;
+  grid-template-columns: 286px minmax(0, 1fr);
+  min-height: 100svh;
+  background: var(--ss-bg-canvas);
+  color: var(--ss-text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Sidebar
+   -------------------------------------------------------------------------- */
+.setup-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  padding: var(--ss-space-5) var(--ss-space-4);
+  color: var(--ss-text-inverse);
+  background: var(--ss-navy-900);
+}
+
+.setup-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ss-space-2);
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ss-text-inverse);
+  font-size: var(--ss-text-lg);
+  font-weight: var(--ss-font-bold);
+  cursor: pointer;
+}
+
+.setup-brand img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.setup-brand strong {
+  color: var(--ss-gold-400);
+}
+
+.setup-caption {
+  margin: var(--ss-space-6) var(--ss-space-2) var(--ss-space-3);
+  color: color-mix(in srgb, var(--ss-text-inverse) 54%, transparent);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* --------------------------------------------------------------------------
+   Navigation des étapes
+   -------------------------------------------------------------------------- */
+.setup-sidebar #stepNav {
+  display: grid;
+  gap: var(--ss-space-1);
+}
+
+.setup-screen .step-link {
+  display: grid;
+  grid-template-columns: 30px 1fr 18px;
+  align-items: center;
+  gap: var(--ss-space-2);
+  width: 100%;
+  min-height: 45px;
+  padding: var(--ss-space-1) var(--ss-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--ss-radius-sm);
+  background: transparent;
+  color: color-mix(in srgb, var(--ss-text-inverse) 62%, transparent);
+  text-align: left;
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-bold);
+  cursor: pointer;
+  transition: color var(--ss-transition-fast), background var(--ss-transition-fast), border-color var(--ss-transition-fast);
+}
+
+.setup-screen .step-link:hover {
+  color: color-mix(in srgb, var(--ss-text-inverse) 86%, transparent);
+  background: color-mix(in srgb, var(--ss-text-inverse) 6%, transparent);
+}
+
+.setup-screen .step-link:focus-visible {
+  outline: 3px solid var(--ss-blue-300);
+  outline-offset: 2px;
+}
+
+.setup-screen .step-link .number {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid color-mix(in srgb, var(--ss-text-inverse) 23%, transparent);
+  border-radius: var(--ss-radius-full);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-bold);
+}
+
+.setup-screen .step-link.active {
+  color: var(--ss-text-inverse);
+  background: color-mix(in srgb, var(--ss-text-inverse) 10%, transparent);
+}
+
+.setup-screen .step-link.active .number {
+  border-color: var(--ss-gold-500);
+  background: var(--ss-gold-500);
+  color: var(--ss-navy-950);
+}
+
+.setup-screen .step-link.done {
+  color: color-mix(in srgb, var(--ss-text-inverse) 86%, transparent);
+}
+
+.setup-screen .step-link.done .number {
+  border-color: var(--ss-emerald-500);
+  color: var(--ss-emerald-400);
+}
+
+.setup-screen .step-link svg {
+  width: 15px;
+  height: 15px;
+  justify-self: end;
+  color: var(--ss-emerald-400);
+}
+
+/* --------------------------------------------------------------------------
+   Bloc sécurité sidebar
+   -------------------------------------------------------------------------- */
+.setup-security {
+  display: flex;
+  gap: var(--ss-space-3);
+  margin-top: auto;
+  padding: var(--ss-space-3) var(--ss-space-2);
+  border-top: 1px solid color-mix(in srgb, var(--ss-text-inverse) 12%, transparent);
+  color: var(--ss-emerald-300);
+}
+
+.setup-security svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.setup-security p {
+  margin: 0;
+}
+
+.setup-security b,
+.setup-security span {
+  display: block;
+}
+
+.setup-security b {
+  margin-bottom: var(--ss-space-1);
+  color: var(--ss-text-inverse);
+  font-size: var(--ss-text-xs);
+}
+
+.setup-security span {
+  color: color-mix(in srgb, var(--ss-text-inverse) 52%, transparent);
+  font-size: var(--ss-text-xs);
+  line-height: var(--ss-leading-normal);
+}
+
+/* --------------------------------------------------------------------------
+   Zone principale
+   -------------------------------------------------------------------------- */
+.setup-main {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  overflow: auto;
+}
+
+.setup-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ss-space-4);
+  width: min(920px, calc(100% - var(--ss-space-10)));
+  margin: 0 auto;
+  padding: var(--ss-space-6) 0 var(--ss-space-4);
+}
+
+.setup-header span {
+  display: block;
+  margin-bottom: var(--ss-space-1);
+  color: var(--ss-text-link);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.setup-header h1 {
+  margin: 0;
+  font-size: var(--ss-text-2xl);
+  font-weight: var(--ss-font-bold);
+  line-height: var(--ss-leading-tight);
+  color: var(--ss-text-primary);
+}
+
+.setup-progress {
+  height: 3px;
+  background: var(--ss-border-strong);
+}
+
+.setup-progress span {
+  display: block;
+  height: 100%;
+  width: 14%;
+  background: var(--ss-gold-500);
+  transition: width var(--ss-transition-slow);
+}
+
+#setupForm {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: min(920px, calc(100% - var(--ss-space-10)));
+  margin: 0 auto;
+}
+
+.step-content {
+  flex: 1;
+  padding: var(--ss-space-6) 0 var(--ss-space-5);
+}
+
+/* --------------------------------------------------------------------------
+   Intro de section
+   -------------------------------------------------------------------------- */
+.setup-screen .section-intro {
+  max-width: 720px;
+  margin: 0 0 var(--ss-space-5);
+}
+
+.setup-screen .section-intro h2 {
+  margin: 0 0 var(--ss-space-1);
+  font-size: var(--ss-text-xl);
+  font-weight: var(--ss-font-bold);
+  line-height: var(--ss-leading-tight);
+  color: var(--ss-text-primary);
+}
+
+.setup-screen .section-intro p {
+  margin: 0;
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-base);
+  line-height: var(--ss-leading-relaxed);
+}
+
+/* --------------------------------------------------------------------------
+   Bloc configuration du site public
+   -------------------------------------------------------------------------- */
+.setup-screen .school-site-setup {
+  margin-top: var(--ss-space-5);
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius);
+  background: var(--ss-bg-primary);
+  box-shadow: var(--ss-shadow-sm);
+}
+
+.setup-screen .site-setup-head {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ss-space-3);
+  margin-bottom: var(--ss-space-4);
+}
+
+.setup-screen .site-setup-head > span {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ss-radius-sm);
+  color: var(--ss-blue-600);
+  background: var(--ss-blue-100);
+}
+
+.setup-screen .site-setup-head h3,
+.setup-screen .site-setup-head p {
+  margin: 0;
+}
+
+.setup-screen .site-setup-head h3 {
+  font-size: var(--ss-text-base);
+  font-weight: var(--ss-font-bold);
+  color: var(--ss-text-primary);
+}
+
+.setup-screen .site-setup-head p {
+  margin-top: var(--ss-space-1);
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-sm);
+  line-height: var(--ss-leading-normal);
+}
+
+.setup-screen .publication-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ss-space-2);
+  min-height: 42px;
+  margin-top: var(--ss-space-4);
+  padding: var(--ss-space-2);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-sm);
+  background: var(--ss-bg-secondary);
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-extrabold);
+}
+
+.setup-screen .publication-flow span {
+  padding: var(--ss-space-1) var(--ss-space-2);
+  border-radius: var(--ss-radius-sm);
+  background: var(--ss-bg-primary);
+}
+
+.setup-screen .publication-flow svg {
+  width: 12px;
+  height: 12px;
+  color: var(--ss-text-muted);
+}
+
+[data-theme="dark"] .setup-screen .site-setup-head > span {
+  background: color-mix(in srgb, var(--ss-blue-500) 18%, transparent);
+  color: var(--ss-blue-300);
+}
+
+/* --------------------------------------------------------------------------
+   Grille de cycles
+   -------------------------------------------------------------------------- */
+.setup-screen .cycle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ss-space-4);
+}
+
+.setup-screen .cycle-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius);
+  background: var(--ss-bg-primary);
+  cursor: pointer;
+  transition: border-color var(--ss-transition-fast), box-shadow var(--ss-transition-fast), transform var(--ss-transition-fast);
+}
+
+.setup-screen .cycle-option:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--ss-shadow-md);
+}
+
+.setup-screen .cycle-option.selected {
+  border-color: var(--ss-coral-500);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ss-coral-500) 20%, transparent);
+}
+
+.setup-screen .cycle-option input {
+  position: absolute;
+  top: var(--ss-space-3);
+  right: var(--ss-space-3);
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ss-coral-500);
+}
+
+.setup-screen .cycle-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--ss-space-4);
+  border-radius: var(--ss-radius-sm);
+  color: var(--cycle, var(--ss-coral-500));
+  background: var(--cycle-bg, var(--ss-coral-50));
+}
+
+.setup-screen .cycle-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.setup-screen .cycle-option h3 {
+  margin: 0 0 var(--ss-space-1);
+  font-size: var(--ss-text-lg);
+  font-weight: var(--ss-font-bold);
+  color: var(--ss-text-primary);
+}
+
+.setup-screen .cycle-option p {
+  margin: 0;
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-sm);
+  line-height: var(--ss-leading-normal);
+}
+
+/* --------------------------------------------------------------------------
+   Aperçu des modules
+   -------------------------------------------------------------------------- */
+.setup-screen .module-preview {
+  margin-top: var(--ss-space-5);
+  padding: var(--ss-space-4);
+  border-left: 3px solid var(--ss-navy-900);
+  border-radius: 0 var(--ss-radius) var(--ss-radius) 0;
+  background: var(--ss-bg-primary);
+  box-shadow: var(--ss-shadow-sm);
+}
+
+.setup-screen .module-preview h3 {
+  margin: 0 0 var(--ss-space-3);
+  font-size: var(--ss-text-base);
+  font-weight: var(--ss-font-bold);
+  color: var(--ss-text-primary);
+}
+
+.setup-screen .module-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ss-space-2);
+}
+
+.setup-screen .module-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ss-space-1);
+  min-height: 28px;
+  padding: 0 var(--ss-space-2);
+  border-radius: var(--ss-radius-sm);
+  background: var(--ss-bg-secondary);
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-bold);
+}
+
+.setup-screen .module-tag svg {
+  width: 12px;
+  height: 12px;
+}
+
+[data-theme="dark"] .setup-screen .module-preview {
+  border-left-color: var(--ss-blue-400);
+}
+
+/* --------------------------------------------------------------------------
+   Upload logo
+   -------------------------------------------------------------------------- */
+.setup-screen .logo-upload {
+  display: grid;
+  place-items: center;
+  min-height: 170px;
+  padding: var(--ss-space-4);
+  border: 1px dashed var(--ss-border-strong);
+  border-radius: var(--ss-radius);
+  background: var(--ss-bg-primary);
+  color: var(--ss-text-secondary);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--ss-transition-fast), background var(--ss-transition-fast);
+}
+
+.setup-screen .logo-upload:hover {
+  border-color: var(--ss-blue-500);
+  background: var(--ss-blue-50);
+}
+
+.setup-screen .logo-upload svg {
+  width: 30px;
+  height: 30px;
+  margin-bottom: var(--ss-space-1);
+  color: var(--ss-blue-600);
+}
+
+.setup-screen .logo-upload b,
+.setup-screen .logo-upload span {
+  display: block;
+}
+
+.setup-screen .logo-upload b {
+  color: var(--ss-text-primary);
+  font-size: var(--ss-text-sm);
+}
+
+.setup-screen .logo-upload span {
+  margin-top: var(--ss-space-1);
+  font-size: var(--ss-text-xs);
+}
+
+[data-theme="dark"] .setup-screen .logo-upload:hover {
+  background: color-mix(in srgb, var(--ss-blue-500) 12%, transparent);
+}
+
+/* --------------------------------------------------------------------------
+   Grille de récapitulatif
+   -------------------------------------------------------------------------- */
+.setup-screen .review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ss-space-3);
+}
+
+.setup-screen .review-block {
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius);
+  background: var(--ss-bg-primary);
+  box-shadow: var(--ss-shadow-sm);
+}
+
+.setup-screen .review-block h3 {
+  margin: 0 0 var(--ss-space-3);
+  font-size: var(--ss-text-base);
+  font-weight: var(--ss-font-bold);
+  color: var(--ss-text-primary);
+}
+
+.setup-screen .review-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ss-space-4);
+  padding: var(--ss-space-1) 0;
+  border-top: 1px solid var(--ss-border-subtle);
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-xs);
+}
+
+.setup-screen .review-row b {
+  color: var(--ss-text-primary);
+  text-align: right;
+  font-weight: var(--ss-font-semibold);
+}
+
+.setup-screen .warning-note {
+  display: flex;
+  gap: var(--ss-space-3);
+  margin-top: var(--ss-space-4);
+  padding: var(--ss-space-3);
+  border: 1px solid var(--ss-warning-border);
+  border-radius: var(--ss-radius);
+  background: var(--ss-warning-bg);
+  color: var(--ss-warning-text);
+  font-size: var(--ss-text-sm);
+  line-height: var(--ss-leading-normal);
+}
+
+.setup-screen .warning-note svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Pied d'actions sticky
+   -------------------------------------------------------------------------- */
+.setup-actions {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--ss-space-4);
+  min-height: 76px;
+  padding: var(--ss-space-3) 0;
+  border-top: 1px solid var(--ss-border-default);
+  background: color-mix(in srgb, var(--ss-bg-canvas) 94%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.setup-actions .ss-button:first-child {
+  justify-self: start;
+}
+
+.setup-actions .ss-button:last-child {
+  justify-self: end;
+}
+
+.setup-actions .draft-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ss-space-1);
+  color: var(--ss-text-muted);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-bold);
+}
+
+.setup-actions .draft-state svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   Tablette : sidebar repliée en header horizontal
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .setup-screen {
+    grid-template-columns: 1fr;
+  }
+
+  .setup-sidebar {
+    position: static;
+    min-height: auto;
+    height: auto;
+    padding: var(--ss-space-3) var(--ss-space-4);
+  }
+
+  .setup-brand,
+  .setup-caption,
+  .setup-security {
+    display: none;
+  }
+
+  .setup-sidebar #stepNav {
+    display: flex;
+    justify-content: center;
+    gap: var(--ss-space-1);
+  }
+
+  .setup-screen .step-link {
+    grid-template-columns: 24px;
+    justify-content: center;
+    width: auto;
+    min-width: 44px;
+    min-height: 44px;
+    padding: var(--ss-space-2);
+  }
+
+  .setup-screen .step-link span:not(.number),
+  .setup-screen .step-link svg {
+    display: none;
+  }
+
+  .setup-screen .step-link .number {
+    width: 24px;
+    height: 24px;
+  }
+
+  .setup-main {
+    height: auto;
+    min-height: calc(100svh - 64px);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Mobile : colonne unique
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .setup-header,
+  #setupForm {
+    width: calc(100% - var(--ss-space-6));
+  }
+
+  .setup-header {
+    padding-top: var(--ss-space-4);
+  }
+
+  .setup-header h1 {
+    font-size: var(--ss-text-xl);
+  }
+
+  .step-content {
+    padding-top: var(--ss-space-4);
+  }
+
+  .setup-screen .ss-form-grid--2,
+  .setup-screen .review-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .setup-screen .ss-field--wide {
+    grid-column: auto;
+  }
+
+  .setup-screen .cycle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .setup-actions {
+    grid-template-columns: 1fr 1fr;
+    min-height: 70px;
+  }
+
+  .setup-actions .draft-state {
+    display: none;
+  }
+
+  .setup-actions .ss-button {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 768px) {
+  .setup-sidebar #stepNav {
+    justify-content: space-around;
+  }
+
+  .setup-screen .step-link:nth-child(n+6) {
+    display: none;
+  }
+}

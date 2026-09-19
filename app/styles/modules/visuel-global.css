@@ -1,0 +1,189 @@
+/* ============================================================
+   VISUEL-INT-01 — nouvelle identité visuelle de l'INTERIEUR
+   Scopé body.screen-workspace : les écrans d'entrée restent intacts.
+   DESIGN UNIQUEMENT : aucun nom, ID, listener ou fonction changé.
+   Charte : fond clair · cartes dégradées par fonctionnalité · boutons liquid.
+   ============================================================ */
+
+/* ---------- Structure : fond général clair ---------- */
+body.screen-workspace {
+  background: linear-gradient(180deg, #f7fbff 0%, #eef4fc 100%);
+}
+body.screen-workspace .workspace-content {
+  background:
+    radial-gradient(720px 420px at 92% -6%, rgba(96, 165, 250, .14), transparent 60%),
+    radial-gradient(600px 380px at -6% 108%, rgba(103, 232, 249, .10), transparent 58%),
+    transparent;
+}
+
+/* ---------- Sidebar claire ---------- */
+body.screen-workspace .workspace-sidebar {
+  background: #ffffff;
+  border-right: 1px solid #e3ecf8;
+  box-shadow: 4px 0 24px rgba(30, 58, 138, .06);
+}
+body.screen-workspace .workspace-wordmark { color: #17315c; }
+body.screen-workspace .workspace-wordmark strong { color: #1d4ed8; }
+body.screen-workspace .workspace-nav button {
+  color: #3b5378;
+  border-radius: 12px;
+  transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+body.screen-workspace .workspace-nav button:hover {
+  background: #eef5fd;
+  color: #17315c;
+}
+body.screen-workspace .workspace-nav button.active {
+  background: linear-gradient(100deg, #2563eb, #06b6d4);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(6, 182, 212, .26);
+}
+body.screen-workspace .nav-section span { color: #8aa0c2; }
+body.screen-workspace .sidebar-footer { border-top-color: #e8f0fa; }
+body.screen-workspace .sidebar-user b { color: #17315c; }
+body.screen-workspace .sidebar-user small { color: #6d85ab; }
+body.screen-workspace .sidebar-copyright { color: #93a8c7; }
+body.screen-workspace .sidebar-theme { color: #3b5378; }
+body.screen-workspace .workspace-back {
+  color: #33507e;
+  background: #f2f7fe;
+  border: 1px solid #dbe8f7;
+  border-radius: 12px;
+}
+body.screen-workspace .workspace-back:hover { background: #e7f1fc; }
+
+/* ---------- Topbar claire, recherche en pilule ---------- */
+body.screen-workspace .workspace-topbar {
+  background: rgba(255, 255, 255, .92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e3ecf8;
+  box-shadow: 0 6px 22px rgba(30, 58, 138, .05);
+}
+body.screen-workspace .topbar-search {
+  background: #f2f7fe;
+  border: 1px solid #dbe8f7;
+  border-radius: 999px;
+  box-shadow: inset 0 1px 3px rgba(30, 58, 138, .05);
+}
+body.screen-workspace .topbar-search input { color: #17315c; }
+body.screen-workspace .topbar-search input::placeholder { color: #8aa4c8; }
+body.screen-workspace .topbar-icon {
+  background: #f2f7fe;
+  border: 1px solid #dbe8f7;
+  border-radius: 12px;
+  color: #33507e;
+}
+body.screen-workspace .topbar-campus {
+  background: #f2f7fe;
+  border: 1px solid #dbe8f7;
+  border-radius: 999px;
+  color: #17315c;
+}
+body.screen-workspace .topbar-profile { border-color: #dbe8f7; }
+
+/* ---------- Héros clair ---------- */
+body.screen-workspace .dashboard-hero {
+  background: linear-gradient(120deg, #e7f2ff 0%, #eef8ff 55%, #e6f6fb 100%);
+  border: 1px solid #d8e9f9;
+  border-radius: 22px;
+  box-shadow: 0 18px 44px rgba(30, 58, 138, .10);
+}
+body.screen-workspace .hero-label {
+  background: #d9edff;
+  color: #0e8fc4;
+  border-left-color: #06b6d4;
+}
+body.screen-workspace .hero-copy h1 { color: #0f2a57; }
+body.screen-workspace .hero-copy p { color: #4c6490; }
+body.screen-workspace .hero-date { color: #5f7aa6; }
+body.screen-workspace .hero-cta--primary {
+  background: linear-gradient(100deg, #2563eb, #06b6d4);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 12px 26px rgba(6, 182, 212, .30), inset 0 1px 0 rgba(255, 255, 255, .38);
+}
+body.screen-workspace .hero-cta--primary:hover { transform: translateY(-1px); }
+
+/* ---------- Cartes KPI neumorphiques ---------- */
+body.screen-workspace .kpi-card {
+  background: #ffffff;
+  border: 1px solid #e6eefb;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(30, 58, 138, .08), inset 0 1px 0 #ffffff;
+}
+
+/* ---------- Sections / panneaux ---------- */
+body.screen-workspace .dashboard-section {
+  background: #ffffff;
+  border: 1px solid #e6eefb;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(30, 58, 138, .07);
+}
+
+/* ---------- Cartes de modules : une couleur par fonctionnalité ---------- */
+body.screen-workspace .module-card,
+body.screen-workspace .quick-access-item {
+  border: 1px solid rgba(255, 255, 255, .65);
+  border-radius: 18px;
+  box-shadow: 0 12px 26px rgba(30, 58, 138, .09);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+body.screen-workspace .module-card:hover,
+body.screen-workspace .quick-access-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(30, 58, 138, .13);
+}
+
+/* charte par fonctionnalité (fond pastel + accent icône) */
+body.screen-workspace .module-card--pilotage,
+body.screen-workspace .quick-access-item--pilotage { background: linear-gradient(135deg, #e0f2fe, #cffafe); }
+body.screen-workspace .module-card--pilotage .module-card__icon, body.screen-workspace .quick-access-item--pilotage .quick-access-item__icon { color: #0284c7; }
+
+body.screen-workspace .module-card--security,
+body.screen-workspace .quick-access-item--security { background: linear-gradient(135deg, #dbeafe, #cffafe); }
+body.screen-workspace .module-card--security .module-card__icon, body.screen-workspace .quick-access-item--security .quick-access-item__icon { color: #1d4ed8; }
+
+body.screen-workspace .module-card--school,
+body.screen-workspace .quick-access-item--school { background: linear-gradient(135deg, #d1fae5, #ccfbf1); }
+body.screen-workspace .module-card--school .module-card__icon, body.screen-workspace .quick-access-item--school .quick-access-item__icon { color: #059669; }
+
+body.screen-workspace .module-card--pedagogy,
+body.screen-workspace .quick-access-item--pedagogy { background: linear-gradient(135deg, #d9f7e8, #d1fae5); }
+body.screen-workspace .module-card--pedagogy .module-card__icon, body.screen-workspace .quick-access-item--pedagogy .quick-access-item__icon { color: #0d9488; }
+
+body.screen-workspace .module-card--finance,
+body.screen-workspace .quick-access-item--finance { background: linear-gradient(135deg, #ede9fe, #f3e8ff); }
+body.screen-workspace .module-card--finance .module-card__icon, body.screen-workspace .quick-access-item--finance .quick-access-item__icon { color: #7c3aed; }
+
+body.screen-workspace .module-card--feeControl,
+body.screen-workspace .quick-access-item--feeControl { background: linear-gradient(135deg, #f3e8ff, #ede9fe); }
+body.screen-workspace .module-card--feeControl .module-card__icon, body.screen-workspace .quick-access-item--feeControl .quick-access-item__icon { color: #9333ea; }
+
+body.screen-workspace .module-card--accounting,
+body.screen-workspace .quick-access-item--accounting { background: linear-gradient(135deg, #e9e7fb, #e8edf5); }
+body.screen-workspace .module-card--accounting .module-card__icon, body.screen-workspace .quick-access-item--accounting .quick-access-item__icon { color: #6366f1; }
+
+body.screen-workspace .module-card--people,
+body.screen-workspace .quick-access-item--people { background: linear-gradient(135deg, #fce7f3, #fde7f0); }
+body.screen-workspace .module-card--people .module-card__icon, body.screen-workspace .quick-access-item--people .quick-access-item__icon { color: #db2777; }
+
+body.screen-workspace .module-card--inventory,
+body.screen-workspace .quick-access-item--inventory { background: linear-gradient(135deg, #ffedd5, #ffe8d6); }
+body.screen-workspace .module-card--inventory .module-card__icon, body.screen-workspace .quick-access-item--inventory .quick-access-item__icon { color: #ea580c; }
+
+body.screen-workspace .module-card--communication,
+body.screen-workspace .quick-access-item--communication { background: linear-gradient(135deg, #ccfbf1, #cffafe); }
+body.screen-workspace .module-card--communication .module-card__icon, body.screen-workspace .quick-access-item--communication .quick-access-item__icon { color: #0891b2; }
+
+body.screen-workspace .module-card--care,
+body.screen-workspace .quick-access-item--care { background: linear-gradient(135deg, #fef9c3, #fef3c7); }
+body.screen-workspace .module-card--care .module-card__icon, body.screen-workspace .quick-access-item--care .quick-access-item__icon { color: #d97706; }
+
+body.screen-workspace .module-card--administration,
+body.screen-workspace .quick-access-item--administration { background: linear-gradient(135deg, #e2e8f0, #e8eef7); }
+body.screen-workspace .module-card--administration .module-card__icon, body.screen-workspace .quick-access-item--administration .quick-access-item__icon { color: #475569; }
+
+body.screen-workspace .module-card--reports,
+body.screen-workspace .quick-access-item--reports { background: linear-gradient(135deg, #ffedd5, #fef3c7); }
+body.screen-workspace .module-card--reports .module-card__icon, body.screen-workspace .quick-access-item--reports .quick-access-item__icon { color: #c2410c; }

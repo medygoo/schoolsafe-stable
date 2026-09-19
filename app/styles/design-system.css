@@ -1,0 +1,271 @@
+/* ============================================================
+   SchoolSafe V2 — couche d'application des tokens
+   Les alias --ds-* sont temporaires et pointent vers --ss-*.
+   Les modules seront migrés progressivement avant leur retrait.
+   ============================================================ */
+
+:root {
+  --ds-bg-top: var(--ss-blue-50);
+  --ds-bg-bottom: var(--ss-slate-50);
+  --ds-decor-color: var(--ss-blue-100);
+  --ds-glass-bg: var(--ss-surface-solid);
+  --ds-glass-blur: none;
+  --ds-glass-border: 1px solid var(--ss-border-default);
+  --ds-glass-shadow: var(--ss-shadow-card);
+  --ds-radius-card: var(--ss-radius-xl);
+  --ds-radius-card-lg: var(--ss-radius-xl);
+  --ds-radius-card-sm: var(--ss-radius-lg);
+  --ds-radius-pill: var(--ss-radius-full);
+  --ds-btn-primary-start: var(--ss-blue-600);
+  --ds-btn-primary-end: var(--ss-cyan-500);
+  --ds-btn-primary-shadow: var(--ss-shadow-sm);
+  --ds-btn-secondary-bg: var(--ss-surface-solid);
+  --ds-btn-secondary-text: var(--ss-text-primary);
+  --ds-btn-secondary-shadow: var(--ss-shadow-xs);
+  --ds-font-family: "Poppins", var(--ss-font-sans);
+  --ds-title-color: var(--ss-text-primary);
+  --ds-body-color: var(--ss-text-secondary);
+  --ds-positive: var(--ss-emerald-600);
+  --ds-alert: var(--ss-coral-600);
+  --ds-mod-blue: var(--ss-blue-600);
+  --ds-mod-blue-bg: var(--ss-blue-50);
+  --ds-mod-green: var(--ss-emerald-600);
+  --ds-mod-green-bg: var(--ss-emerald-50);
+  --ds-mod-orange: var(--ss-orange-500);
+  --ds-mod-orange-bg: var(--ss-orange-50);
+  --ds-mod-violet: var(--ss-violet-600);
+  --ds-mod-violet-bg: var(--ss-violet-50);
+  --ds-mod-pink: var(--ss-pink-600);
+  --ds-mod-pink-bg: var(--ss-pink-50);
+  --ds-mod-turquoise: var(--ss-cyan-600);
+  --ds-mod-turquoise-bg: var(--ss-cyan-50);
+  --ds-mod-yellow: var(--ss-gold-500);
+  --ds-mod-yellow-bg: var(--ss-amber-50);
+  --ds-mod-slate: var(--ss-slate-600);
+  --ds-mod-slate-bg: var(--ss-slate-100);
+  --ds-field-border: var(--ss-border-strong);
+}
+
+body,
+input,
+textarea,
+select,
+button {
+  font-family: var(--ds-font-family);
+}
+
+body {
+  color: var(--ss-text-primary);
+  background: linear-gradient(180deg, var(--ds-bg-top), var(--ds-bg-bottom));
+}
+
+.ss-card,
+.ss-modal,
+.setup-screen,
+.student-record,
+.record-card,
+.profile-card {
+  background: var(--ss-surface-solid);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-xl);
+  box-shadow: var(--ss-shadow-card);
+}
+
+.ss-card--sm,
+.badge-card,
+.student-record {
+  border-radius: var(--ss-radius-lg);
+}
+
+button.ss-primary,
+a.ss-primary {
+  min-height: var(--ss-control-height);
+  color: var(--ss-text-on-brand);
+  background: var(--ss-action-gradient);
+  border: 1px solid transparent;
+  border-radius: var(--ss-radius);
+  box-shadow: var(--ss-shadow-sm);
+}
+
+button.ss-secondary,
+a.ss-secondary {
+  min-height: var(--ss-control-height);
+  color: var(--ss-text-primary);
+  background: var(--ss-surface-solid);
+  border: 1px solid var(--ss-border-strong);
+  border-radius: var(--ss-radius);
+  box-shadow: none;
+}
+
+.ss-input,
+.ss-input-shell,
+.ss-select,
+.ss-textarea,
+.workspace-screen .topbar-search {
+  background-color: var(--ss-surface-solid);
+  border-color: var(--ss-border-strong);
+  border-radius: var(--ss-radius);
+}
+
+.nav-item.active,
+.menu-item--active,
+.workspace-screen .workspace-nav button.active {
+  color: var(--ss-text-on-brand);
+  background: var(--ss-action-gradient);
+  border-radius: var(--ss-radius);
+  box-shadow: var(--ss-shadow-sm);
+}
+
+.nav-item:not(.active),
+.workspace-screen .workspace-nav button:not(.active) {
+  background: transparent;
+}
+
+.workspace-screen .workspace-nav button:not(.active):hover {
+  background: var(--ss-blue-50);
+}
+
+.module-badge,
+.sidebar-icon-wrapper,
+.kpi-icon,
+.module-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ss-touch-target);
+  height: var(--ss-touch-target);
+  border-radius: var(--ss-radius);
+}
+
+.module--blue .module-badge,
+.domain-pilotage .sidebar-icon-wrapper,
+.kpi-icon.blue,
+.module-card--pilotage .module-card__icon,
+.module-card--rapports .module-card__icon {
+  background: var(--ds-mod-blue);
+}
+
+.module--green .module-badge,
+.domain-ecole .sidebar-icon-wrapper,
+.kpi-icon.green,
+.module-card--ecole .module-card__icon {
+  background: var(--ds-mod-green);
+}
+
+.module--orange .module-badge,
+.domain-finance .sidebar-icon-wrapper,
+.kpi-icon.gold,
+.module-card--finance .module-card__icon {
+  background: var(--ds-mod-orange);
+}
+
+.module--violet .module-badge,
+.domain-pedagogie .sidebar-icon-wrapper,
+.kpi-icon.purple,
+.module-card--personnel .module-card__icon,
+.module-card--pedagogie .module-card__icon {
+  background: var(--ds-mod-violet);
+}
+
+.module--pink .module-badge,
+.domain-securite .sidebar-icon-wrapper,
+.kpi-icon.coral {
+  background: var(--ds-mod-pink);
+}
+
+.module--turquoise .module-badge,
+.domain-communication .sidebar-icon-wrapper,
+.kpi-icon.cyan,
+.module-card--communication .module-card__icon {
+  background: var(--ds-mod-turquoise);
+}
+
+.module--yellow .module-badge,
+.domain-stock .sidebar-icon-wrapper {
+  background: var(--ds-mod-yellow);
+}
+
+.module--slate .module-badge,
+.domain-administration .sidebar-icon-wrapper,
+.module-card--comptabilite .module-card__icon {
+  background: var(--ds-mod-slate);
+}
+
+.module-badge svg,
+.sidebar-icon-wrapper svg,
+.kpi-icon svg,
+.module-card__icon svg {
+  width: 22px;
+  height: 22px;
+  color: var(--ss-text-on-brand);
+}
+
+.workspace-screen .workspace-sidebar,
+.workspace-screen .workspace-topbar,
+.dashboard-kpi .kpi-card,
+.module-card,
+.auth-screen .login-panel,
+#notification-container > div {
+  background: var(--ss-surface-solid);
+  border-color: var(--ss-border-default);
+  box-shadow: var(--ss-shadow-card);
+}
+
+.dashboard-hero,
+.dashboard-hero--mobile {
+  background: linear-gradient(135deg, var(--ss-blue-50), var(--ss-cyan-50));
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-xl);
+}
+
+.workspace-screen .sidebar-user,
+.setup-sidebar {
+  background: var(--ss-surface-muted);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-lg);
+}
+
+.workspace-breadcrumb button,
+.workspace-breadcrumb__back,
+.ss-button--danger,
+.ss-button--ghost {
+  border-radius: var(--ss-radius);
+}
+
+.workspace-breadcrumb li[aria-current="page"] button {
+  color: var(--ss-blue-700);
+  background: var(--ss-blue-50);
+  font-weight: var(--ss-font-semibold);
+}
+
+.module-card__title,
+.kpi-card b,
+.kpi-value,
+.stat-value,
+.number-large {
+  color: var(--ss-text-primary);
+  font-weight: var(--ss-font-bold);
+}
+
+.module-card__desc {
+  color: var(--ss-text-secondary);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.dashboard-greeting h2,
+.workspace-screen .workspace-brand strong {
+  font-family: var(--ds-font-family);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto;
+  }
+}

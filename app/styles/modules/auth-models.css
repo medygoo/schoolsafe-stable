@@ -1,0 +1,128 @@
+/* Disposition finale de la connexion. Un formulaire conservé pendant la saisie. */
+#auth[data-login-layout] {
+  --auth-ink:#0c245b; --auth-muted:#4e6b9a;
+  height:var(--auth-viewport-height,100dvh); min-height:0;
+  overflow-x:hidden; overflow-y:auto; overscroll-behavior-y:contain; scroll-padding-block:12px;
+  color:var(--auth-ink); background:radial-gradient(ellipse at 18% 65%,#d4ebff 0,transparent 43%),linear-gradient(115deg,#eef8ff,#e7f5ff 53%,#f5fbff);
+}
+#auth[data-login-layout] > * { flex-shrink:0; }
+#auth[data-login-layout] .auth-topbar { width:min(1240px,calc(100% - 48px)); min-height:78px; gap:24px; padding:10px 0; }
+#auth[data-login-layout] .auth-layout {
+  display:grid; width:min(1180px,calc(100% - 48px));
+  grid-template-columns:minmax(130px,.42fr) minmax(240px,1fr) minmax(360px,440px);
+  grid-template-rows:auto auto 1fr; grid-template-areas:"message message form" "values dialogue form" "values jaspe form";
+  align-items:start; align-content:start; gap:0 22px; height:auto; min-height:0;
+  margin:0 auto; padding:10px 0 12px; border:0; border-radius:0; background:none; box-shadow:none; transition:none;
+}
+#auth[data-login-layout] .auth-layout > * { min-width:0; }
+#auth[data-login-layout] .auth-message { grid-area:message; margin:0; padding:8px 0 12px; text-align:left; }
+#auth[data-login-layout] .auth-message h1 { font-size:clamp(25px,2.3vw,34px); margin:0 0 8px; max-width:none; }
+#auth[data-login-layout] .auth-message p { margin:0; max-width:500px; font-size:14px; line-height:1.45; }
+#auth[data-login-layout] .auth-values { display:block; grid-area:values; align-self:center; padding:0; background:none; border:0; }
+#auth[data-login-layout] .auth-values ul { grid-template-columns:1fr; gap:22px; }
+#auth[data-login-layout] .auth-values li { flex-direction:row; text-align:left; gap:10px; }
+#auth[data-login-layout] .auth-value-icon { width:40px; height:44px; flex-basis:40px; border-radius:14px; }
+#auth[data-login-layout] .auth-values strong { font-size:13px; }
+#auth[data-login-layout] .auth-values li p { display:block; font-size:12px; }
+#auth[data-login-layout] .auth-signature { display:block; font-size:18px; margin-top:24px; }
+#auth[data-login-layout] .auth-jaspe { grid-area:jaspe; height:clamp(320px,calc(100svh - 320px),610px); min-height:0; align-self:end; margin:0; overflow:visible; opacity:1; transition:none; }
+#auth[data-login-layout] .auth-jaspe .jaspe2d { width:100%; height:100%; }
+#auth[data-login-layout] .auth-jaspe .jaspe2d :is(img,.jaspe2d__live-canvas) {
+  position:absolute; inset:0; width:100%; height:100%; max-width:none; margin:0;
+  object-fit:contain; object-position:center bottom; transform:none; animation:none; filter:drop-shadow(0 6px 6px #44719520);
+}
+#auth[data-login-layout] .auth-dialogue { grid-area:dialogue; min-width:0; min-height:74px; align-self:start; padding:0 0 10px; pointer-events:none; }
+#auth[data-login-layout] .auth-dialogue .jaspe2d__bubble {
+  position:static; width:100%; max-width:310px; margin:0 0 0 auto; padding:11px 13px;
+  font-size:13px; line-height:1.45; border-radius:20px 20px 20px 3px; overflow-wrap:anywhere;
+  box-shadow:0 6px 18px #579bd91a; transform:none; transition:opacity .22s ease;
+}
+#auth[data-login-layout] .login-panel { grid-area:form; align-self:start; width:100%; max-width:none; margin:0; padding:18px 22px; border:1px solid white; border-radius:26px; background:#ffffffed; box-shadow:0 12px 32px #83bae42b,inset 0 1px 0 white; }
+#auth[data-login-layout] .panel-brand { flex-direction:row; justify-content:flex-start; gap:12px; margin-bottom:12px; text-align:left; }
+#auth[data-login-layout] .auth-panel-logo { display:none; }
+#auth[data-login-layout] .auth-panel-person { display:grid; place-items:center; width:44px; height:44px; flex:0 0 44px; color:#078ff5; border:1px solid white; border-radius:50%; background:linear-gradient(135deg,#edfaff,#b9e0ff); }
+#auth[data-login-layout] .auth-panel-person svg { width:24px; height:24px; }
+#auth[data-login-layout] .panel-brand div { align-items:flex-start; }
+#auth[data-login-layout] .panel-brand b { font-size:25px; line-height:1.2; }
+#auth[data-login-layout] .panel-brand div > span { font-size:12px; }
+#auth[data-login-layout] .login-method { margin:0 0 10px; padding:3px; border-width:1px; border-radius:16px; }
+#auth[data-login-layout] .login-method button { min-width:0; min-height:44px; gap:5px; padding-inline:5px; font-size:13px; }
+#auth[data-login-layout] .login-method button svg { width:17px; height:17px; flex-shrink:0; }
+#auth[data-login-layout] .ss-field { gap:4px; margin-bottom:8px; }
+#auth[data-login-layout] .ss-label { font-size:12px; line-height:1.4; }
+#auth[data-login-layout] .ss-input-shell { min-width:0; min-height:44px; padding:0 10px; gap:8px; }
+#auth[data-login-layout] .ss-input { min-width:0; width:100%; height:44px; padding:0; font-size:16px; }
+#auth[data-login-layout] .ss-input-shell > svg { width:17px; height:17px; flex:none; }
+#auth[data-login-layout] .ss-icon-button { min-width:40px; width:40px; min-height:44px; height:44px; padding:6px; background:transparent; color:#4b6f9f; }
+#auth[data-login-layout] .label-row { flex-direction:row; flex-wrap:wrap; align-items:center; margin:0 0 4px; gap:0 8px; }
+#auth[data-login-layout] .text-button { font-size:12px; min-height:30px; }
+#auth[data-login-layout] .check-row { margin:6px 0; min-height:32px; font-size:12px; line-height:1.35; }
+#auth[data-login-layout] .login-button { min-height:46px; margin:4px 0 0; padding:10px; font-size:16px; }
+#auth[data-login-layout] .demo-access--button { min-height:44px; margin-top:8px; padding:6px 10px; font-size:12px; line-height:1.35; }
+#auth[data-login-layout] .demo-role-field { margin-top:8px; margin-bottom:0; }
+#auth[data-login-layout] .demo-role-field .ss-label { margin-bottom:0; }
+#auth[data-login-layout] .demo-role-field .ss-select { width:100%; min-width:0; min-height:44px; height:44px; padding-block:0; padding-right:28px; font-size:13px; }
+#auth[data-login-layout] .auth-other-access { border-top:1px solid #dbe8f7; margin-top:10px; color:#365c91; }
+#auth[data-login-layout] .auth-other-access summary { cursor:pointer; padding:12px 0 0; min-height:36px; font-size:12px; font-weight:600; }
+#auth[data-login-layout] .auth-other-access summary:focus-visible { outline:2px solid #0874f4; outline-offset:2px; }
+#auth[data-login-layout] .first-install { margin-top:8px; padding-top:0; border:0; flex-wrap:wrap; gap:4px; font-size:12px; }
+#auth[data-login-layout] .first-install button { min-height:40px; }
+#auth[data-login-layout] .preview-profile-button { white-space:normal; height:auto; min-height:44px; font-size:12px; }
+#auth[data-login-layout] .auth-footer { padding:8px 12px 12px; margin-top:auto; gap:20px; font-size:11px; }
+
+@media (min-width:761px) and (max-width:1100px) {
+  #auth[data-login-layout] .auth-layout { width:calc(100% - 32px); grid-template-columns:minmax(230px,1fr) minmax(350px,1.12fr); grid-template-areas:"message form" "dialogue form" "jaspe form"; gap:0 18px; }
+  #auth[data-login-layout] .auth-values { display:none; }
+  #auth[data-login-layout] .auth-message h1 { font-size:26px; }
+  #auth[data-login-layout] .auth-jaspe { height:clamp(320px,calc(100svh - 340px),570px); }
+}
+@media (max-width:760px) {
+  #auth[data-login-layout] .auth-topbar { width:calc(100% - 24px); min-height:72px; gap:8px; padding:10px 0; flex-direction:row; }
+  #auth[data-login-layout] .brand-button { flex-direction:row; font-size:clamp(23px,6.4vw,29px); gap:5px; }
+  #auth[data-login-layout] .brand-button .auth-shield { width:42px; height:38px; }
+  #auth[data-login-layout] #backToSplash .auth-shield img { width:42px; height:46.75px; }
+  #auth[data-login-layout] .auth-motto { display:none; }
+  #auth[data-login-layout] .language-switch { position:static; margin-left:auto; height:38px; padding:2px; }
+  #auth[data-login-layout] .language-switch button { min-width:32px; font-size:12px; }
+  #auth[data-login-layout] .auth-layout { width:calc(100% - 20px); margin:0 auto; padding:0 0 8px; }
+  #auth[data-login-layout] .auth-values { display:none; }
+  #auth[data-login-layout] .login-panel { padding:14px; border-radius:24px; }
+  #auth[data-login-layout] .auth-dialogue { min-height:0; }
+  #auth[data-login-layout] .panel-brand b { font-size:23px; }
+  #auth[data-login-layout] .auth-footer { margin-top:auto; }
+
+  /* Entière à gauche : taille uniforme et chaussures conservées. */
+  #auth[data-login-layout="companion"] .auth-layout { grid-template-columns:minmax(96px,.6fr) minmax(0,1fr); grid-template-rows:auto auto auto; grid-template-areas:"message message" "dialogue dialogue" "jaspe form"; gap:0; }
+  #auth[data-login-layout="companion"] .auth-message { text-align:center; padding:4px 6px 12px; }
+  #auth[data-login-layout="companion"] .auth-message h1 { font-size:23px; }
+  #auth[data-login-layout="companion"] .auth-message p { font-size:12px; }
+  #auth[data-login-layout="companion"] .auth-jaspe { height:430px; align-self:start; }
+  #auth[data-login-layout="companion"] .auth-jaspe .jaspe2d :is(img,.jaspe2d__live-canvas) { width:174%; left:-37%; height:100%; object-position:center center; }
+  #auth[data-login-layout="companion"] .auth-dialogue .jaspe2d__bubble { width:min(100%,310px); font-size:12px; padding:9px 11px; }
+  #auth[data-login-layout="companion"] .login-panel { padding:12px 10px; }
+  #auth[data-login-layout="companion"] .auth-panel-person { display:none; }
+  #auth[data-login-layout="companion"] .panel-brand b { font-size:22px; }
+  #auth[data-login-layout="companion"] .label-row { gap:0; }
+  #auth[data-login-layout="companion"] .ss-input-shell { gap:4px; padding-inline:6px; }
+  #auth[data-login-layout="companion"] .check-row { font-size:11px; }
+  #auth[data-login-layout="companion"] .login-method button { font-size:12px; }
+
+  /* Buste : seul le cadre masque le bas de l'image complète. */
+  #auth[data-login-layout="welcome"] .auth-layout { grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-rows:auto auto; grid-template-areas:"jaspe dialogue" "form form"; gap:0; }
+  #auth[data-login-layout="welcome"] .auth-message { display:none; }
+  #auth[data-login-layout="welcome"] .auth-jaspe { height:184px; align-self:start; overflow:hidden; }
+  #auth[data-login-layout="welcome"] .auth-jaspe .jaspe2d :is(img,.jaspe2d__live-canvas) { width:360px; height:540px; left:calc(50% - 180px); top:-32px; object-position:center bottom; }
+  #auth[data-login-layout="welcome"] .auth-dialogue { padding:12px 0 12px 6px; }
+  #auth[data-login-layout="welcome"] .auth-dialogue .jaspe2d__bubble { max-width:none; font-size:12px; padding:10px; }
+}
+/* Le contrôleur réserve cet état aux téléphones. Libérer aussi l'en-tête. */
+#auth[data-login-layout].auth-jaspe-withdrawn .auth-topbar,
+#auth[data-login-layout].auth-jaspe-withdrawn .auth-message,
+#auth[data-login-layout].auth-jaspe-withdrawn .auth-values,
+#auth[data-login-layout].auth-jaspe-withdrawn .auth-dialogue,
+#auth[data-login-layout].auth-jaspe-withdrawn .auth-jaspe,
+#auth[data-login-layout].auth-jaspe-withdrawn .auth-footer { display:none; }
+#auth[data-login-layout].auth-jaspe-withdrawn .auth-layout { width:min(560px,100%); margin:0 auto; padding:0; grid-template-columns:minmax(0,1fr); grid-template-rows:auto; grid-template-areas:"form"; gap:0; }
+#auth[data-login-layout].auth-jaspe-withdrawn .login-panel { min-height:var(--auth-viewport-height,100dvh); padding:max(12px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom)); border-radius:0; border:0; box-shadow:none; }
+#auth[data-login-layout].auth-jaspe-withdrawn .auth-panel-person { display:grid; }
+@media (prefers-reduced-motion:reduce) { #auth[data-login-layout] .auth-jaspe,#auth[data-login-layout] .jaspe2d img { animation:none !important; transition:none; } }

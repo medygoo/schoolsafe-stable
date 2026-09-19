@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "width": 1023,
+  "height": 1537,
+  "policy": "Copies intégrales V12. Alpha appliqué uniquement à l’affichage.",
+  "poses": {
+    "pack1/idle": {
+      "file": "rest.png",
+      "source": "references/repos.png",
+      "sha256": "5a9d45502948158dff4bf66e2d688e111ca14dd4259097f1d5d67b60d6378bf4",
+      "bytes": 1514386,
+      "face": [
+        515,
+        310
+      ],
+      "holes": []
+    },
+    "pack1/wave": {
+      "file": "wave.png",
+      "source": "images/salut.png",
+      "sha256": "9465a164ffff3452c05dc6b97f535b5c57c30c3c144fdccdd1736dfc579ecd99",
+      "bytes": 1611578,
+      "face": [
+        515,
+        310
+      ],
+      "holes": []
+    },
+    "pack3/explain": {
+      "file": "guide.png",
+      "source": "references/guider.png",
+      "sha256": "8eaba3b2608a043f500145ec5bcb0d76e8a1f482bc0e97cd9c9a4e4428a5af04",
+      "bytes": 1589711,
+      "face": [
+        515,
+        310
+      ],
+      "holes": []
+    },
+    "pack2/listening": {
+      "file": "attentiveBody.png",
+      "source": "images/attentiveBody.png",
+      "sha256": "9ff79e8b361c1edadaee3e5684dbe8ebbae6dfe7b45751e3edb95e43e7851aa2",
+      "bytes": 1631823,
+      "face": [
+        509.63957003695,
+        314.9506214309708
+      ],
+      "holes": []
+    },
+    "pack2/thinking": {
+      "file": "chin1.png",
+      "source": "images/chin1.png",
+      "sha256": "b7621372998d3cc024d1083add38e61285d607331c98c19760d2da2ee6f9a197",
+      "bytes": 1593664,
+      "face": [
+        509.7544507893853,
+        304.5814578434666
+      ],
+      "holes": []
+    },
+    "pack4/worried": {
+      "file": "worried1.png",
+      "source": "images/worried1.png",
+      "sha256": "a6f8706132273d68c347ca79f6c5aa083689a4cdc31b75c159901e1ec98b54ea",
+      "bytes": 1595520,
+      "face": [
+        511.79509573396035,
+        314.15552569701043
+      ],
+      "holes": []
+    },
+    "pack3/congratulate": {
+      "file": "thumb2.png",
+      "source": "images/thumb2.png",
+      "sha256": "a0e0c8eb9e59c11df06f2f761b98dcad7f8387201f4659b6c82ac5d1b0c186cb",
+      "bytes": 1611002,
+      "face": [
+        509.20490426603965,
+        306.84447430298957
+      ],
+      "holes": []
+    }
+  }
+}

@@ -1,0 +1,199 @@
+{
+  "version": 13,
+  "checkedAt": "2026-09-08T16:55:31.795Z",
+  "scope": "Détourages adossée et chaise, essai de transition",
+  "images": [
+    {
+      "file": "adossee-detouree.png",
+      "width": 1023,
+      "height": 1537,
+      "transparent": 1201202,
+      "opaque": 341928,
+      "sha256": "b23fbfdc0bb6d88156db88eb45485ef89676ddf1499476db5531111efb25edac",
+      "alphaVerified": true,
+      "playable": false,
+      "status": "key-pose-cutout"
+    },
+    {
+      "file": "chaise-detouree.png",
+      "width": 1023,
+      "height": 1537,
+      "transparent": 979900,
+      "opaque": 544175,
+      "sha256": "511f2e56ea52af97fd596345f925a4684a6753ae4fd36fbcf6709e691eac624b",
+      "alphaVerified": true,
+      "playable": false,
+      "status": "key-pose-cutout"
+    }
+  ],
+  "video": {
+    "width": 720,
+    "height": 1082,
+    "duration": 10.013,
+    "frames": [
+      {
+        "t": 0,
+        "transparent": 579665,
+        "opaque": 182041,
+        "bounds": [
+          200,
+          79,
+          517,
+          998
+        ],
+        "hash": "fa6d81e3d5bdd7c47a3f96d844273667cfad6d42e0d0e27866fa4aad2bc2e49e"
+      },
+      {
+        "t": 0.5,
+        "transparent": 579665,
+        "opaque": 182041,
+        "bounds": [
+          200,
+          79,
+          517,
+          998
+        ],
+        "hash": "fa6d81e3d5bdd7c47a3f96d844273667cfad6d42e0d0e27866fa4aad2bc2e49e"
+      },
+      {
+        "t": 1,
+        "transparent": 579665,
+        "opaque": 182041,
+        "bounds": [
+          200,
+          79,
+          517,
+          998
+        ],
+        "hash": "fa6d81e3d5bdd7c47a3f96d844273667cfad6d42e0d0e27866fa4aad2bc2e49e"
+      },
+      {
+        "t": 2,
+        "transparent": 579665,
+        "opaque": 182041,
+        "bounds": [
+          200,
+          79,
+          517,
+          998
+        ],
+        "hash": "fa6d81e3d5bdd7c47a3f96d844273667cfad6d42e0d0e27866fa4aad2bc2e49e"
+      },
+      {
+        "t": 3,
+        "transparent": 579665,
+        "opaque": 182041,
+        "bounds": [
+          200,
+          79,
+          517,
+          998
+        ],
+        "hash": "fa6d81e3d5bdd7c47a3f96d844273667cfad6d42e0d0e27866fa4aad2bc2e49e"
+      },
+      {
+        "t": 4,
+        "transparent": 579665,
+        "opaque": 182041,
+        "bounds": [
+          200,
+          79,
+          517,
+          998
+        ],
+        "hash": "fa6d81e3d5bdd7c47a3f96d844273667cfad6d42e0d0e27866fa4aad2bc2e49e"
+      },
+      {
+        "t": 5,
+        "transparent": 579665,
+        "opaque": 182041,
+        "bounds": [
+          200,
+          79,
+          517,
+          998
+        ],
+        "hash": "fa6d81e3d5bdd7c47a3f96d844273667cfad6d42e0d0e27866fa4aad2bc2e49e"
+      },
+      {
+        "t": 6,
+        "transparent": 579665,
+        "opaque": 182041,
+        "bounds": [
+          200,
+          79,
+          517,
+          998
+        ],
+        "hash": "fa6d81e3d5bdd7c47a3f96d844273667cfad6d42e0d0e27866fa4aad2bc2e49e"
+      },
+      {
+        "t": 7,
+        "transparent": 579665,
+        "opaque": 182041,
+        "bounds": [
+          200,
+          79,
+          517,
+          998
+        ],
+        "hash": "fa6d81e3d5bdd7c47a3f96d844273667cfad6d42e0d0e27866fa4aad2bc2e49e"
+      },
+      {
+        "t": 8,
+        "transparent": 579665,
+        "opaque": 182041,
+        "bounds": [
+          200,
+          79,
+          517,
+          998
+        ],
+        "hash": "fa6d81e3d5bdd7c47a3f96d844273667cfad6d42e0d0e27866fa4aad2bc2e49e"
+      },
+      {
+        "t": 9,
+        "transparent": 579665,
+        "opaque": 182041,
+        "bounds": [
+          200,
+          79,
+          517,
+          998
+        ],
+        "hash": "fa6d81e3d5bdd7c47a3f96d844273667cfad6d42e0d0e27866fa4aad2bc2e49e"
+      },
+      {
+        "t": 9.9,
+        "transparent": 579665,
+        "opaque": 182041,
+        "bounds": [
+          200,
+          79,
+          517,
+          998
+        ],
+        "hash": "fa6d81e3d5bdd7c47a3f96d844273667cfad6d42e0d0e27866fa4aad2bc2e49e"
+      }
+    ],
+    "file": "adossement-essai-heygen.webm",
+    "sha256": "1a0727a78f90972c21c84351e7c3a5f678b8f6df5ee21e0494230e7e75f1f328",
+    "uniqueSampledFrames": 1,
+    "status": "rejected-static",
+    "playable": false,
+    "providerVideoId": "9cada3e53bdb9b868760c5a2d1ba870c"
+  },
+  "clipsReady": false,
+  "remaining": [
+    "Approche, contact du dos, maintien et redressement",
+    "Placement de la chaise, assise progressive, lever et rangement",
+    "Prise, ouverture, lecture, fermeture et rangement du livre",
+    "Raccords avec le repos et récupération lors des interruptions"
+  ],
+  "providerLimit": {
+    "operation": "create_photo_avatar",
+    "httpStatus": 403,
+    "message": "Avatar creation requires a paid plan. Upgrade to access this feature.",
+    "purchasePerformed": false
+  }
+}

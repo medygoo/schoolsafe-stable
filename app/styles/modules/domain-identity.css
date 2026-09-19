@@ -1,0 +1,353 @@
+/* --------------------------------------------------------------------------
+   Identités visuelles par domaine — SchoolSafe
+   Référence de qualité : module Stock / Inventaire (inventory.css), dont le
+   pattern est généralisé ici : accent scopé (--domain-a / --domain-b /
+   --domain-soft) + hero dégradé + onglet actif + icônes KPI, en thème clair
+   et bleu nuit. Même design system, mêmes composants, même architecture :
+   seules les couleurs identifient le domaine. Splash et Guardian exclus.
+   -------------------------------------------------------------------------- */
+
+/* Pont de compatibilité : variables legacy consommées par inventory.css. */
+:root {
+  --border-color: var(--ss-border-default, #d7e1ef);
+  --surface-card: var(--ss-bg-primary, #ffffff);
+  --surface-elevated: var(--ss-bg-secondary, #f6f8fb);
+  --text-primary: var(--ss-text-primary, #172033);
+  --text-muted: var(--ss-text-secondary, #52657d);
+  --shadow-sm: var(--ss-shadow-sm, 0 1px 2px rgba(16, 24, 40, .06));
+}
+
+/* --- Accents scopés par domaine ----------------------------------------- */
+
+.school-module {
+  --domain-a: var(--ss-domain-ecole);
+  --domain-b: var(--ss-domain-ecole-2);
+  --domain-soft: var(--ss-domain-ecole-bg);
+}
+.parent-portal {
+  --domain-a: var(--ss-domain-parent);
+  --domain-b: var(--ss-domain-parent-2);
+  --domain-soft: var(--ss-domain-parent-bg);
+}
+#pedagogyModule,
+.palmares-module,
+.teacher-pedagogy-portal {
+  --domain-a: var(--ss-domain-pedagogie);
+  --domain-b: var(--ss-domain-pedagogie-2);
+  --domain-soft: var(--ss-domain-pedagogie-bg);
+}
+.security-module,
+.guard-security-portal {
+  --domain-a: var(--ss-domain-securite);
+  --domain-b: var(--ss-domain-securite-2);
+  --domain-soft: var(--ss-domain-securite-bg);
+}
+.finance-module {
+  --domain-a: var(--ss-domain-finance);
+  --domain-b: var(--ss-domain-finance-2);
+  --domain-soft: var(--ss-domain-finance-bg);
+}
+.accounting-module {
+  --domain-a: var(--ss-domain-comptabilite);
+  --domain-b: var(--ss-domain-comptabilite-2);
+  --domain-soft: var(--ss-domain-comptabilite-bg);
+}
+.hr-module {
+  --domain-a: var(--ss-domain-personnel);
+  --domain-b: var(--ss-domain-personnel-2);
+  --domain-soft: var(--ss-domain-personnel-bg);
+}
+.document-center-module {
+  --domain-a: var(--ss-domain-documents);
+  --domain-b: var(--ss-domain-documents-2);
+  --domain-soft: var(--ss-domain-documents-bg);
+}
+.communication-module {
+  --domain-a: var(--ss-domain-communication);
+  --domain-b: var(--ss-domain-communication-2);
+  --domain-soft: var(--ss-domain-communication-bg);
+  --communication-accent: var(--ss-domain-communication);
+}
+.administration-module {
+  --domain-a: var(--ss-domain-administration);
+  --domain-b: var(--ss-domain-administration-2);
+  --domain-soft: var(--ss-domain-administration-bg);
+}
+.jaspe-card,
+.safe-assistant {
+  --domain-a: var(--ss-domain-jaspe);
+  --domain-b: var(--ss-domain-jaspe-2);
+  --domain-soft: var(--ss-domain-jaspe-bg);
+}
+
+/* --- Heroes / bandeaux métiers (thème clair) ----------------------------- */
+
+.school-module .module-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: var(--ss-space-5, 1.25rem);
+  background: linear-gradient(135deg, var(--domain-a), var(--domain-b));
+  color: #ffffff;
+}
+.school-module .module-header h2 { color: inherit; margin: 0; }
+.school-module .module-back { color: inherit; }
+
+.parent-portal .parent-dashboard-header {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--domain-a), var(--domain-b));
+  color: #ffffff;
+}
+.parent-portal .parent-dashboard-header h1 { color: inherit; }
+.parent-portal .parent-dashboard-header p { color: rgba(255, 255, 255, 0.88); }
+
+#pedagogyModule .pedagogy-module-header,
+.palmares-module-header,
+.teacher-pedagogy-portal .teacher-hero {
+  background: linear-gradient(135deg, var(--domain-a), var(--domain-b));
+}
+
+.security-module-header,
+.guard-security-portal .guard-security-hero {
+  background: linear-gradient(135deg, #1e293b 55%, #7c2d12);
+}
+.guard-security-portal .guard-security-eyebrow { color: #fb923c; }
+
+.finance-module-header {
+  background: linear-gradient(135deg, var(--domain-a), var(--domain-b));
+}
+
+.accounting-module-header {
+  background: linear-gradient(135deg, var(--domain-a), var(--domain-b));
+}
+
+.hr-module-header {
+  background: linear-gradient(135deg, var(--domain-a), var(--domain-b));
+}
+
+.document-center-module-header {
+  background: linear-gradient(135deg, var(--domain-a), var(--domain-b));
+}
+
+.communication-module-header {
+  background: linear-gradient(135deg, var(--domain-a), var(--domain-b));
+  color: var(--ss-text-on-brand, #ffffff);
+}
+
+.administration-module .administration-header {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--domain-a), var(--domain-b));
+  color: #ffffff;
+}
+.administration-module .administration-header p { color: rgba(255, 255, 255, 0.88); }
+.administration-module .administration-header > div > span { color: #c7d2fe; }
+
+/* --- Onglets actifs par domaine ------------------------------------------ */
+
+.school-module .school-tabs button:hover,
+.school-module .school-tabs button.active {
+  color: var(--domain-a);
+  border-bottom-color: var(--domain-a);
+  background: var(--domain-soft);
+}
+
+.finance-module .pedagogy-tabs button:hover,
+.finance-module .pedagogy-tabs button.active,
+.accounting-module .pedagogy-tabs button:hover,
+.accounting-module .pedagogy-tabs button.active,
+.hr-module .pedagogy-tabs button:hover,
+.hr-module .pedagogy-tabs button.active,
+.document-center-module .pedagogy-tabs button:hover,
+.document-center-module .pedagogy-tabs button.active,
+.communication-module .pedagogy-tabs button:hover,
+.communication-module .pedagogy-tabs button.active {
+  color: var(--domain-a);
+  border-bottom-color: var(--domain-a);
+  background: var(--domain-soft);
+}
+
+/* Sécurité : texte bleu nuit, soulignement orange maîtrisé. */
+.security-module .pedagogy-tabs button:hover,
+.security-module .pedagogy-tabs button.active {
+  color: var(--domain-a);
+  border-bottom-color: var(--domain-b);
+  background: var(--domain-soft);
+}
+
+/* --- KPI / icônes métier -------------------------------------------------- */
+
+.school-module .ss-kpi-card__icon,
+.parent-portal .ss-kpi-card__icon,
+#pedagogyModule .ss-kpi-card__icon,
+.palmares-module .ss-kpi-card__icon,
+.teacher-pedagogy-portal .ss-kpi-card__icon,
+.security-module .ss-kpi-card__icon,
+.guard-security-portal .ss-kpi-card__icon,
+.finance-module .ss-kpi-card__icon,
+.accounting-module .ss-kpi-card__icon,
+.hr-module .ss-kpi-card__icon,
+.document-center-module .ss-kpi-card__icon,
+.communication-module .ss-kpi-card__icon,
+.administration-module .ss-kpi-card__icon {
+  background: var(--domain-soft);
+  color: var(--domain-a);
+}
+
+/* Notes d'audit Finance : rappel d'accent ambre, sémantique conservée. */
+.finance-module .finance-audit-note {
+  border-color: color-mix(in srgb, var(--domain-a) 24%, var(--ss-border-default, #d7e1ef));
+  background: var(--domain-soft);
+}
+
+/* --- Jaspe logiciel -------------------------------------------------------- */
+
+.jaspe-card {
+  box-shadow: inset 0 3px 0 var(--domain-a), var(--ss-shadow-sm, 0 1px 2px rgba(16, 24, 40, .06));
+}
+/* --- Branches du tableau de bord (consomme --branch-color) ---------------- */
+
+.branch-section .branch-head > span:first-child { color: var(--branch-color, currentColor); }
+.branch-section .action-button:hover,
+.branch-section .action-button:focus-visible {
+  border-color: var(--branch-color, var(--ss-border-default));
+}
+
+/* --- Thème bleu nuit -------------------------------------------------------- */
+
+[data-theme="dark"] .school-module .module-header {
+  background: linear-gradient(135deg, #16265e, #0b3a4a);
+}
+[data-theme="dark"] .parent-portal .parent-dashboard-header {
+  background: linear-gradient(135deg, #312e81, #4c1d95);
+}
+[data-theme="dark"] #pedagogyModule .pedagogy-module-header,
+[data-theme="dark"] .palmares-module-header,
+[data-theme="dark"] .teacher-pedagogy-portal .teacher-hero {
+  background: linear-gradient(135deg, #3b1d77, #1e3a8a);
+}
+[data-theme="dark"] .security-module-header,
+[data-theme="dark"] .guard-security-portal .guard-security-hero {
+  background: linear-gradient(135deg, #0b1626 55%, #431407);
+}
+[data-theme="dark"] .finance-module-header {
+  background: linear-gradient(135deg, #57360a, #8a5a0b);
+}
+[data-theme="dark"] .accounting-module-header {
+  background: linear-gradient(135deg, #213852, #2b3648);
+}
+[data-theme="dark"] .hr-module-header {
+  background: linear-gradient(135deg, #46244a, #57202e);
+}
+[data-theme="dark"] .document-center-module-header {
+  background: linear-gradient(135deg, #0a3d47, #2b3648);
+}
+[data-theme="dark"] .communication-module-header {
+  background: linear-gradient(135deg, #0c4a6e, #4c1d95);
+}
+[data-theme="dark"] .administration-module .administration-header {
+  background: linear-gradient(135deg, #172554, #3f4c63);
+}
+
+[data-theme="dark"] .school-module .school-tabs button:hover,
+[data-theme="dark"] .school-module .school-tabs button.active,
+[data-theme="dark"] .finance-module .pedagogy-tabs button:hover,
+[data-theme="dark"] .finance-module .pedagogy-tabs button.active,
+[data-theme="dark"] .accounting-module .pedagogy-tabs button:hover,
+[data-theme="dark"] .accounting-module .pedagogy-tabs button.active,
+[data-theme="dark"] .hr-module .pedagogy-tabs button:hover,
+[data-theme="dark"] .hr-module .pedagogy-tabs button.active,
+[data-theme="dark"] .document-center-module .pedagogy-tabs button:hover,
+[data-theme="dark"] .document-center-module .pedagogy-tabs button.active,
+[data-theme="dark"] .communication-module .pedagogy-tabs button:hover,
+[data-theme="dark"] .communication-module .pedagogy-tabs button.active,
+[data-theme="dark"] .security-module .pedagogy-tabs button:hover,
+[data-theme="dark"] .security-module .pedagogy-tabs button.active {
+  color: var(--domain-a);
+  border-bottom-color: var(--domain-a);
+  background: color-mix(in srgb, var(--domain-a) 16%, transparent);
+}
+
+/* --------------------------------------------------------------------------
+   Harmonisation des sous-fonctionnalités — 1 domaine = 1 famille visuelle.
+   Onglets internes, sourcils de section, icônes et hover héritent de
+   l'accent du domaine. Les couleurs sémantiques (succès/erreur/alerte/
+   inactif/info) restent universelles et ne sont jamais remplacées.
+   -------------------------------------------------------------------------- */
+
+/* Stock / Inventaire : les onglets rentrent dans la famille teal + bleu. */
+.inventory-module .pedagogy-tabs button:hover,
+.inventory-module .pedagogy-tabs button.active {
+  color: var(--ss-domain-stock);
+  border-bottom-color: var(--ss-domain-stock);
+  background: var(--ss-domain-stock-bg);
+}
+
+/* Pédagogie : onglets du module principal verrouillés sur violet + bleu. */
+#pedagogyModule .pedagogy-tabs button:hover,
+#pedagogyModule .pedagogy-tabs button.active {
+  color: var(--ss-domain-pedagogie);
+  border-bottom-color: var(--ss-domain-pedagogie-2);
+  background: var(--ss-domain-pedagogie-bg);
+}
+
+/* Sécurité : sous-onglets de mode en bleu nuit, soulignement orange maîtrisé. */
+.security-module .security-mode-tabs button.active {
+  color: var(--domain-a);
+  box-shadow: inset 0 -2px 0 var(--domain-b), var(--ss-shadow-sm, 0 1px 2px rgba(16, 24, 40, .06));
+}
+.security-module .security-mode-tabs button:hover { color: var(--domain-b); }
+
+/* Sourcils de section : chaque domaine teinte ses sous-fonctionnalités. */
+.finance-module :is(
+  .finance-overview > header span:first-child,
+  .finance-panel > header span,
+  .finance-report-head > div > span,
+  .family-finance > header > div > span,
+  .finance-panel > header > b
+) {
+  color: var(--domain-a);
+}
+#pedagogyModule .panel-heading span,
+#pedagogyModule .gradebook-head > div > span { color: var(--domain-a); }
+.accounting-module .panel-heading span,
+.hr-module .panel-heading span,
+.document-center-module .panel-heading span,
+.communication-module .panel-heading span { color: var(--domain-a); }
+
+/* Icônes de sous-fonctionnalités dans la famille du domaine. */
+.teacher-pedagogy-portal .teacher-priority-icon,
+.teacher-pedagogy-portal .teacher-scope-card > svg {
+  background: var(--domain-soft);
+  color: var(--domain-a);
+}
+.hr-module .hr-dashboard-metric > span {
+  background: var(--domain-soft);
+  color: var(--domain-a);
+}
+
+/* Hover et bordures légères dans la famille du domaine. */
+.teacher-pedagogy-portal .teacher-priority-card:hover,
+.teacher-pedagogy-portal .teacher-priority-card:focus-visible { border-color: var(--domain-a); }
+.hr-module .hr-dashboard-action:hover,
+.hr-module .hr-dashboard-action:focus-visible { border-color: var(--domain-a); }
+.finance-module .finance-dashboard-shortcuts button:hover,
+.finance-module .finance-dashboard-shortcuts button:focus-visible { border-color: var(--domain-a); }
+.administration-module .administration-card:hover,
+.administration-module .administration-card:focus-visible {
+  border-color: color-mix(in srgb, var(--domain-a) 45%, var(--ss-border-default, #d7e1ef));
+}
+.administration-module .administration-card__boundary { color: var(--domain-a); }
+
+/* Thème bleu nuit : mêmes familles, accents éclaircis. */
+[data-theme="dark"] .inventory-module .pedagogy-tabs button:hover,
+[data-theme="dark"] .inventory-module .pedagogy-tabs button.active {
+  color: var(--ss-domain-stock);
+  border-bottom-color: var(--ss-domain-stock);
+  background: color-mix(in srgb, var(--ss-domain-stock) 16%, transparent);
+}
+[data-theme="dark"] #pedagogyModule .pedagogy-tabs button:hover,
+[data-theme="dark"] #pedagogyModule .pedagogy-tabs button.active {
+  color: var(--ss-domain-pedagogie);
+  border-bottom-color: var(--ss-domain-pedagogie);
+  background: color-mix(in srgb, var(--ss-domain-pedagogie) 16%, transparent);
+}

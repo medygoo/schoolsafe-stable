@@ -1,0 +1,229 @@
+/* ============================================================
+   ENTRÉE-VISUEL-01 — nouveau langage visuel de l'écran de connexion
+   (surcharges scopées .auth-screen, chargées APRÈS auth.css)
+   Blanc/bleu pâle · neumorphisme doux · boutons liquid · JASPE 2.5D
+   AUCUNE logique modifiée — présentation uniquement.
+   ============================================================ */
+
+.auth-screen {
+  color: #17315c;
+  background:
+    radial-gradient(900px 620px at 88% -10%, rgba(96, 165, 250, .22), transparent 60%),
+    radial-gradient(760px 560px at -8% 104%, rgba(34, 211, 238, .16), transparent 58%),
+    linear-gradient(180deg, #f6faff 0%, #eaf3fe 100%);
+}
+
+/* bulles douces décoratives */
+.auth-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(147, 197, 253, .30) 0 64px, transparent 66px),
+    radial-gradient(circle at 86% 78%, rgba(103, 232, 249, .24) 0 88px, transparent 90px),
+    radial-gradient(circle at 70% 8%, rgba(191, 219, 254, .35) 0 44px, transparent 46px);
+}
+
+/* ancienne couche photo désactivée (conservée dans le DOM, masquée) */
+.auth-media, .auth-shade { display: none; }
+
+/* topbar sur fond clair */
+.auth-screen .brand-button { color: #17315c; }
+.auth-screen .brand-button strong { color: #1d4ed8; }
+.auth-screen .language-switch { background: #ffffff; border: 1px solid #dbe8f7; box-shadow: 0 6px 18px rgba(30, 58, 138, .08); }
+.auth-screen .language-switch button { color: #56719c; }
+.auth-screen .language-switch button.selected { background: linear-gradient(100deg, #2563eb, #06b6d4); color: #fff; }
+
+/* message d'accueil sur fond clair */
+.auth-screen .auth-message { color: #17315c; }
+.auth-screen .auth-message .eyebrow {
+  color: #1d4ed8;
+  background: #e3eefe;
+  border-left-color: #06b6d4;
+  border-radius: 0 8px 8px 0;
+}
+.auth-screen .auth-message h1 { color: #0f2a57; }
+.auth-screen .auth-message p { color: #4c6490; }
+
+/* zone JASPE : à côté du formulaire sur machine */
+.auth-screen .auth-layout { position: relative; z-index: 2; }
+.auth-jaspe { position: relative; }
+.auth-screen .auth-message { margin-top: clamp(48px, 8vh, 84px); }
+
+/* carte de connexion neumorphique */
+.auth-screen .login-panel {
+  background: #ffffff;
+  border: 1px solid #e2edfb;
+  border-radius: 24px;
+  box-shadow:
+    0 24px 60px rgba(30, 58, 138, .13),
+    0 2px 6px rgba(30, 58, 138, .05),
+    inset 0 1px 0 #ffffff;
+}
+.auth-screen .panel-brand b { color: #0f2a57; }
+.auth-screen .panel-brand span { color: #5f7aa6; }
+
+/* sélecteur e-mail / téléphone */
+.auth-screen .login-method {
+  background: #eef5fd;
+  border: 1px solid #dce9f8;
+  border-radius: 14px;
+}
+.auth-screen .login-method button { color: #56719c; border-radius: 11px; }
+.auth-screen .login-method button.selected {
+  background: linear-gradient(100deg, #2563eb, #06b6d4);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(6, 182, 212, .28);
+}
+
+/* champs arrondis, ombres très légères */
+.auth-screen .ss-label { color: #33507e; }
+.auth-screen .ss-input-shell {
+  background: #f6fafe;
+  border: 1px solid #dbe8f7;
+  border-radius: 14px;
+  box-shadow: inset 0 1px 3px rgba(30, 58, 138, .05);
+}
+.auth-screen .ss-input-shell:focus-within {
+  border-color: #38bdf8;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, .16);
+}
+.auth-screen .ss-input-shell .ss-input { color: #0f2a57; }
+.auth-screen .ss-input-shell .ss-input::placeholder { color: #8aa4c8; }
+.auth-screen .ss-input-shell svg { color: #7c97bf; }
+.auth-screen .dial-code { color: #33507e; }
+.auth-screen .ss-select {
+  background: #f6fafe;
+  border: 1px solid #dbe8f7;
+  border-radius: 14px;
+  color: #0f2a57;
+}
+.auth-screen .ss-select option { color: #0f2a57; }
+.auth-screen .text-button { color: #0e8fc4; }
+.auth-screen .text-button:hover { color: #0b7aa5; }
+.auth-screen .check-row { color: #4c6490; }
+
+/* bouton principal liquid bleu → cyan */
+.auth-screen .login-button {
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  min-height: 54px;
+  color: #fff;
+  background: linear-gradient(100deg, #2563eb 10%, #06b6d4 85%);
+  box-shadow: 0 14px 30px rgba(6, 182, 212, .32), inset 0 1px 0 rgba(255, 255, 255, .38);
+  font-weight: 800;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.auth-screen .login-button:hover { transform: translateY(-2px); box-shadow: 0 18px 38px rgba(6, 182, 212, .4), inset 0 1px 0 rgba(255, 255, 255, .38); }
+.auth-screen .login-button svg {
+  width: 26px;
+  height: 26px;
+  padding: 5px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #2563eb;
+  flex: none;
+}
+
+/* sélecteur de profil démo : pilule orange (maquette) — mécanisme et textes inchangés */
+.auth-screen .demo-role-field .ss-label { color: #92610f; }
+.auth-screen .demo-role-field .ss-select {
+  background: linear-gradient(100deg, #fbbf24, #f59e0b);
+  border: 0;
+  border-radius: 999px;
+  color: #4a2c05;
+  font-weight: 800;
+  box-shadow: 0 10px 22px rgba(245, 158, 11, .26), inset 0 1px 0 rgba(255, 255, 255, .42);
+}
+
+/* accès démo en douceur */
+.auth-screen .demo-access--button {
+  background: #ffffff;
+  border: 1px solid #f3d9a4;
+  color: #92610f;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px rgba(233, 165, 21, .12);
+}
+.auth-screen .demo-access--button:hover { background: #fffaf0; }
+.auth-screen .demo-role-field .ss-label { color: #33507e; }
+
+/* liens secondaires */
+.auth-screen .first-install button { color: #1d4ed8; }
+.auth-screen .first-install { color: #4c6490; border-top-color: #dbe8f7; }
+.auth-screen .auth-footer { color: #4c6490; }
+.auth-screen .preview-profile-button { color: #33507e; border-color: #dbe8f7; background: #ffffff; }
+
+/* Deuxième état : les repères remplacent Jaspe pendant la saisie. La cellule
+   reste la même pour conserver la position et les dimensions du formulaire. */
+.auth-reassurance {
+  grid-area: jaspe;
+  align-self: center;
+  justify-self: center;
+  width: min(100%, 430px);
+  padding: 20px 28px;
+  color: #244a87;
+  animation: authReassuranceIn 220ms ease-out;
+}
+.auth-reassurance h2 { margin: 0; max-width: 370px; font-size: clamp(22px, 2vw, 28px); font-weight: 700; line-height: 1.35; }
+.auth-reassurance-line { display: block; width: 66px; height: 3px; margin: 18px 0 26px; border-radius: 4px; background: linear-gradient(90deg, #2563eb, #06b6d4); }
+.auth-reassurance ul { display: grid; gap: 20px; margin: 0; padding: 0; list-style: none; }
+.auth-reassurance li { display: flex; align-items: center; gap: 14px; }
+.auth-value-icon { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: 14px; background: #e0efff; color: #1676e9; }
+.auth-value-icon svg { width: 24px; height: 24px; }
+.auth-reassurance strong { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; }
+.auth-reassurance p { margin: 3px 0 0; color: #526f9a; font-size: 14px; line-height: 1.4; }
+@keyframes authReassuranceIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* — Machine : message + JASPE à gauche, formulaire à droite — */
+@media (min-width: 861px) {
+  .auth-screen .auth-layout,
+  .auth-screen.auth-is-typing .auth-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.02fr) minmax(380px, .98fr);
+    grid-template-areas: "message form" "jaspe form";
+    gap: 0 clamp(24px, 4vw, 56px);
+    align-items: start;
+    height: auto;
+    padding-top: 96px;
+    padding-bottom: 80px;
+    transition: none;
+  }
+  .auth-screen .auth-message { grid-area: message; }
+  .auth-screen .login-panel { grid-area: form; align-self: center; }
+  .auth-jaspe {
+    grid-area: jaspe;
+    height: min(46vh, 470px);
+    margin-top: 6px;
+  }
+  .auth-jaspe .jaspe2d { height: 100%; }
+}
+
+/* — Téléphone : JASPE au-dessus du formulaire, s'efface à la saisie — */
+@media (max-width: 860px) {
+  .auth-reassurance { display: none; }
+  .auth-screen .auth-layout,
+  .auth-screen.auth-is-typing .auth-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: calc(100% - 24px);
+    height: auto;
+    min-height: 100svh;
+    padding-top: 76px;
+    padding-bottom: 80px;
+    gap: 12px;
+    transition: none;
+  }
+  .auth-screen .auth-message h1 { font-size: 24px; }
+  .auth-jaspe { order: 1; }
+  .auth-jaspe .jaspe2d--showcase img { margin-inline: 0; }
+  .auth-screen .login-panel,
+  .auth-screen:not(.auth-is-typing) .login-panel { order: 2; width: 100%; margin: 0; padding: 16px; }
+  .auth-jaspe .jaspe2d__bubble { left: 50%; max-width: 50%; font-size: 12px; padding: 10px; }
+  .auth-screen .auth-message { order: 0; margin-top: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .auth-reassurance { animation: none; } }

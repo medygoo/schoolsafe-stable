@@ -1,0 +1,70 @@
+{
+  "date": "2026-09-16",
+  "checks": [
+    {
+      "width": 1440,
+      "height": 1000,
+      "overflow": false,
+      "images": [
+        {
+          "loaded": true,
+          "width": 650
+        },
+        {
+          "loaded": true,
+          "width": 650
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "images": [
+        {
+          "loaded": true,
+          "width": 348
+        },
+        {
+          "loaded": true,
+          "width": 348
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "height": 640,
+      "overflow": false,
+      "images": [
+        {
+          "loaded": true,
+          "width": 278
+        },
+        {
+          "loaded": true,
+          "width": 278
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "assets": [
+    {
+      "file": "jaspe-assise-accueil-clair-v1.png",
+      "width": 1536,
+      "height": 1024,
+      "pngColorType": 2,
+      "bytes": 1516164,
+      "sha256": "f558fdcf751bb86cdac59924e877e3d12cccdfcefea6f43767dc3b60007dd667"
+    },
+    {
+      "file": "jaspe-assise-accueil-sombre-v1.png",
+      "width": 1536,
+      "height": 1024,
+      "pngColorType": 2,
+      "bytes": 1548499,
+      "sha256": "2101b5c7097bc92308f17d2c191d7c5525deefcba6f88e5c207385246795a548"
+    }
+  ],
+  "scope": "Reference images and HTML preview only; no application behavior changed or retested."
+}

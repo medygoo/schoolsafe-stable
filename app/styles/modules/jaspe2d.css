@@ -1,0 +1,96 @@
+/* JASPE 2.5D — présentation (lot ENTRÉE-VISUEL-01) */
+.jaspe2d {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+.jaspe2d img {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 28px rgba(30, 58, 138, 0.28));
+  transition: opacity 160ms ease;
+}
+.jaspe2d--fading img { opacity: 0.35; }
+
+/* JASPE est vivante sur l'écran de connexion (LOT B, commande expresse du Directeur) :
+   poses en fondu + micro-respiration. Reduced-motion : pose unique, tout statique. */
+
+/* — Showcase : variantes empilées, transition en fondu — */
+.jaspe2d--showcase { display: block; width: 100%; height: 100%; }
+.jaspe2d--showcase img {
+  position: absolute;
+  inset: 0;
+  margin: 0 auto;
+  opacity: 0;
+  transition: opacity .7s ease;
+}
+.jaspe2d--showcase img.on { opacity: 1; }
+
+/* micro-respiration : elle n'est jamais une image morte (très lent, presque imperceptible) */
+@keyframes jaspeBreathe { from { transform: scale(1); } to { transform: scale(1.015); } }
+.jaspe2d--showcase img.on { animation: jaspeBreathe 7s ease-in-out infinite alternate; }
+
+/* bulle : transition douce quand le texte change */
+.jaspe2d__bubble { transition: opacity .22s ease, transform .22s ease; }
+.jaspe2d__bubble.switching { opacity: 0; transform: translateY(4px); }
+.jaspe2d__bubble--off { opacity: 0; }
+
+.jaspe2d__bubble {
+  position: absolute;
+  top: 6%;
+  left: 58%;
+  max-width: 240px;
+  margin: 0;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1px solid #dbe7f3;
+  border-radius: 16px 16px 16px 4px;
+  box-shadow: 0 10px 24px rgba(30, 58, 138, 0.14);
+  color: #1e3a8a;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+/* — Écran de connexion — */
+.auth-jaspe {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  opacity: 1;
+  transition: opacity 220ms ease;
+}
+.auth-jaspe .jaspe2d { height: 100%; }
+
+/* La saisie prime aussi sur ordinateur. La colonne garde sa place pour que
+   les champs ne se déplacent pas sous le pointeur ou le clavier. */
+/* auth-is-typing only pauses animation; withdrawal is placement-aware. */
+
+/* Téléphone : JASPE à la hauteur de l'écran de connexion quand rien n'est actif,
+   puis elle s'efface proprement dès qu'un champ prend le focus (place au clavier) */
+@media (max-width: 860px) {
+  .auth-jaspe {
+    height: 38dvh;
+    min-height: 240px;
+    margin-bottom: -8px;
+    transition: opacity 220ms ease, height 260ms ease, margin 260ms ease;
+  }
+  .auth-screen.auth-jaspe-withdrawn .auth-jaspe {
+    height: 0;
+    min-height: 0;
+    opacity: 0;
+    margin-bottom: 0;
+    overflow: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-jaspe { transition: none; }
+  .jaspe2d--showcase img { transition: opacity .2s ease; animation: none !important; }
+  .jaspe2d__bubble { transition: none; }
+}

@@ -1,0 +1,400 @@
+{
+  "schema": "schoolsafe-installation-inventory-v1",
+  "executable": false,
+  "status": "BLOCKED_PENDING_FUNCTIONAL_SQL_QUALIFICATION",
+  "note": "Inventory order is not a cross-set production execution plan. Existing per-set order is preserved. No automatic application or historical rewrite.",
+  "units": [
+    {
+      "set": "baseline",
+      "file": "database/baseline/v1/01_roles.sql",
+      "manifest": "database/baseline/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "10448f25fb7925391c66d872a11d13d2876667dddeaaa39e8ec785868c72e5fe",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "baseline",
+      "file": "database/baseline/v1/02_schemas.sql",
+      "manifest": "database/baseline/v1/manifest.json",
+      "orderInSet": 2,
+      "sha256": "d588efaaa03f385db9f50db873e3b05321647cf39254f8ea822040c863d7ae40",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "baseline",
+      "file": "database/baseline/v1/03_extensions.sql",
+      "manifest": "database/baseline/v1/manifest.json",
+      "orderInSet": 3,
+      "sha256": "d5614193bee6785294eaf2febae32480f41b53cc50b20406a2142222cc865528",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "baseline",
+      "file": "database/baseline/v1/04_app_tables.sql",
+      "manifest": "database/baseline/v1/manifest.json",
+      "orderInSet": 4,
+      "sha256": "e03e05a26f196bfa657c62971740af6d52522a3885fe3ec184abc60122fe8465",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "baseline",
+      "file": "database/baseline/v1/05_iam.sql",
+      "manifest": "database/baseline/v1/manifest.json",
+      "orderInSet": 5,
+      "sha256": "87fc9522b8b530e2c09858de46deaaf43570893472c2810b062f1ff044edf7d5",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "baseline",
+      "file": "database/baseline/v1/06_audit_ops.sql",
+      "manifest": "database/baseline/v1/manifest.json",
+      "orderInSet": 6,
+      "sha256": "b21c242218945cfea044a5ae8c75694df930eca42b6ded3bea7520e9d3c2e661",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "baseline",
+      "file": "database/baseline/v1/07_constraints_indexes.sql",
+      "manifest": "database/baseline/v1/manifest.json",
+      "orderInSet": 7,
+      "sha256": "7ffde1d41c06cbce867ea2f287fcb9223c0ecd76815c3f2afa8226672fc8ec89",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "baseline",
+      "file": "database/baseline/v1/08_internal_functions.sql",
+      "manifest": "database/baseline/v1/manifest.json",
+      "orderInSet": 8,
+      "sha256": "63422301ad2b9ccc6dfad079fe2c88d302e53f1ad7c20cf757a8f0ec64905ca2",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "baseline",
+      "file": "database/baseline/v1/09_api_rpc.sql",
+      "manifest": "database/baseline/v1/manifest.json",
+      "orderInSet": 9,
+      "sha256": "e7fbcfda47b59ff00a712e222b56f1af6ed75d904f4f5b6c14e869c62b9cf49f",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "baseline",
+      "file": "database/baseline/v1/10_triggers.sql",
+      "manifest": "database/baseline/v1/manifest.json",
+      "orderInSet": 10,
+      "sha256": "6690f7698c55b4903a81a56066fadd8383421904724429ee34aa8a726a831ab7",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "baseline",
+      "file": "database/baseline/v1/11_rls_acl.sql",
+      "manifest": "database/baseline/v1/manifest.json",
+      "orderInSet": 11,
+      "sha256": "484e65146d0c43009c8261f52dea6a005c9fd2c521d835478206d0f9b79e9e04",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "baseline",
+      "file": "database/baseline/v1/12_seed_permissions.sql",
+      "manifest": "database/baseline/v1/manifest.json",
+      "orderInSet": 12,
+      "sha256": "bfbc080d4a1c4502cd849eb00f6cc6a4ed1cf1a790ff680a26e817158da4c13a",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "baseline",
+      "file": "database/baseline/v1/13_verification.sql",
+      "manifest": "database/baseline/v1/manifest.json",
+      "orderInSet": 13,
+      "sha256": "9ae19b0d309ce76c483434e1484dae89e5ea572a02a001b84fc7502cb9e842d2",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "auth",
+      "file": "database/auth/v1/01_auth_tables.sql",
+      "manifest": "database/auth/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "6dd18006c8dc8577b8365b9ffbf18a967bafab75fa195b167b7056fab40d1baf",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "auth",
+      "file": "database/auth/v1/02_auth_api.sql",
+      "manifest": "database/auth/v1/manifest.json",
+      "orderInSet": 2,
+      "sha256": "840130b333cf4452f6208006bd222b926d75041409806b8f5028d504e86b1e4b",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "access",
+      "file": "database/access/v1/01_role_templates.sql",
+      "manifest": "database/access/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "ced0935d0ee562c1cd636dc6d8856d13d54338b9a976488fc71b428648e2e9c8",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "access",
+      "file": "database/access/v1/02_provision_bridge.sql",
+      "manifest": "database/access/v1/manifest.json",
+      "orderInSet": 2,
+      "sha256": "00c330fbc921d8fa4608b822b9308cecfb377c053f4c6bed720e166727a6a87e",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "access",
+      "file": "database/access/v1/03_control_context.sql",
+      "manifest": "database/access/v1/manifest.json",
+      "orderInSet": 3,
+      "sha256": "9dfa8fb501d7d289d6abfea18901627da49721b8d6e1d3c0364f3d0018e0e1f5",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "access",
+      "file": "database/access/v1/04_role_assignments.sql",
+      "manifest": "database/access/v1/manifest.json",
+      "orderInSet": 4,
+      "sha256": "620f15afe2acd333ec2a93a24b6dbcc8378df4e20002872d1354d844f1d58c98",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "access",
+      "file": "database/access/v1/05_custom_roles.sql",
+      "manifest": "database/access/v1/manifest.json",
+      "orderInSet": 5,
+      "sha256": "8afe995795f077424f696b3bc1bf409c865cf6bdc6a5b065f74003e959f8407c",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "finance",
+      "file": "database/finance/v1/01_finance_native.sql",
+      "manifest": "database/finance/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "20818f9e0b8bbbfa4654a0ae100dcdff139f0e644b509bd8d38f4e2dde3faaa6",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "finance",
+      "file": "database/finance/v1/02_finance_full.sql",
+      "manifest": "database/finance/v1/manifest.json",
+      "orderInSet": 2,
+      "sha256": "5ae9388202abc58bc1f546d5aaeaab9fb7551d82534e540e11f43a58f36a23b2",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "pedagogy",
+      "file": "database/pedagogy/v1/01_pedagogy_native.sql",
+      "manifest": "database/pedagogy/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "0f776de51eab1b8b43fd2eeb85610662f12f97a2dfcd8fb89f548268c79284ff",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "cards",
+      "file": "database/cards/v1/01_cards_native.sql",
+      "manifest": "database/cards/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "60cdf6b2281a233cd87a98163c412222eba3cfa619cc0e6a3fe5a22dadaf83e9",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "cards",
+      "file": "database/cards/v1/02_cards_classes.sql",
+      "manifest": "database/cards/v1/manifest.json",
+      "orderInSet": 2,
+      "sha256": "bf05067d5689239bf39132e27497797db4436ddfd342c263de191e399a6395c0",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "cards",
+      "file": "database/cards/v1/03_cards_lifecycle.sql",
+      "manifest": "database/cards/v1/manifest.json",
+      "orderInSet": 3,
+      "sha256": "402b98723c4242bf8b04af9b27f720792303c72b0d5701914fb2351a4af7f8c4",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "family",
+      "file": "database/family/v1/01_pickup_authorizations.sql",
+      "manifest": "database/family/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "bfb0f539c5c1a3d141727560cd2bad9ca11a4f3394a1cf5484ca3660083946ac",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "family",
+      "file": "database/family/v1/02_primary_transfer.sql",
+      "manifest": "database/family/v1/manifest.json",
+      "orderInSet": 2,
+      "sha256": "07d7b912afb5eaa531bb75a5971e33baf35e0e0e1b17c7cbce3962e7d25ab28f",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "family",
+      "file": "database/family/v1/03_pickup_confirmation.sql",
+      "manifest": "database/family/v1/manifest.json",
+      "orderInSet": 3,
+      "sha256": "e10139ea6ff02bb0ad81a31f20567ff2976637831ea40a906a572960a50c1d93",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "family",
+      "file": "database/family/v1/04_student_import.sql",
+      "manifest": "database/family/v1/manifest.json",
+      "orderInSet": 4,
+      "sha256": "94a361704366d293536b40a89767654aa5b6e62e69caec89c453e19ef2a1fd9a",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "devicehub",
+      "file": "database/devicehub/v1/01_devicehub_core.sql",
+      "manifest": "database/devicehub/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "f693e2782fe0c882d292bde13af403b6fa917d08338b56f024d4e94eef25bf15",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "devicehub",
+      "file": "database/devicehub/v1/02_devicehub_rpc.sql",
+      "manifest": "database/devicehub/v1/manifest.json",
+      "orderInSet": 2,
+      "sha256": "ebc853aa9b34c6cea3248e083b2eaaf9d89e19055b70606cf14d5829e84ad8ee",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "devicehub",
+      "file": "database/devicehub/v1/03_attendance.sql",
+      "manifest": "database/devicehub/v1/manifest.json",
+      "orderInSet": 3,
+      "sha256": "ac9ab222d31dc49be9585e5f231f859b73baa9582e38029963c3fe07195d1524",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "dashboard",
+      "file": "database/dashboard/v1/01_dashboard.sql",
+      "manifest": "database/dashboard/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "b8d9e72b66fe404e44e7b6ea9d3acee75f6118e647e2c71be8d3077a154d5e18",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "license",
+      "file": "database/license/v1/01_license.sql",
+      "manifest": "database/license/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "b21e4ad7d5c2550419014890d23c305913aad433ca60e48fadf0d6b4004d8ee1",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "trial",
+      "file": "database/trial/v1/01_trial.sql",
+      "manifest": "database/trial/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "d87c8017900e2dbbc53dc444d01678b4e459f22b96ba77c462aef63ebd073ba4",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "projections",
+      "file": "database/projections/v1/01_student_read.sql",
+      "manifest": "database/projections/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "56af4a67429b647470bf29897308dd04890454509fccf652cee288451dec5237",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "projections",
+      "file": "database/projections/v1/02_session_bootstrap.sql",
+      "manifest": "database/projections/v1/manifest.json",
+      "orderInSet": 2,
+      "sha256": "d59d9684276b662273f443d36831ababf547437ec89ca853ca64ba88427b94c7",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "projections",
+      "file": "database/projections/v1/03_access_read.sql",
+      "manifest": "database/projections/v1/manifest.json",
+      "orderInSet": 3,
+      "sha256": "f10a7d3c6d5a15e96393c654ebd72eabb6ee7019d1345830737742c73edd4b54",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "projections",
+      "file": "database/projections/v1/04_access_assignment_views.sql",
+      "manifest": "database/projections/v1/manifest.json",
+      "orderInSet": 4,
+      "sha256": "4ce603d95511cbf16b19a7833487ba6b94114087626571986bfcbc83e812c55e",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "projections",
+      "file": "database/projections/v1/05_session_validity.sql",
+      "manifest": "database/projections/v1/manifest.json",
+      "orderInSet": 5,
+      "sha256": "132062f3bcdb6dafe306bf88db078152b7ac0e2e293804abab3439b17cd00d8b",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "projections",
+      "file": "database/projections/v1/07_targeted_denies.sql",
+      "manifest": "database/projections/v1/manifest.json",
+      "orderInSet": 6,
+      "sha256": "80a0702410b542f55bd25fd49536b706a7c1c94e88e30c1af067deeb674e446b",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "projections",
+      "file": "database/projections/v1/08_session_denial_contract.sql",
+      "manifest": "database/projections/v1/manifest.json",
+      "orderInSet": 7,
+      "sha256": "a523c7e0d012511e5130a8238bcde4db4a6c8fb48878d40b7f9c161ee03841e5",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "projections",
+      "file": "database/projections/v1/02_student_list.sql",
+      "requires": [
+        "baseline",
+        "auth",
+        "access"
+      ],
+      "blockers": [
+        "student_create_draft declares required arguments after arguments with defaults (PostgreSQL 42P13).",
+        "The planned enrollment status is absent from the canonical CHECK constraint.",
+        "The school_id argument and per-student scope must be qualified before enabling these SECURITY DEFINER functions."
+      ],
+      "sha256": "5524283a2f05a26f1a42edde79292b6762f66ca28c7b59a87ecaeb452d7f21be",
+      "status": "BLOCKED_REQUIRES_ADDITIVE_FIX",
+      "install": false
+    },
+    {
+      "set": "setup",
+      "file": "database/setup/v1/01_setup_native.sql",
+      "requires": [
+        "baseline",
+        "auth",
+        "access"
+      ],
+      "blockers": [
+        "setup_create_admin omits the mandatory school_id in iam.profile_roles.",
+        "The super_admin role lookup is not the canonical admin template/provisioning contract.",
+        "Provisioning ACLs, RLS and the setup service contract require a dedicated security-qualified additive migration."
+      ],
+      "sha256": "cde3b0da1ca58467c9462dc1a0b70853ab4f8478c2ac0e3ce9d270f59091c8c7",
+      "status": "BLOCKED_REQUIRES_ADDITIVE_FIX",
+      "install": false
+    },
+    {
+      "set": "auth",
+      "file": "database/auth/v1/03_auth_reset.sql",
+      "sha256": "dd2d1b21cdb804aa54d0aa693d180eb4a8361837cae6f1890fb7e37e77180e65",
+      "status": "UNREGISTERED_REQUIRES_REVIEW",
+      "install": false,
+      "requires": [
+        "baseline",
+        "auth"
+      ],
+      "blockers": [
+        "Existing recovery unit outside the auth manifest; separate auth/security qualification required. No change authorized in the packaging lot."
+      ]
+    }
+  ]
+}

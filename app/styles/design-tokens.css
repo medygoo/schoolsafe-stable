@@ -1,0 +1,432 @@
+/* ============================================================
+   SchoolSafe V2 — Design Tokens
+   Fichier source unique des variables visuelles du Design System.
+   Ne pas définir de classes ici, uniquement des tokens CSS.
+   ============================================================ */
+
+/* --------------------------------------------------------------------------
+   Palette principale
+   -------------------------------------------------------------------------- */
+:root {
+  --ss-navy-950: #020617;
+  --ss-navy-900: #071a3d;
+  --ss-navy-800: #0e2a5a;
+  --ss-navy-700: #123e7a;
+  --ss-blue-900: #1e3a8a;
+  --ss-blue-800: #1e40af;
+  --ss-blue-700: #1d4ed8;
+  --ss-blue-600: #2563eb;
+  --ss-blue-500: #3b82f6;
+  --ss-blue-400: #60a5fa;
+  --ss-blue-300: #93c5fd;
+  --ss-blue-100: #dbeafe;
+  --ss-blue-50: #eff6ff;
+
+  --ss-gold-600: #d97706;
+  --ss-gold-500: #f59e0b;
+  --ss-gold-400: #fbbf24;
+  --ss-gold-300: #fcd34d;
+  --ss-gold-100: #fef3c7;
+
+  /* Échelle amber utilisée par les états de la structure scolaire. */
+  --ss-amber-50: #fffbeb;
+  --ss-amber-100: #fef3c7;
+  --ss-amber-300: #fcd34d;
+  --ss-amber-400: #fbbf24;
+  --ss-amber-800: #92400e;
+  --ss-amber-900: #78350f;
+
+  --ss-slate-950: #020617;
+  --ss-slate-900: #0f172a;
+  --ss-slate-800: #1e293b;
+  --ss-slate-700: #334155;
+  --ss-slate-600: #475569;
+  --ss-slate-500: #64748b;
+  --ss-slate-400: #94a3b8;
+  --ss-slate-300: #cbd5e1;
+  --ss-slate-200: #e2e8f0;
+  --ss-slate-100: #f1f5f9;
+  --ss-slate-50: #f8fafc;
+
+  --ss-emerald-700: #047857;
+  --ss-emerald-600: #059669;
+  --ss-emerald-500: #10b981;
+  --ss-emerald-100: #d1fae5;
+  --ss-emerald-50: #ecfdf5;
+
+  --ss-coral-700: #b91c1c;
+  --ss-coral-600: #dc2626;
+  --ss-coral-500: #ef4444;
+  --ss-coral-100: #fee2e2;
+  --ss-coral-50: #fef2f2;
+
+  --ss-violet-700: #6d28d9;
+  --ss-violet-600: #7c3aed;
+  --ss-violet-500: #8b5cf6;
+  --ss-violet-100: #ede9fe;
+  --ss-violet-50: #f5f3ff;
+
+  --ss-orange-600: #ea580c;
+  --ss-orange-500: #f97316;
+  --ss-orange-100: #ffedd5;
+  --ss-orange-50: #fff7ed;
+
+  --ss-cyan-600: #0891b2;
+  --ss-cyan-500: #06b6d4;
+  --ss-cyan-100: #cffafe;
+  --ss-cyan-50: #ecfeff;
+
+  --ss-pink-600: #db2777;
+  --ss-pink-500: #ec4899;
+  --ss-pink-100: #fce7f3;
+  --ss-pink-50: #fdf2f8;
+}
+
+/* --------------------------------------------------------------------------
+   Thème clair (défaut)
+   -------------------------------------------------------------------------- */
+:root,
+[data-theme="light"] {
+  /* Surfaces */
+  --ss-bg-canvas: var(--ss-slate-50);
+  --ss-bg-primary: #ffffff;
+  --ss-bg-secondary: var(--ss-slate-100);
+  --ss-bg-tertiary: var(--ss-slate-200);
+  --ss-bg-inverse: var(--ss-slate-900);
+  --ss-bg-brand: var(--ss-blue-900);
+  --ss-bg-brand-hover: var(--ss-blue-800);
+  --ss-bg-accent: var(--ss-gold-400);
+  --ss-surface-solid: #ffffff;
+  --ss-surface-muted: rgb(248 250 252 / 0.96);
+  --ss-surface-overlay: rgb(255 255 255 / 0.98);
+  --ss-focus-offset-color: #ffffff;
+  --ss-action-gradient: linear-gradient(135deg, var(--ss-blue-600), var(--ss-cyan-500));
+  --ss-gradient-module: linear-gradient(
+    120deg,
+    var(--ss-navy-900) 0%,
+    var(--ss-blue-700) 52%,
+    var(--ss-violet-700) 100%
+  );
+
+  /* Textes */
+  --ss-text-primary: var(--ss-slate-900);
+  --ss-text-secondary: var(--ss-slate-600);
+  --ss-text-tertiary: var(--ss-slate-500);
+  --ss-text-muted: var(--ss-slate-500);
+  --ss-text-inverse: #ffffff;
+  --ss-text-on-brand: #ffffff;
+  --ss-text-on-brand-soft: var(--ss-blue-100);
+  --ss-text-brand: var(--ss-blue-900);
+  --ss-text-accent: var(--ss-gold-600);
+  --ss-text-link: var(--ss-blue-600);
+  --ss-text-link-hover: var(--ss-blue-700);
+
+  /* Bordures */
+  --ss-border-default: var(--ss-slate-200);
+  --ss-border-strong: var(--ss-slate-300);
+  --ss-border-subtle: var(--ss-slate-100);
+  --ss-border-inverse: rgba(255, 255, 255, 0.2);
+
+  /* Alias sémantiques utilisés par les modules récents */
+  --ss-surface: var(--ss-bg-primary);
+  --ss-surface-raised: var(--ss-bg-secondary);
+  --ss-border: var(--ss-border-default);
+  --ss-text: var(--ss-text-primary);
+  --ss-primary: var(--ss-blue-600);
+
+  /* États sémantiques */
+  --ss-success-bg: var(--ss-emerald-50);
+  --ss-success-text: var(--ss-emerald-700);
+  --ss-success-border: var(--ss-emerald-500);
+  --ss-warning-bg: var(--ss-gold-100);
+  --ss-warning-text: var(--ss-gold-600);
+  --ss-warning-border: var(--ss-gold-500);
+  --ss-error-bg: var(--ss-coral-50);
+  --ss-error-text: var(--ss-coral-700);
+  --ss-error-border: var(--ss-coral-500);
+  --ss-info-bg: var(--ss-blue-50);
+  --ss-info-text: var(--ss-blue-700);
+  --ss-info-border: var(--ss-blue-500);
+
+  /* Ombres */
+  --ss-shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --ss-shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.06);
+  --ss-shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.06);
+  --ss-shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.06);
+  --ss-shadow-xl: 0 20px 25px -5px rgb(15 23 42 / 0.1), 0 8px 10px -6px rgb(15 23 42 / 0.08);
+  --ss-shadow-glow: 0 0 24px rgb(37 99 235 / 0.18);
+  --ss-shadow-card: 0 8px 24px rgb(15 23 42 / 0.08);
+  --ss-shadow-floating: 0 16px 36px rgb(15 23 42 / 0.14);
+}
+
+/* --------------------------------------------------------------------------
+   Thème sombre
+   -------------------------------------------------------------------------- */
+[data-theme="dark"] {
+  --ss-bg-canvas: #0b1630;
+  --ss-bg-primary: #111f3a;
+  --ss-bg-secondary: #182a4a;
+  --ss-bg-tertiary: #243a5f;
+  --ss-bg-inverse: #ffffff;
+  --ss-bg-brand: var(--ss-blue-900);
+  --ss-bg-brand-hover: var(--ss-blue-800);
+  --ss-bg-accent: var(--ss-gold-500);
+  --ss-surface-solid: #111f3a;
+  --ss-surface-muted: rgb(24 42 74 / 0.96);
+  --ss-surface-overlay: rgb(17 31 58 / 0.98);
+  --ss-focus-offset-color: #111f3a;
+  --ss-action-gradient: linear-gradient(135deg, var(--ss-blue-600), var(--ss-cyan-600));
+  --ss-gradient-module: linear-gradient(
+    120deg,
+    #102a56 0%,
+    #1f4f99 52%,
+    #315f9f 100%
+  );
+
+  --ss-text-primary: #f8fafc;
+  --ss-text-secondary: var(--ss-slate-300);
+  --ss-text-tertiary: var(--ss-slate-400);
+  --ss-text-muted: var(--ss-slate-400);
+  --ss-text-inverse: #ffffff;
+  --ss-text-on-brand: #f8fafc;
+  --ss-text-on-brand-soft: #dbeafe;
+  --ss-text-brand: var(--ss-blue-300);
+  --ss-text-accent: var(--ss-gold-400);
+  --ss-text-link: var(--ss-blue-400);
+  --ss-text-link-hover: var(--ss-blue-300);
+
+  --ss-border-default: rgba(255, 255, 255, 0.1);
+  --ss-border-strong: rgba(255, 255, 255, 0.16);
+  --ss-border-subtle: rgba(255, 255, 255, 0.06);
+  --ss-border-inverse: rgba(0, 0, 0, 0.2);
+
+  --ss-surface: var(--ss-bg-primary);
+  --ss-surface-raised: var(--ss-bg-secondary);
+  --ss-border: var(--ss-border-default);
+  --ss-text: var(--ss-text-primary);
+  --ss-primary: var(--ss-blue-400);
+
+  /* Fonds et textes amber adaptés au bleu nuit. */
+  --ss-amber-50: rgba(251, 191, 36, 0.12);
+  --ss-amber-100: rgba(251, 191, 36, 0.2);
+  --ss-amber-300: #fbbf24;
+  --ss-amber-800: #fcd34d;
+  --ss-amber-900: #fde68a;
+
+  --ss-success-bg: rgba(16, 185, 129, 0.12);
+  --ss-success-text: #34d399;
+  --ss-success-border: var(--ss-emerald-500);
+  --ss-warning-bg: rgba(245, 158, 11, 0.12);
+  --ss-warning-text: #fbbf24;
+  --ss-warning-border: var(--ss-gold-500);
+  --ss-error-bg: rgba(239, 68, 68, 0.12);
+  --ss-error-text: #f87171;
+  --ss-error-border: var(--ss-coral-500);
+  --ss-info-bg: rgba(59, 130, 246, 0.12);
+  --ss-info-text: #60a5fa;
+  --ss-info-border: var(--ss-blue-500);
+
+  --ss-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.25);
+  --ss-shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.35), 0 1px 2px -1px rgb(0 0 0 / 0.25);
+  --ss-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --ss-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.45), 0 4px 6px -4px rgb(0 0 0 / 0.35);
+  --ss-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.4);
+  --ss-shadow-glow: 0 0 32px rgb(37 99 235 / 0.28);
+  --ss-shadow-card: 0 8px 24px rgb(0 0 0 / 0.28);
+  --ss-shadow-floating: 0 16px 36px rgb(0 0 0 / 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   Typographie
+   -------------------------------------------------------------------------- */
+:root {
+  --ss-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ss-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --ss-text-xs: 0.75rem;    /* 12px — métadonnées uniquement */
+  --ss-text-sm: 0.875rem;   /* 14px — fonctionnel secondaire, navigation, labels */
+  --ss-text-base: 1rem;     /* 16px — corps principal */
+  --ss-text-lg: 1.125rem;   /* 18px */
+  --ss-text-xl: 1.25rem;    /* 20px */
+  --ss-text-2xl: 1.5rem;    /* 24px */
+  --ss-text-3xl: 1.875rem;  /* 30px */
+  --ss-text-4xl: 2.25rem;   /* 36px */
+
+  --ss-font-regular: 400;
+  --ss-font-medium: 500;
+  --ss-font-semibold: 600;
+  --ss-font-bold: 700;
+  --ss-font-extrabold: 800;
+
+  --ss-leading-tight: 1.2;
+  --ss-leading-snug: 1.35;
+  --ss-leading-normal: 1.5;
+  --ss-leading-relaxed: 1.65;
+}
+
+/* --------------------------------------------------------------------------
+   Espacements
+   -------------------------------------------------------------------------- */
+:root {
+  --ss-space-1: 0.25rem;  /* 4px */
+  --ss-space-2: 0.5rem;   /* 8px */
+  --ss-space-3: 0.75rem;  /* 12px */
+  --ss-space-4: 1rem;     /* 16px */
+  --ss-space-5: 1.25rem;  /* 20px */
+  --ss-space-6: 1.5rem;   /* 24px */
+  --ss-space-8: 2rem;     /* 32px */
+  --ss-space-10: 2.5rem;  /* 40px */
+  --ss-space-12: 3rem;    /* 48px */
+  --ss-space-16: 4rem;    /* 64px */
+}
+
+/* --------------------------------------------------------------------------
+   Rayons
+   -------------------------------------------------------------------------- */
+:root {
+  --ss-radius-sm: 8px;
+  --ss-radius: 12px;
+  --ss-radius-md: 14px;
+  --ss-radius-lg: 16px;
+  --ss-radius-xl: 20px;
+  --ss-radius-2xl: 24px;
+  --ss-radius-full: 9999px;
+}
+
+/* --------------------------------------------------------------------------
+   Transitions
+   -------------------------------------------------------------------------- */
+:root {
+  --ss-transition-fast: 120ms ease;
+  --ss-transition-base: 180ms ease;
+  --ss-transition-slow: 280ms ease;
+  --ss-transition-bounce: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* --------------------------------------------------------------------------
+   Interaction et mise en page
+   -------------------------------------------------------------------------- */
+:root {
+  --ss-control-height: 48px;
+  --ss-control-height-lg: 52px;
+  --ss-touch-target: 44px;
+  --ss-focus-outline: 2px solid transparent;
+  --ss-focus-ring: 0 0 0 2px var(--ss-focus-offset-color), 0 0 0 5px var(--ss-blue-600);
+  --ss-content-narrow: 40rem;
+  --ss-content-standard: 64rem;
+  --ss-content-wide: 90rem;
+}
+
+/* --------------------------------------------------------------------------
+   Breakpoints (documentés pour usage JS/CSS @media)
+   -------------------------------------------------------------------------- */
+:root {
+  --ss-breakpoint-sm: 640px;
+  --ss-breakpoint-md: 768px;
+  --ss-breakpoint-lg: 1024px;
+  --ss-breakpoint-xl: 1280px;
+  --ss-breakpoint-2xl: 1536px;
+}
+
+/* --------------------------------------------------------------------------
+   Couleurs par domaine (module)
+   Ces tokens permettent de colorer les icônes/cartes par fonctionnalité.
+   -------------------------------------------------------------------------- */
+:root,
+[data-theme="light"] {
+  --ss-domain-pilotage: var(--ss-blue-600);
+  --ss-domain-pilotage-bg: var(--ss-blue-50);
+  /* Élèves / Scolarité — bleu royal + cyan */
+  --ss-domain-ecole: #1d4ed8;
+  --ss-domain-ecole-2: #06b6d4;
+  --ss-domain-ecole-bg: #eff6ff;
+  /* Parent / Tuteur — indigo + violet doux */
+  --ss-domain-parent: #4f46e5;
+  --ss-domain-parent-2: #8b5cf6;
+  --ss-domain-parent-bg: #eef2ff;
+  /* Pédagogie / Enseignant — violet + bleu */
+  --ss-domain-pedagogie: #7c3aed;
+  --ss-domain-pedagogie-2: #2563eb;
+  --ss-domain-pedagogie-bg: #f5f3ff;
+  /* Sécurité / Gardien — bleu nuit + orange maîtrisé */
+  --ss-domain-securite: #1e293b;
+  --ss-domain-securite-2: #ea580c;
+  --ss-domain-securite-bg: #f1f5f9;
+  /* Finance — ambre + or */
+  --ss-domain-finance: #d97706;
+  --ss-domain-finance-2: #f59e0b;
+  --ss-domain-finance-bg: #fffbeb;
+  /* Comptabilité / Trésorerie — bleu acier + ardoise */
+  --ss-domain-comptabilite: #3a6ea5;
+  --ss-domain-comptabilite-2: #475569;
+  --ss-domain-comptabilite-bg: #f1f5f9;
+  /* RH / Personnel — prune + bordeaux doux */
+  --ss-domain-personnel: #8e4585;
+  --ss-domain-personnel-2: #a83a54;
+  --ss-domain-personnel-bg: #faf5f9;
+  /* Stock / Inventaire — teal + bleu (référence conservée) */
+  --ss-domain-stock: #0f766e;
+  --ss-domain-stock-2: #2563eb;
+  --ss-domain-stock-bg: #f0fdfa;
+  /* Documents — bleu pétrole + ardoise */
+  --ss-domain-documents: #0d5c6b;
+  --ss-domain-documents-2: #475569;
+  --ss-domain-documents-bg: #e9f4f6;
+  /* Communication — bleu clair + violet */
+  --ss-domain-communication: #0ea5e9;
+  --ss-domain-communication-2: #8b5cf6;
+  --ss-domain-communication-bg: #f0f9ff;
+  /* Administration — marine + gris premium */
+  --ss-domain-administration: #1e3a8a;
+  --ss-domain-administration-2: #64748b;
+  --ss-domain-administration-bg: #e8edf5;
+  /* Jaspe logiciel — bleu électrique + indigo/violet */
+  --ss-domain-jaspe: #2f6bff;
+  --ss-domain-jaspe-2: #7c3aed;
+  --ss-domain-jaspe-bg: #eef3ff;
+  --ss-domain-rapports: var(--ss-blue-700);
+  --ss-domain-rapports-bg: var(--ss-blue-50);
+}
+
+[data-theme="dark"] {
+  --ss-domain-pilotage: var(--ss-blue-400);
+  --ss-domain-pilotage-bg: rgba(59, 130, 246, 0.14);
+  --ss-domain-ecole: #60a5fa;
+  --ss-domain-ecole-2: #22d3ee;
+  --ss-domain-ecole-bg: rgba(37, 99, 235, 0.16);
+  --ss-domain-parent: #a5b4fc;
+  --ss-domain-parent-2: #a78bfa;
+  --ss-domain-parent-bg: rgba(79, 70, 229, 0.18);
+  --ss-domain-pedagogie: #a78bfa;
+  --ss-domain-pedagogie-2: #60a5fa;
+  --ss-domain-pedagogie-bg: rgba(124, 58, 237, 0.18);
+  --ss-domain-securite: #fb923c;
+  --ss-domain-securite-2: #94a3b8;
+  --ss-domain-securite-bg: rgba(234, 88, 12, 0.16);
+  --ss-domain-finance: #fbbf24;
+  --ss-domain-finance-2: #fcd34d;
+  --ss-domain-finance-bg: rgba(217, 119, 6, 0.18);
+  --ss-domain-comptabilite: #7ca7d9;
+  --ss-domain-comptabilite-2: #94a3b8;
+  --ss-domain-comptabilite-bg: rgba(58, 110, 165, 0.22);
+  --ss-domain-personnel: #d79bc9;
+  --ss-domain-personnel-2: #e2637b;
+  --ss-domain-personnel-bg: rgba(142, 69, 133, 0.24);
+  --ss-domain-stock: #5eead4;
+  --ss-domain-stock-2: #60a5fa;
+  --ss-domain-stock-bg: rgba(15, 118, 110, 0.24);
+  --ss-domain-documents: #45a3b3;
+  --ss-domain-documents-2: #94a3b8;
+  --ss-domain-documents-bg: rgba(13, 92, 107, 0.3);
+  --ss-domain-communication: #38bdf8;
+  --ss-domain-communication-2: #a78bfa;
+  --ss-domain-communication-bg: rgba(14, 165, 233, 0.16);
+  --ss-domain-administration: #8fabf0;
+  --ss-domain-administration-2: #94a3b8;
+  --ss-domain-administration-bg: rgba(30, 58, 138, 0.3);
+  --ss-domain-jaspe: #6ea8ff;
+  --ss-domain-jaspe-2: #a78bfa;
+  --ss-domain-jaspe-bg: rgba(47, 107, 255, 0.18);
+  --ss-domain-rapports: var(--ss-blue-400);
+  --ss-domain-rapports-bg: rgba(59, 130, 246, 0.14);
+}

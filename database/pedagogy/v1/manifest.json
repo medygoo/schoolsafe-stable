@@ -1,0 +1,12 @@
+{
+  "pedagogy_version": "schoolsafe-pedagogy-v1",
+  "requires_baseline": "schoolsafe-vps-v1",
+  "units": [
+    {
+      "order": 1,
+      "name": "pedagogy_native",
+      "file": "01_pedagogy_native.sql",
+      "sha256": "0f776de51eab1b8b43fd2eeb85610662f12f97a2dfcd8fb89f548268c79284ff"
+    }
+  ]
+}

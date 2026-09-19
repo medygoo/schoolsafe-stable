@@ -1,0 +1,529 @@
+{
+  "review": "DB-04B-R2",
+  "status": "READY FOR FINAL REVIEW",
+  "generated_from": "repository files only; no database, Docker, Cloud or VPS access",
+  "catalog": {
+    "permissions": 60,
+    "scopes": 7
+  },
+  "static_controls": [
+    {
+      "name": "no auth.uid()",
+      "status": "PASS",
+      "evidence": "PostgreSQL transaction context only"
+    },
+    {
+      "name": "no BYPASSRLS",
+      "status": "PASS",
+      "evidence": "all five SchoolSafe roles use NOBYPASSRLS"
+    },
+    {
+      "name": "no application SUPERUSER",
+      "status": "PASS",
+      "evidence": "all application roles use NOSUPERUSER"
+    },
+    {
+      "name": "no GRANT to PUBLIC",
+      "status": "PASS",
+      "evidence": "PUBLIC is revoked, never granted"
+    },
+    {
+      "name": "no CREATE in public",
+      "status": "PASS",
+      "evidence": "SchoolSafe objects use protected schemas"
+    },
+    {
+      "name": "SECURITY DEFINER search_path",
+      "status": "PASS",
+      "evidence": "24 definers pin pg_catalog"
+    },
+    {
+      "name": "P0 actor/school authority",
+      "status": "PASS",
+      "evidence": "P0 RPCs derive actor and school from iam.current_* context"
+    },
+    {
+      "name": "canonical permissions",
+      "status": "PASS",
+      "evidence": "60 permissions in unit 12"
+    },
+    {
+      "name": "canonical scopes",
+      "status": "PASS",
+      "evidence": "7 scopes in unit 12"
+    },
+    {
+      "name": "permission-bound scopes",
+      "status": "PASS",
+      "evidence": "grant_scopes and exception_scopes replace global profile scopes"
+    },
+    {
+      "name": "tenant composite foreign keys",
+      "status": "PASS",
+      "evidence": "every declared tenant-to-tenant FK includes school_id on both sides"
+    },
+    {
+      "name": "assigned_classes AND assigned_subjects",
+      "status": "PASS",
+      "evidence": "one active exact class-subject assignment"
+    },
+    {
+      "name": "no pedagogical class/subject OR",
+      "status": "PASS",
+      "evidence": "no OR in exact teacher assignment"
+    },
+    {
+      "name": "explicit DENY priority",
+      "status": "PASS",
+      "evidence": "DENY guard precedes both ALLOW paths"
+    },
+    {
+      "name": "no Supabase dependency",
+      "status": "PASS",
+      "evidence": "pure PostgreSQL baseline"
+    },
+    {
+      "name": "operation-specific RLS",
+      "status": "PASS",
+      "evidence": "no business FOR ALL policy is created"
+    },
+    {
+      "name": "non-recursive IAM RLS",
+      "status": "PASS",
+      "evidence": "IAM policies use the school setting while API entry points validate the full context"
+    },
+    {
+      "name": "explicit API execute allowlist",
+      "status": "PASS",
+      "evidence": "every API function grant is signature-specific"
+    },
+    {
+      "name": "no browser direct table access",
+      "status": "PASS",
+      "evidence": "schoolsafe_api executes allowlisted API functions only"
+    }
+  ],
+  "files": [
+    {
+      "file": "01_roles.sql",
+      "sha256": "10448f25fb7925391c66d872a11d13d2876667dddeaaa39e8ec785868c72e5fe",
+      "lines": 48,
+      "objects_created": [
+        "role schoolsafe_owner (NOLOGIN)",
+        "role schoolsafe_migrator (LOGIN)",
+        "role schoolsafe_api (LOGIN)",
+        "role schoolsafe_worker (LOGIN)",
+        "role schoolsafe_auditor (NOLOGIN)"
+      ],
+      "security_definer": [],
+      "grants": [
+        "grant schoolsafe_owner to schoolsafe_migrator;",
+        "grant schoolsafe_owner to schoolsafe_bootstrap;",
+        "grant schoolsafe_migrator to schoolsafe_bootstrap;"
+      ],
+      "revokes": [],
+      "rls": [],
+      "dependencies": [
+        "bootstrap session with CREATEROLE",
+        "PostgreSQL 17.11"
+      ],
+      "risks": [
+        "LOGIN roles remain unusable until out-of-Git SCRAM secrets are injected"
+      ]
+    },
+    {
+      "file": "05_iam.sql",
+      "sha256": "87fc9522b8b530e2c09858de46deaaf43570893472c2810b062f1ff044edf7d5",
+      "lines": 159,
+      "objects_created": [
+        "table iam.users",
+        "table iam.profiles",
+        "table iam.devices",
+        "table iam.roles",
+        "table iam.permissions",
+        "table iam.scopes",
+        "table iam.profile_roles",
+        "table iam.role_permission_grants",
+        "table iam.permission_conditions",
+        "table iam.profile_permission_exceptions",
+        "table iam.grant_scopes",
+        "table iam.exception_scopes"
+      ],
+      "security_definer": [],
+      "grants": [],
+      "revokes": [],
+      "rls": [],
+      "dependencies": [
+        "01_roles.sql",
+        "02_schemas.sql",
+        "04_app_tables.sql for app.schools"
+      ],
+      "risks": [
+        "every scope must remain attached to its exact grant or exception"
+      ]
+    },
+    {
+      "file": "07_constraints_indexes.sql",
+      "sha256": "7ffde1d41c06cbce867ea2f287fcb9223c0ecd76815c3f2afa8226672fc8ec89",
+      "lines": 424,
+      "objects_created": [],
+      "security_definer": [],
+      "grants": [],
+      "revokes": [],
+      "rls": [],
+      "dependencies": [
+        "all table definitions from units 04-06"
+      ],
+      "risks": [
+        "a missing composite school_id foreign key could make a cross-school relation representable"
+      ]
+    },
+    {
+      "file": "08_internal_functions.sql",
+      "sha256": "3d973f644a6a6de5eb59436f56b6f3a245b39499e306dafd9d877c79337bb0ef",
+      "lines": 866,
+      "objects_created": [
+        "function iam.read_context_uuid",
+        "function iam.current_user_id",
+        "function iam.current_profile_id",
+        "function iam.current_school_id",
+        "function iam.current_request_id",
+        "function iam.context_is_valid",
+        "function api.set_request_context",
+        "function iam.has_exact_teacher_assignment",
+        "function iam.is_guardian_of",
+        "function iam.condition_matches",
+        "function iam.scope_matches",
+        "function iam.grant_scopes_match",
+        "function iam.exception_scopes_match",
+        "function iam.has_explicit_deny",
+        "function iam.can_access",
+        "function iam.require_access",
+        "function app.is_student_operational",
+        "function audit.write_event",
+        "function ops.record_schema_version"
+      ],
+      "security_definer": [
+        {
+          "function": "iam.context_is_valid",
+          "safe_search_path": true
+        },
+        {
+          "function": "api.set_request_context",
+          "safe_search_path": true
+        },
+        {
+          "function": "iam.has_exact_teacher_assignment",
+          "safe_search_path": true
+        },
+        {
+          "function": "iam.is_guardian_of",
+          "safe_search_path": true
+        },
+        {
+          "function": "iam.condition_matches",
+          "safe_search_path": true
+        },
+        {
+          "function": "iam.scope_matches",
+          "safe_search_path": true
+        },
+        {
+          "function": "iam.grant_scopes_match",
+          "safe_search_path": true
+        },
+        {
+          "function": "iam.exception_scopes_match",
+          "safe_search_path": true
+        },
+        {
+          "function": "iam.has_explicit_deny",
+          "safe_search_path": true
+        },
+        {
+          "function": "iam.can_access",
+          "safe_search_path": true
+        },
+        {
+          "function": "iam.require_access",
+          "safe_search_path": true
+        },
+        {
+          "function": "app.is_student_operational",
+          "safe_search_path": true
+        },
+        {
+          "function": "audit.write_event",
+          "safe_search_path": true
+        },
+        {
+          "function": "ops.record_schema_version",
+          "safe_search_path": true
+        }
+      ],
+      "grants": [],
+      "revokes": [],
+      "rls": [],
+      "dependencies": [
+        "04_app_tables.sql",
+        "05_iam.sql",
+        "06_audit_ops.sql",
+        "07_constraints_indexes.sql"
+      ],
+      "risks": [
+        "authorization correctness depends on complete transaction-local backend context"
+      ]
+    },
+    {
+      "file": "09_api_rpc.sql",
+      "sha256": "97bf44e8a68c3961ffe4ca12488a797c9e883a5e7a8bdabc9f04c17f1112212b",
+      "lines": 809,
+      "objects_created": [
+        "function api.check_access",
+        "function api.deactivate_other_academic_years",
+        "function api.next_document_number",
+        "function api.ensure_receipt_number",
+        "function api.record_payment",
+        "function api.cancel_payment",
+        "function api.increment_card_print_count",
+        "function api.create_student_draft",
+        "function api.compensate_student_draft_creation"
+      ],
+      "security_definer": [
+        {
+          "function": "api.check_access",
+          "safe_search_path": true
+        },
+        {
+          "function": "api.deactivate_other_academic_years",
+          "safe_search_path": true
+        },
+        {
+          "function": "api.next_document_number",
+          "safe_search_path": true
+        },
+        {
+          "function": "api.ensure_receipt_number",
+          "safe_search_path": true
+        },
+        {
+          "function": "api.record_payment",
+          "safe_search_path": true
+        },
+        {
+          "function": "api.cancel_payment",
+          "safe_search_path": true
+        },
+        {
+          "function": "api.increment_card_print_count",
+          "safe_search_path": true
+        },
+        {
+          "function": "api.create_student_draft",
+          "safe_search_path": true
+        },
+        {
+          "function": "api.compensate_student_draft_creation",
+          "safe_search_path": true
+        }
+      ],
+      "grants": [],
+      "revokes": [],
+      "rls": [],
+      "dependencies": [
+        "08_internal_functions.sql",
+        "canonical permissions later seeded by unit 12"
+      ],
+      "risks": [
+        "eight mutating P0 RPCs require semantic execution tests before any production use"
+      ]
+    },
+    {
+      "file": "10_triggers.sql",
+      "sha256": "fe6f06833f25d51401dfef3328f060ee934b734b0b11562827e6ad97c192f2dd",
+      "lines": 450,
+      "objects_created": [
+        "function ops.set_updated_at",
+        "function app.guard_same_school_reference",
+        "function app.validate_student_enrollment",
+        "function app.project_active_enrollment_class",
+        "function app.require_operational_student",
+        "function audit.capture_access_change",
+        "function audit.prevent_event_mutation"
+      ],
+      "security_definer": [
+        {
+          "function": "audit.capture_access_change",
+          "safe_search_path": true
+        }
+      ],
+      "grants": [],
+      "revokes": [],
+      "rls": [],
+      "dependencies": [
+        "tenant composite constraints from unit 07",
+        "audit.write_event from unit 08"
+      ],
+      "risks": [
+        "access configuration changes must remain fully audited"
+      ]
+    },
+    {
+      "file": "11_rls_acl.sql",
+      "sha256": "59aba8c2ba98dc5480d0de048968896baf3bd93b5c0036a7640c25e09c7f7a05",
+      "lines": 307,
+      "objects_created": [
+        "function iam.install_owner_policies",
+        "policy audit_events_owner_select",
+        "policy audit_events_owner_insert",
+        "policy audit_events_auditor_tenant",
+        "policy system_events_worker_select",
+        "policy system_events_worker_update",
+        "policy notifications_worker_select",
+        "policy notifications_worker_update"
+      ],
+      "security_definer": [],
+      "grants": [
+        "grant usage on schema api to schoolsafe_api, schoolsafe_worker, schoolsafe_auditor;",
+        "grant execute on function api.set_request_context(uuid, uuid, uuid, uuid) to schoolsafe_api;",
+        "grant execute on function api.check_access(text, uuid, uuid, uuid, uuid, uuid, jsonb) to schoolsafe_api;",
+        "grant execute on function api.deactivate_other_academic_years(uuid) to schoolsafe_api;",
+        "grant execute on function api.next_document_number(text, text) to schoolsafe_api;",
+        "grant execute on function api.ensure_receipt_number(uuid) to schoolsafe_api;",
+        "grant execute on function api.record_payment(uuid, numeric, text, timestamptz, text, text, jsonb) to schoolsafe_api;",
+        "grant execute on function api.cancel_payment(uuid, text, integer) to schoolsafe_api;",
+        "grant execute on function api.increment_card_print_count(uuid) to schoolsafe_api;",
+        "grant execute on function api.create_student_draft(text, text, text, text, date, text, uuid, uuid, date, text, uuid, text, text, text, text, text) to schoolsafe_api;",
+        "grant execute on function api.compensate_student_draft_creation(uuid) to schoolsafe_api;",
+        "grant execute on function api.set_request_context(uuid, uuid, uuid, uuid) to schoolsafe_worker, schoolsafe_auditor;",
+        "grant usage on schema iam to schoolsafe_worker, schoolsafe_auditor;",
+        "grant execute on function iam.current_school_id() to schoolsafe_worker, schoolsafe_auditor;",
+        "grant execute on function iam.context_is_valid() to schoolsafe_worker, schoolsafe_auditor;",
+        "grant usage on schema ops to schoolsafe_worker;",
+        "grant select, update on ops.system_events, ops.notifications to schoolsafe_worker;",
+        "grant usage on schema audit to schoolsafe_auditor;",
+        "grant select on audit.events to schoolsafe_auditor;",
+        "grant usage on schema ops to schoolsafe_migrator;",
+        "grant select, insert on ops.schema_versions to schoolsafe_migrator;",
+        "grant execute on function ops.record_schema_version(smallint, text, text, text, text) to schoolsafe_migrator;"
+      ],
+      "revokes": [
+        "revoke all on all tables in schema app from public;",
+        "revoke all on all tables in schema iam from public;",
+        "revoke all on all tables in schema audit from public;",
+        "revoke all on ops.schema_versions, ops.system_events, ops.notification_templates, ops.notifications, ops.data_retention_policies, ops.document_number_sequences, ops.indicator_snapshots from public;",
+        "revoke all on all sequences in schema app from public;",
+        "revoke all on all sequences in schema iam from public;",
+        "revoke all on all sequences in schema audit from public;",
+        "revoke all on all sequences in schema ops from public;",
+        "revoke all on all tables in schema app from schoolsafe_api;",
+        "revoke all on all tables in schema iam from schoolsafe_api;",
+        "revoke all on all tables in schema audit from schoolsafe_api;",
+        "revoke all on ops.schema_versions, ops.system_events, ops.notification_templates, ops.notifications, ops.data_retention_policies, ops.document_number_sequences, ops.indicator_snapshots from schoolsafe_api;",
+        "revoke all on all sequences in schema app from schoolsafe_api;",
+        "revoke all on all sequences in schema iam from schoolsafe_api;",
+        "revoke all on all sequences in schema audit from schoolsafe_api;",
+        "revoke all on all sequences in schema ops from schoolsafe_api;",
+        "revoke execute on all functions in schema app from public, schoolsafe_api, schoolsafe_worker, schoolsafe_auditor;",
+        "revoke execute on all functions in schema iam from public, schoolsafe_api, schoolsafe_worker, schoolsafe_auditor;",
+        "revoke execute on all functions in schema audit from public, schoolsafe_api, schoolsafe_worker, schoolsafe_auditor;",
+        "revoke execute on function ops.record_schema_version(smallint, text, text, text, text) from public, schoolsafe_api, schoolsafe_worker, schoolsafe_auditor;",
+        "revoke execute on all functions in schema api from public, schoolsafe_api, schoolsafe_worker, schoolsafe_auditor;"
+      ],
+      "rls": [
+        "ENABLE + FORCE RLS on every tenant-aware app table",
+        "ENABLE + FORCE RLS on tenant-aware iam tables",
+        "ENABLE + FORCE RLS on audit.events",
+        "ENABLE + FORCE RLS on tenant-aware ops tables",
+        "operation-specific SELECT/INSERT/UPDATE/DELETE policies",
+        "no UPDATE/DELETE policies for append-only ledgers"
+      ],
+      "dependencies": [
+        "all tables from units 04-06",
+        "functions from units 08-10",
+        "03_extensions.sql ACL lockdown"
+      ],
+      "risks": [
+        "a missed tenant-aware table or runtime grant would create a data-isolation failure"
+      ]
+    },
+    {
+      "file": "12_seed_permissions.sql",
+      "sha256": "8a347abde67b8efb91625346f0177be36445dd331f3c5450b40c945c252c79d2",
+      "lines": 108,
+      "objects_created": [
+        "60 canonical permission rows",
+        "7 canonical scope rows"
+      ],
+      "security_definer": [],
+      "grants": [],
+      "revokes": [],
+      "rls": [],
+      "dependencies": [
+        "05_iam.sql",
+        "07_constraints_indexes.sql"
+      ],
+      "risks": [
+        "catalog drift is fatal: the unit asserts exactly 60 permissions and seven scopes"
+      ]
+    },
+    {
+      "file": "13_verification.sql",
+      "sha256": "96c70087aaf4621da480868a66576e5eefe7a960a21c9802c650e4aacd46b209",
+      "lines": 393,
+      "objects_created": [],
+      "security_definer": [],
+      "grants": [],
+      "revokes": [],
+      "rls": [],
+      "dependencies": [
+        "units 01-12",
+        "pg_stat_statements preloaded and installed by unit 03"
+      ],
+      "risks": [
+        "structural verification does not replace the rollback-only semantic Access_Law test"
+      ]
+    },
+    {
+      "file": "tests/from-zero-access-law.test.sql",
+      "sha256": "f53b98a1379ad5391324d14ada4eb1ac840b1b1988bb5c3dabd7112ff433c28c",
+      "lines": 451,
+      "objects_created": [
+        "temporary pg_temp.assert_true function",
+        "rollback-only School A/B/C identities, roles, grants, classes, subjects and children",
+        "function pg_temp.assert_true"
+      ],
+      "security_definer": [],
+      "grants": [],
+      "revokes": [],
+      "rls": [],
+      "dependencies": [
+        "fully applied disposable TEST baseline",
+        "synthetic School A/B/C fixtures"
+      ],
+      "risks": [
+        "SQL is intentionally executable only later and must end in ROLLBACK"
+      ]
+    },
+    {
+      "file": "scripts/run-from-zero-test.sh",
+      "sha256": "5b65735c23edd1e5bc44de577d9c3fc6173a7cc2a170e881880d5776c9f07dfb",
+      "lines": 173,
+      "objects_created": [
+        "none directly; orchestrates the 13 reviewed SQL units"
+      ],
+      "security_definer": [],
+      "grants": [],
+      "revokes": [],
+      "rls": [],
+      "dependencies": [
+        "root-authorized Docker CLI",
+        "empty schoolsafe_test",
+        "reviewed manifest.sha256"
+      ],
+      "risks": [
+        "future apply mutates TEST; explicit confirmation and empty-target gates are mandatory"
+      ]
+    }
+  ]
+}

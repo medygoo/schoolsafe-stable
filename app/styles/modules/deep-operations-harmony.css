@@ -1,0 +1,309 @@
+/* --------------------------------------------------------------------------
+   Harmonisation visuelle profonde — Sécurité, Finance, Comptabilité, RH, Stock
+   Couche frontend scopée ; les états sémantiques universels restent intacts.
+   -------------------------------------------------------------------------- */
+
+.security-module,
+.guard-security-portal {
+  --harmony-accent: var(--ss-domain-securite);
+  --harmony-accent-2: var(--ss-domain-securite-2);
+  --harmony-soft: var(--ss-domain-securite-bg);
+}
+
+.finance-module,
+.fee-control-module {
+  --harmony-accent: var(--ss-domain-finance);
+  --harmony-accent-2: var(--ss-domain-finance-2);
+  --harmony-soft: var(--ss-domain-finance-bg);
+}
+
+.accounting-module {
+  --harmony-accent: var(--ss-domain-comptabilite);
+  --harmony-accent-2: var(--ss-domain-comptabilite-2);
+  --harmony-soft: var(--ss-domain-comptabilite-bg);
+}
+
+.hr-module {
+  --harmony-accent: var(--ss-domain-personnel);
+  --harmony-accent-2: var(--ss-domain-personnel-2);
+  --harmony-soft: var(--ss-domain-personnel-bg);
+}
+
+.inventory-module {
+  --harmony-accent: var(--ss-domain-stock);
+  --harmony-accent-2: var(--ss-domain-stock-2);
+  --harmony-soft: var(--ss-domain-stock-bg);
+}
+
+:where(
+  .security-module,
+  .guard-security-portal,
+  .finance-module,
+  .fee-control-module,
+  .accounting-module,
+  .hr-module,
+  .inventory-module
+) {
+  --harmony-line: color-mix(in srgb, var(--harmony-accent) 28%, var(--ss-border-default));
+  --harmony-ring: color-mix(in srgb, var(--harmony-accent) 38%, transparent);
+  accent-color: var(--harmony-accent);
+}
+
+/* En-têtes de sous-fonction : un repère constant dans les longs parcours. */
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  :is(
+    .guard-security-workspace-header,
+    .security-scan-panel > header,
+    .fee-control-hero,
+    .finance-overview > header,
+    .finance-panel > header,
+    .finance-report-head,
+    .accounting-journal > header,
+    .accounting-treasury > header,
+    .accounting-expenses > header,
+    .accounting-reconciliation > header,
+    .accounting-closing > header,
+    .accounting-reports > header,
+    .hr-dashboard > header,
+    .hr-staff > header,
+    .hr-records > header,
+    .hr-payroll > header,
+    .hr-reports > header,
+    .inventory-dashboard > header,
+    .inventory-catalog > header,
+    .inventory-levels > header,
+    .inventory-movements > header,
+    .inventory-procurement > header,
+    .inventory-receipts > header,
+    .inventory-reports > header
+  ) {
+  border-inline-start: 4px solid var(--harmony-accent);
+  border-radius: var(--ss-radius-lg);
+  padding: var(--ss-space-3) var(--ss-space-4);
+  background: linear-gradient(110deg, var(--harmony-soft), transparent 78%);
+}
+
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  :is(.guard-security-eyebrow, [class$="-content"] > section > header span:first-child, [class$="-content"] > section > header b:first-child) {
+  color: var(--harmony-accent);
+}
+
+/* Cartes, KPI et actions profondes. */
+.guard-security-portal :is(
+  .guard-security-panel,
+  .guard-security-metric,
+  .guard-security-feature,
+  .guard-incident-card,
+  .guard-attendance-row,
+  .guard-dismissal-row
+),
+.security-module :is(.security-scan-panel, .security-demo-boundary),
+.finance-module :is(
+  .finance-dashboard-metric,
+  .finance-dashboard-action,
+  .finance-panel,
+  .student-finance-card,
+  .fee-control-panel,
+  .fee-control-campaign,
+  .finance-receipt-preview,
+  .finance-assignment-draft,
+  .finance-exemption-draft,
+  .finance-remediation-draft,
+  .finance-canteen-draft
+),
+.fee-control-module :is(.fee-control-panel, .fee-control-result),
+.accounting-module :is(
+  .accounting-dashboard-metric,
+  .accounting-dashboard-action,
+  .accounting-currency-summaries > article,
+  .accounting-treasury-card,
+  .accounting-report-overview,
+  .accounting-closing-summary
+),
+.hr-module :is(
+  .hr-dashboard-metric,
+  .hr-dashboard-action,
+  .hr-staff-dossier,
+  .hr-staff-detail,
+  .hr-staff-draft,
+  .hr-payroll-grid > article,
+  .hr-reports-grid > article
+),
+.inventory-module :is(
+  .inventory-dashboard-metric,
+  .inventory-report-card,
+  .inventory-finance-link,
+  .inventory-currency-summary,
+  .inventory-form
+) {
+  border-top: 3px solid var(--harmony-accent);
+  border-inline-color: var(--harmony-line);
+  border-bottom-color: var(--harmony-line);
+  border-radius: var(--ss-radius-xl);
+  background-image: linear-gradient(145deg, color-mix(in srgb, var(--harmony-soft) 58%, transparent), transparent 44%);
+  box-shadow: var(--ss-shadow-sm);
+}
+
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  :is(
+    .guard-security-panel,
+    .guard-security-metric,
+    .finance-dashboard-metric,
+    .finance-dashboard-action,
+    .accounting-dashboard-metric,
+    .accounting-dashboard-action,
+    .accounting-currency-summaries > article,
+    .hr-dashboard-metric,
+    .hr-dashboard-action,
+    .inventory-dashboard-metric,
+    .inventory-report-card
+  ):hover {
+  border-inline-color: var(--harmony-accent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--harmony-accent) 12%, transparent);
+  transform: translateY(-1px);
+}
+
+/* Icônes des KPI et actions. */
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  :is(
+    .guard-security-metric > span,
+    .finance-dashboard-metric > span,
+    .finance-dashboard-action > i,
+    .accounting-dashboard-metric > span,
+    .accounting-dashboard-action > i,
+    .hr-dashboard-metric > span,
+    .hr-dashboard-action > i,
+    .inventory-dashboard-metric > span,
+    .inventory-report-card > i
+  ) {
+  color: var(--harmony-accent);
+  background: linear-gradient(145deg, var(--harmony-soft), color-mix(in srgb, var(--harmony-accent-2) 14%, transparent));
+  box-shadow: inset 0 0 0 1px var(--harmony-line);
+}
+
+/* Formulaires et zones de filtres. */
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  :is(
+    form,
+    .guard-incident-form,
+    .accounting-journal-filters,
+    .accounting-report-filters,
+    .hr-staff-filters,
+    .hr-preparation-form,
+    .inventory-form
+  ) {
+  border-top: 3px solid var(--harmony-accent);
+  border-radius: var(--ss-radius-xl);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--harmony-soft) 72%, var(--ss-bg-primary)), var(--ss-bg-primary) 52%);
+}
+
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  :is(label, .ss-label) {
+  color: var(--ss-text-primary);
+  font-weight: 650;
+}
+
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+  min-height: 44px;
+  border-color: var(--harmony-line);
+  background-color: var(--ss-bg-primary);
+}
+
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea):focus-visible {
+  border-color: var(--harmony-accent);
+  outline: 3px solid var(--harmony-accent);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 5px var(--harmony-ring);
+}
+
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  :is(button, .ss-button, [role="button"], [tabindex="0"]) {
+  min-height: 44px;
+}
+
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  :is(button, .ss-button, [role="button"], [tabindex="0"]):focus-visible {
+  outline: 3px solid var(--harmony-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--harmony-ring);
+}
+
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  .ss-button:not(.ss-button--secondary):not(.ss-button--danger) {
+  border-color: var(--harmony-accent);
+  background: linear-gradient(135deg, var(--harmony-accent), var(--harmony-accent-2));
+  color: var(--ss-text-on-brand, #fff);
+}
+
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  .ss-button--secondary:hover {
+  border-color: var(--harmony-accent);
+  color: var(--harmony-accent);
+  background: var(--harmony-soft);
+}
+
+/* Tableaux : en-tête métier et défilement interne sur petit écran. */
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  :is([class*="table-wrap"], [class*="table-wrapper"]) {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  border: 1px solid var(--harmony-line);
+  border-radius: var(--ss-radius-lg);
+}
+
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module) table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+:is(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module) table thead th {
+  border-bottom: 2px solid var(--harmony-accent);
+  background: color-mix(in srgb, var(--harmony-soft) 82%, var(--ss-bg-secondary));
+  color: var(--ss-text-primary);
+}
+
+:is(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module) table tbody tr:hover td {
+  background: color-mix(in srgb, var(--harmony-soft) 62%, transparent);
+}
+
+/* BACKEND_LATER et DÉMONSTRATION : information bleue universelle. */
+:where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+  :is(
+    .guard-security-honesty,
+    .security-demo-boundary,
+    .finance-backend-note,
+    .finance-readonly,
+    .accounting-boundary:not(.accounting-boundary--warning),
+    .hr-boundary,
+    .inventory-boundary,
+    [class$="-boundary-chip"]
+  ) {
+  border-color: color-mix(in srgb, var(--ss-blue-600) 32%, var(--ss-border-default));
+  background: color-mix(in srgb, var(--ss-blue-500) 10%, var(--ss-bg-primary));
+  color: var(--ss-blue-700);
+}
+
+@media (max-width: 720px) {
+  :where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+    :is(.pedagogy-tabs, .security-mode-tabs, .inventory-workflow, .finance-workflow-steps) {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  :where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+    :is(.guard-security-workspace-header, [class$="-content"] > section > header) {
+    align-items: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(.security-module, .guard-security-portal, .finance-module, .fee-control-module, .accounting-module, .hr-module, .inventory-module)
+    :is(.guard-security-panel, .finance-dashboard-metric, .finance-dashboard-action, .accounting-dashboard-metric, .accounting-dashboard-action, .hr-dashboard-metric, .hr-dashboard-action, .inventory-dashboard-metric, .inventory-report-card) {
+    transition: border-color var(--ss-transition-fast), box-shadow var(--ss-transition-fast), transform var(--ss-transition-fast);
+  }
+}

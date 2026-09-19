@@ -1,0 +1,280 @@
+/* --------------------------------------------------------------------------
+   Harmonisation visuelle profonde — École, Parent, Pédagogie
+   Couche de finition uniquement : aucun DOM ni comportement métier.
+   -------------------------------------------------------------------------- */
+
+.school-module,
+.academic-structure-modal {
+  --harmony-accent: var(--ss-domain-ecole);
+  --harmony-accent-2: var(--ss-domain-ecole-2);
+  --harmony-soft: var(--ss-domain-ecole-bg);
+}
+
+.parent-portal {
+  --harmony-accent: var(--ss-domain-parent);
+  --harmony-accent-2: var(--ss-domain-parent-2);
+  --harmony-soft: var(--ss-domain-parent-bg);
+}
+
+#pedagogyModule,
+.palmares-module,
+.teacher-pedagogy-portal {
+  --harmony-accent: var(--ss-domain-pedagogie);
+  --harmony-accent-2: var(--ss-domain-pedagogie-2);
+  --harmony-soft: var(--ss-domain-pedagogie-bg);
+}
+
+:where(
+  .school-module,
+  .academic-structure-modal,
+  .parent-portal,
+  #pedagogyModule,
+  .palmares-module,
+  .teacher-pedagogy-portal
+) {
+  --harmony-line: color-mix(in srgb, var(--harmony-accent) 28%, var(--ss-border-default));
+  --harmony-ring: color-mix(in srgb, var(--harmony-accent) 38%, transparent);
+  accent-color: var(--harmony-accent);
+}
+
+/* Hiérarchie interne et en-têtes de sous-fonction. */
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal)
+  :is(
+    .student-workspace__header,
+    .family-section-intro,
+    .student-card-heading,
+    .pickup-section-intro,
+    .academic-section > header,
+    .parent-feature-header,
+    .parent-section-heading,
+    .teacher-workspace-header,
+    .teacher-section-heading,
+    .panel-heading,
+    .palmares-header
+  ) {
+  border-inline-start: 4px solid var(--harmony-accent);
+  border-radius: var(--ss-radius-lg);
+  padding: var(--ss-space-3) var(--ss-space-4);
+  background: linear-gradient(110deg, var(--harmony-soft), transparent 78%);
+}
+
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal)
+  :is(.parent-eyebrow, .teacher-eyebrow, .guard-security-eyebrow, .academic-section > header > span, .panel-heading span) {
+  color: var(--harmony-accent);
+}
+
+/* Cartes métier : même structure, accent perceptible jusqu'au contenu. */
+.school-module :is(
+  .academic-year-card,
+  .academic-level-card,
+  .academic-class-card,
+  .student-record,
+  .student-dossier-panel,
+  .family-section,
+  .lifecycle-panel,
+  .student-card-block,
+  .pickup-person,
+  .student-verification__surface
+),
+.parent-portal :is(
+  .parent-summary-card,
+  .parent-shortcut,
+  .parent-finance-panel,
+  .parent-readonly-panel,
+  .parent-security-panel,
+  .parent-jaspe-card
+),
+#pedagogyModule :is(.pedagogy-panel, .palmares-card),
+.palmares-module :is(.palmares-card, .palmares-ranking),
+.teacher-pedagogy-portal :is(
+  .teacher-priority-card,
+  .teacher-scope-card,
+  .teacher-panel,
+  .teacher-record-card,
+  .teacher-result-card,
+  .teacher-jaspe
+) {
+  border-top: 3px solid var(--harmony-accent);
+  border-inline-color: var(--harmony-line);
+  border-bottom-color: var(--harmony-line);
+  border-radius: var(--ss-radius-xl);
+  background-image: linear-gradient(145deg, color-mix(in srgb, var(--harmony-soft) 58%, transparent), transparent 44%);
+  box-shadow: var(--ss-shadow-sm);
+}
+
+.school-module :is(.academic-year-card, .academic-level-card, .academic-class-card, .student-record, .parent-shortcut):hover,
+.parent-portal :is(.parent-summary-card, .parent-shortcut):hover,
+.teacher-pedagogy-portal :is(.teacher-priority-card, .teacher-scope-card, .teacher-record-card):hover {
+  border-inline-color: var(--harmony-accent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--harmony-accent) 12%, transparent);
+  transform: translateY(-1px);
+}
+
+/* KPI et icônes : teinte métier, sans modifier les statuts universels. */
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal)
+  :is(
+    .student-record__initials,
+    .parent-summary-icon,
+    .teacher-priority-icon,
+    .teacher-direction-metric > span,
+    .student-card-photo,
+    .academic-jaspe > i,
+    .parent-jaspe-launcher,
+    .teacher-jaspe-launcher
+  ) {
+  color: var(--harmony-accent);
+  background: linear-gradient(145deg, var(--harmony-soft), color-mix(in srgb, var(--harmony-accent-2) 14%, transparent));
+  box-shadow: inset 0 0 0 1px var(--harmony-line);
+}
+
+/* Formulaires, filtres, recherche et focus clavier. */
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal)
+  :is(
+    form,
+    .student-toolbar,
+    .family-form-grid,
+    .lifecycle-form,
+    .parent-message-composer,
+    .teacher-form,
+    .palmares-controls
+  ) {
+  border-top: 3px solid var(--harmony-accent);
+  border-radius: var(--ss-radius-xl);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--harmony-soft) 72%, var(--ss-bg-primary)), var(--ss-bg-primary) 52%);
+}
+
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal, .academic-structure-modal)
+  :is(label, .ss-label) {
+  color: var(--ss-text-primary);
+  font-weight: 650;
+}
+
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal, .academic-structure-modal)
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+  min-height: 44px;
+  border-color: var(--harmony-line);
+  background-color: var(--ss-bg-primary);
+}
+
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal, .academic-structure-modal)
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea):focus-visible {
+  border-color: var(--harmony-accent);
+  outline: 3px solid var(--harmony-accent);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 5px var(--harmony-ring);
+}
+
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal, .academic-structure-modal)
+  :is(button, .ss-button, [role="button"]) {
+  min-height: 44px;
+}
+
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal, .academic-structure-modal)
+  :is(button, .ss-button, [role="button"]):focus-visible {
+  outline: 3px solid var(--harmony-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--harmony-ring);
+}
+
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal)
+  .ss-button:not(.ss-button--secondary):not(.ss-button--danger) {
+  border-color: var(--harmony-accent);
+  background: linear-gradient(135deg, var(--harmony-accent), var(--harmony-accent-2));
+  color: var(--ss-text-on-brand, #fff);
+}
+
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal)
+  .ss-button--secondary:hover {
+  border-color: var(--harmony-accent);
+  color: var(--harmony-accent);
+  background: var(--harmony-soft);
+}
+
+/* Tableaux lisibles : défilement interne sur mobile, jamais sur la page. */
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal)
+  :is(.ss-table-wrap, [class*="table-wrap"], [class*="table-wrapper"]) {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  border: 1px solid var(--harmony-line);
+  border-radius: var(--ss-radius-lg);
+}
+
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal) table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal) thead th {
+  border-bottom: 2px solid var(--harmony-accent);
+  background: color-mix(in srgb, var(--harmony-soft) 82%, var(--ss-bg-secondary));
+  color: var(--ss-text-primary);
+}
+
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal) tbody tr:hover td {
+  background: color-mix(in srgb, var(--harmony-soft) 62%, transparent);
+}
+
+/* BACKEND_LATER / DÉMONSTRATION restent des informations universelles bleues. */
+:where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal)
+  :is(
+    .academic-local-notice,
+    .academic-draft-indicator,
+    .parent-draft-boundary,
+    .parent-readonly-boundary,
+    .parent-feature-source,
+    .teacher-boundary,
+    .teacher-honesty-note,
+    .teacher-demo-caption
+  ) {
+  border-color: color-mix(in srgb, var(--ss-blue-600) 32%, var(--ss-border-default));
+  background: color-mix(in srgb, var(--ss-blue-500) 10%, var(--ss-bg-primary));
+  color: var(--ss-blue-700);
+}
+
+/* Modale de structure : identité École, viewport borné, footer toujours utile. */
+.academic-structure-modal .ss-modal {
+  max-height: min(900px, calc(100dvh - 2rem));
+  overflow: auto;
+  border-top: 3px solid var(--harmony-accent);
+  border-inline-color: var(--harmony-line);
+  border-bottom-color: var(--harmony-line);
+  border-radius: var(--ss-radius-xl);
+}
+
+.academic-structure-modal .ss-modal__header {
+  border-bottom-color: var(--harmony-line);
+  background: linear-gradient(110deg, var(--harmony-soft), transparent);
+}
+
+.academic-structure-modal .academic-modal-state {
+  border-color: color-mix(in srgb, var(--ss-blue-600) 32%, var(--ss-border-default));
+  background: color-mix(in srgb, var(--ss-blue-500) 10%, var(--ss-bg-primary));
+}
+
+@media (max-width: 640px) {
+  :where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal)
+    :is(.student-toolbar, .parent-feature-header, .teacher-workspace-header, .teacher-section-heading) {
+    align-items: stretch;
+  }
+
+  :where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal)
+    :is(.school-tabs, .pedagogy-tabs, .teacher-period-tabs, .family-dossier-nav, .student-dossier-nav) {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .academic-structure-modal .ss-modal {
+    max-height: calc(100dvh - 1rem);
+    border-radius: var(--ss-radius-lg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(.school-module, .parent-portal, #pedagogyModule, .palmares-module, .teacher-pedagogy-portal)
+    :is(.academic-year-card, .academic-level-card, .academic-class-card, .parent-summary-card, .parent-shortcut, .teacher-priority-card, .teacher-scope-card) {
+    transition: border-color var(--ss-transition-fast), box-shadow var(--ss-transition-fast), transform var(--ss-transition-fast);
+  }
+}

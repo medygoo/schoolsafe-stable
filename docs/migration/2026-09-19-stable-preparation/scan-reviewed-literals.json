@@ -1,0 +1,114 @@
+{
+  "date": "2026-09-19",
+  "note": "Applies only to weak credential-literal candidates at these exact paths, lines and value hashes. Strong secret patterns are never exempted.",
+  "reviews": [
+    {
+      "path": "app/qa-jaspe-dashboard.cjs",
+      "line": 115,
+      "sha256": "938adf72b30adc52191f7bd7208a4dc2f192de7712ba0707dcf8a49455ac1167",
+      "reason": "Synthetic browser session injected by QA."
+    },
+    {
+      "path": "app/vendor/supabase-sdk.js",
+      "line": 149,
+      "sha256": "8c1400ba490ee4a821a4435e269f1d3989628f857ea6102292c082c096457511",
+      "reason": "Public SDK documentation placeholder, no configured client credential."
+    },
+    {
+      "path": "app/vendor/supabase-sdk.js",
+      "line": 538,
+      "sha256": "8c1400ba490ee4a821a4435e269f1d3989628f857ea6102292c082c096457511",
+      "reason": "Public SDK documentation placeholder, no configured client credential."
+    },
+    {
+      "path": "app/vendor/supabase-sdk.js",
+      "line": 2345,
+      "sha256": "8c1400ba490ee4a821a4435e269f1d3989628f857ea6102292c082c096457511",
+      "reason": "Public SDK documentation placeholder, no configured client credential."
+    },
+    {
+      "path": "app/vendor/supabase-sdk.js",
+      "line": 3922,
+      "sha256": "8c1400ba490ee4a821a4435e269f1d3989628f857ea6102292c082c096457511",
+      "reason": "Public SDK documentation placeholder, no configured client credential."
+    },
+    {
+      "path": "app/vendor/supabase-sdk.js",
+      "line": 6873,
+      "sha256": "8c1400ba490ee4a821a4435e269f1d3989628f857ea6102292c082c096457511",
+      "reason": "Public SDK documentation placeholder, no configured client credential."
+    },
+    {
+      "path": "app/vendor/supabase-sdk.js",
+      "line": 7780,
+      "sha256": "8c1400ba490ee4a821a4435e269f1d3989628f857ea6102292c082c096457511",
+      "reason": "Public SDK documentation placeholder, no configured client credential."
+    },
+    {
+      "path": "app/vendor/supabase-sdk.js",
+      "line": 11566,
+      "sha256": "8c1400ba490ee4a821a4435e269f1d3989628f857ea6102292c082c096457511",
+      "reason": "Public SDK documentation placeholder, no configured client credential."
+    },
+    {
+      "path": "app/vendor/supabase-sdk.js",
+      "line": 14423,
+      "sha256": "8c1400ba490ee4a821a4435e269f1d3989628f857ea6102292c082c096457511",
+      "reason": "Public SDK documentation placeholder, no configured client credential."
+    },
+    {
+      "path": "database/baseline/v1/review/CONTAINER_TEST_RECREATION.md",
+      "line": 21,
+      "sha256": "59bdc1ce95222b8dda71bae5663c9ce6c8826805d0730079495daf1cea1b29fa",
+      "reason": "Path to a test secret file; not its content."
+    },
+    {
+      "path": "server/tests/authnative-routes.test.ts",
+      "line": 23,
+      "sha256": "5ac1c04769ab4ca669fad1879dc6242f68af029e65de37750c18ee6e9ee254cf",
+      "reason": "Mock login result in a unit test."
+    },
+    {
+      "path": "server/tests/control-authority.test.ts",
+      "line": 14,
+      "sha256": "99ec6b2671867c79d5378bcd801c0037ec4ca85d52a074fe90c99dfbd5e4cb65",
+      "reason": "Local synthetic signing fixture in a unit test."
+    },
+    {
+      "path": "server/tests/security-service.test.ts",
+      "line": 18,
+      "sha256": "baf698c16450117dbe6aee29419e1553d1c39cce63a080adfedd229a1d9c9391",
+      "reason": "Synthetic card signature unit-test fixture."
+    },
+    {
+      "path": "server/tests/setup.test.ts",
+      "line": 40,
+      "sha256": "e37bc33a854d2bec07a82beea58c13e3de2c6a47963effcb0744a0d6be45550c",
+      "reason": "Injected setup-service mock token fixture."
+    },
+    {
+      "path": "server/tests/setup.test.ts",
+      "line": 68,
+      "sha256": "e37bc33a854d2bec07a82beea58c13e3de2c6a47963effcb0744a0d6be45550c",
+      "reason": "Injected setup-service mock token fixture."
+    },
+    {
+      "path": "server/tests/setup.test.ts",
+      "line": 99,
+      "sha256": "e37bc33a854d2bec07a82beea58c13e3de2c6a47963effcb0744a0d6be45550c",
+      "reason": "Injected setup-service mock token fixture."
+    },
+    {
+      "path": "server/tests/setup.test.ts",
+      "line": 166,
+      "sha256": "e37bc33a854d2bec07a82beea58c13e3de2c6a47963effcb0744a0d6be45550c",
+      "reason": "Injected setup-service mock token fixture."
+    },
+    {
+      "path": "server/tests/students.test.ts",
+      "line": 154,
+      "sha256": "5ab55bab589b572073b937e211b32ba95fbda02f57ea48b4a9fbc3ef235e3492",
+      "reason": "Synthetic password validation payload in a unit test."
+    }
+  ]
+}

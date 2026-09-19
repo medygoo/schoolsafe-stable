@@ -1,0 +1,30 @@
+{
+  "family_version": "schoolsafe-family-v1",
+  "requires_baseline": "schoolsafe-vps-v1",
+  "units": [
+    {
+      "order": 1,
+      "name": "pickup_authorizations",
+      "file": "01_pickup_authorizations.sql",
+      "sha256": "bfb0f539c5c1a3d141727560cd2bad9ca11a4f3394a1cf5484ca3660083946ac"
+    },
+    {
+      "order": 2,
+      "name": "primary_transfer",
+      "file": "02_primary_transfer.sql",
+      "sha256": "07d7b912afb5eaa531bb75a5971e33baf35e0e0e1b17c7cbce3962e7d25ab28f"
+    },
+    {
+      "order": 3,
+      "name": "pickup_confirmation",
+      "file": "03_pickup_confirmation.sql",
+      "sha256": "e10139ea6ff02bb0ad81a31f20567ff2976637831ea40a906a572960a50c1d93"
+    },
+    {
+      "order": 4,
+      "name": "student_import",
+      "file": "04_student_import.sql",
+      "sha256": "94a361704366d293536b40a89767654aa5b6e62e69caec89c453e19ef2a1fd9a"
+    }
+  ]
+}

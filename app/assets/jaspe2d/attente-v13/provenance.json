@@ -1,0 +1,21 @@
+{
+  "reference": "../originals/rest.png",
+  "generationTool": "image_gen built-in",
+  "cutouts": {
+    "chair": "Remove the background from this seated JASPE illustration. Deliver an isolated PNG cutout with a transparent background. Keep the entire girl AND the wooden chair exactly as shown, including face, hair, hands, white shirt and socks, blue dress and black shoes. Empty space around and between the chair legs must be transparent. Preserve the crisp character detail, composition and original size.",
+    "lean": "Remove the background from this standing JASPE illustration. Deliver an isolated PNG cutout with a transparent background. Keep the entire girl exactly as shown, including face, hair, hands, white shirt and socks, blue dress and black shoes. Empty space around and between her crossed legs must be transparent. Preserve the crisp character detail, composition and original size."
+  },
+  "videoTrial": {
+    "provider": "HeyGen",
+    "videoId": "9cada3e53bdb9b868760c5a2d1ba870c",
+    "imageAssetId": "c73dd4d849d04e2a891e34e6b4eeb0d5",
+    "audioAssetId": "5c700e7df3c147328189e2fa8c8471c3",
+    "duration": 10,
+    "format": "webm",
+    "removeBackgroundRequested": true,
+    "prompt": "A silent 10-second continuous full-body animation of exactly this little schoolgirl, JASPE. Locked camera, entire hair to both shoes always visible, identical face, age, braided twin curly puffs, blue uniform, white shirt, socks and black Mary Jane shoes. No speaking. Begin in the reference standing pose for 1 second. Over seconds 1-3 she naturally turns three-quarter toward screen-left, shifts her weight and leans her upper back slightly against an invisible upright support at screen-right. Feet stay grounded, one knee relaxes; shoulders and hands move naturally. Hold this patient, cheerful waiting pose with a subtle breath and blink for seconds 3-6. Over seconds 6-9 she pushes gently away, straightens and turns back to the EXACT initial standing pose; hold it for the final second. The support is off-image and must never be rendered: no panel, wall, room, floor or props. Preserve body and hand anatomy, crisp clothing detail, natural cloth movement. No camera movement, zoom, cuts, morphing or duplicated limbs. Transparent background required.",
+    "status": "rejected-static",
+    "visuallyVerified": true,
+    "accepted": false
+  }
+}

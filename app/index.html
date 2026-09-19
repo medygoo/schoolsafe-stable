@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071a3d">
+  <!-- Repli pour les hébergements statiques. Les protections frame-ancestors
+       et autres en-têtes sont servies par la couche HTTP lorsque disponible. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob: http://127.0.0.1:8787 http://localhost:8787; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="description" content="SchoolSafe V2">
+  <title>SchoolSafe V2</title>
+  <link rel="icon" href="./schoolsafe-logo.png" type="image/png">
+  <link rel="apple-touch-icon" href="./schoolsafe-logo.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <script>
+    // SchoolSafe Design System — thème clair/sombre
+    (function () {
+      const saved = localStorage.getItem("ss-theme");
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const theme = saved === "dark" || saved === "light" ? saved : (prefersDark ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <link rel="stylesheet" href="./styles/design-tokens.css">
+  <link rel="stylesheet" href="./styles/design-system.css">
+  <link rel="stylesheet" href="./styles/components.css">
+  <link rel="stylesheet" href="./styles/screens/entry.css">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles/dashboard.css">
+  <link rel="stylesheet" href="./styles/modules/pedagogy.css">
+  <link rel="stylesheet" href="./styles/modules/school.css">
+  <link rel="stylesheet" href="./styles/modules/student-family.css">
+  <link rel="stylesheet" href="./styles/modules/student-verification.css">
+  <link rel="stylesheet" href="./styles/modules/student-pickup.css">
+  <link rel="stylesheet" href="./styles/modules/student-lifecycle.css">
+  <link rel="stylesheet" href="./styles/modules/academic-structure.css">
+  <link rel="stylesheet" href="./styles/modules/student-dossier.css">
+  <link rel="stylesheet" href="./styles/modules/student-card-preparation.css">
+  <link rel="stylesheet" href="./styles/modules/parent-portal.css">
+  <link rel="stylesheet" href="./styles/modules/teacher-pedagogy.css">
+  <link rel="stylesheet" href="./styles/modules/guard-security.css">
+  <link rel="stylesheet" href="./styles/modules/security.css">
+  <link rel="stylesheet" href="./styles/modules/pilotage.css">
+  <link rel="stylesheet" href="./styles/modules/finance.css">
+  <link rel="stylesheet" href="./styles/modules/accounting-treasury.css">
+  <link rel="stylesheet" href="./styles/modules/hr.css">
+  <link rel="stylesheet" href="./styles/modules/inventory.css">
+  <link rel="stylesheet" href="./styles/modules/document-center.css">
+  <link rel="stylesheet" href="./styles/modules/communication.css">
+  <link rel="stylesheet" href="./styles/modules/administration.css">
+  <link rel="stylesheet" href="./styles/modules/native-access.css">
+  <link rel="stylesheet" href="./styles/screens/setup.css">
+  <link rel="stylesheet" href="./styles/screens/auth.css">
+  <link rel="stylesheet" href="./styles/modules/entree-visuel.css?v=jaspe-vivante-04">
+  <link rel="stylesheet" href="./styles/modules/jaspe2d.css?v=jaspe-vivante-04">
+  <link rel="stylesheet" href="./styles/modules/auth-companion.css?v=jaspe-vivante-04">
+  <link rel="stylesheet" href="./styles/modules/auth-models.css?v=bulle-jaspe-12">
+  <link rel="stylesheet" href="./styles/modules/visuel-global.css">
+  <link rel="stylesheet" href="./modules/cards/assets/cards.css">
+  <link rel="stylesheet" href="./styles/modules/domain-identity.css">
+  <link rel="stylesheet" href="./styles/modules/deep-school-harmony.css">
+  <link rel="stylesheet" href="./styles/modules/deep-operations-harmony.css">
+<link rel="stylesheet" href="./styles/modules/deep-governance-harmony.css">
+<link rel="stylesheet" href="./styles/dashboard-liquid-glass.css">
+  <link rel="stylesheet" href="./styles/modules/jaspe-dashboard.css">
+  <link rel="stylesheet" href="./styles/modules/jaspe-seated.css">
+<script src="./lucide.min.js" defer></script>
+  <script src="./jspdf.umd.min.js" defer></script>
+  <script src="./vendor/qrcode.min.js" defer></script>
+  <script src="./vendor/html2canvas.min.js" defer></script>
+  <script src="./i18n.js?v=connexion-responsive-10-final" defer></script>
+  <script src="./offline-sync.js" defer></script>
+  <script src="./modules/authnative/auth-native.js" defer></script>
+  <script src="./sw-register.js" defer></script>
+  <script type="module" src="./modules/cards/cards-module.js"></script>
+  <script src="./modules/finance/finance-api.js" defer></script>
+  <script src="./modules/finance/finance-module.js" defer></script>
+  <script src="./modules/accounting/accounting-treasury-demo.js" defer></script>
+  <script src="./modules/hr/hr-demo.js" defer></script>
+  <script src="./modules/inventory/inventory-demo.js" defer></script>
+  <script src="./modules/reports/reports-demo.js?v=reports-module-2026-09-17" defer></script>
+  <script src="./modules/finance/fee-control-module.js" defer></script>
+  <script src="./modules/security/security-api.js" defer></script>
+  <script src="./modules/school/student-pickup-demo.js" defer></script>
+  <script src="./modules/security/security-module.js" defer></script>
+  <script src="./modules/pilotage/pilotage-api.js" defer></script>
+  <script src="./modules/pilotage/pilotage-module.js" defer></script>
+  <script src="./modules/pedagogy/pedagogy-api.js" defer></script>
+  <script src="./modules/pedagogy/pedagogy-module.js" defer></script>
+  <script src="./modules/pedagogy/palmares-api.js" defer></script>
+  <script src="./modules/pedagogy/palmares-module.js" defer></script>
+  <script src="./modules/school/school-api.js" defer></script>
+  <script src="./modules/school/school-native-api.js" defer></script>
+  <script src="./modules/cards/cards-native-api.js" defer></script>
+  <script src="./modules/school/academic-structure-demo.js" defer></script>
+  <script src="./modules/school/student-verification-demo.js" defer></script>
+  <script src="./modules/school/student-lifecycle-demo.js" defer></script>
+  <script src="./modules/school/student-family-demo.js" defer></script>
+  <script src="./modules/school/student-dossier-demo.js" defer></script>
+  <script src="./modules/school/student-card-preparation-demo.js" defer></script>
+  <script src="./modules/school/school-module.js" defer></script>
+  <script src="./modules/parent/parent-portal-demo.js" defer></script>
+  <script src="./modules/pedagogy/teacher-pedagogy-demo.js" defer></script>
+  <script src="./modules/security/guard-security-demo.js" defer></script>
+  <script src="./modules/core/access.js" defer></script>
+  <script src="./modules/safe/jaspe-governance.js" defer></script>
+  <script src="./modules/safe/jaspe-capability-router.js" defer></script>
+  <script src="./modules/administration/administration-demo.js" defer></script>
+  <script src="./modules/administration/access-native.js" defer></script>
+  <script src="./modules/administration/access-role-editor.js" defer></script>
+  <script src="./modules/administration/access-console.js" defer></script>
+  <script src="./modules/communication/communication-demo.js" defer></script>
+  <script src="./modules/document-center/document-center.js" defer></script>
+  <script src="./modules/document-center/finance-accounting-documents.js" defer></script>
+  <script src="./modules/document-center/school-pedagogy-documents.js" defer></script>
+  <script src="./modules/document-center/operational-documents.js" defer></script>
+  <script src="./modules/document-center/document-actions-runtime.js" defer></script>
+  <script src="./modules/document-center/document-assistant.js" defer></script>
+  <script src="./modules/core/ui-helpers.js" defer></script>
+  <script src="./modules/jaspe2d/auth-presence.js?v=connexion-responsive-10-final" defer></script>
+  <script src="./modules/jaspe2d/auth-layouts.js?v=connexion-responsive-10-final" defer></script>
+  <script src="./modules/jaspe2d/jaspe2d.js?v=jaspe-dashboard-01" defer></script>
+  <script src="./modules/safe/safe-assistant.js" defer></script>
+  <script src="./modules/jaspe2d/seated-companion.js" defer></script>
+  <script src="./modules/jaspe2d/dashboard-companion.js" defer></script>
+  <script src="./app.js?v=jaspe-dashboard-01" defer></script>
+</head>
+<body>
+<!--
+THESIS: Aura Blue redéfinit l'espace de travail SchoolSafe comme un centre de pilotage calme, autoritaire et sans dégradé : le bleu marine uni porte l'information, les cartes blanches reposent sur un fond gris froid, l'or ne sert que d'accent de marque.
+OWN-WORLD: héros et sidebar en #1e3a8a uni ; cartes #ffffff sur #f8fafc ; accent or #fbbf24 pour les labels et états clés ; rayons 14-18 px ; ombres douces à offset ; typographie systeme administrative.
+STORY: l'utilisateur reconnaît immédiatement son poste de travail, lit ses priorités dans des tuiles bleues solides, accède aux branches via des cartes blanches épurées, et garde le panneau de périmètre sous les yeux.
+FIRST VIEWPORT: bandeau bleu uni avec label or, titre blanc, CTA blanc, grille de 10 indicateurs, tuiles Aujourd'hui bleues, cartes d'informations communes blanches, panneau latéral bleu uni.
+FORM: refonte code-led de l'espace de travail, direction A (Aura Blue) validée par l'utilisateur, maquette tmp/mockups/direction-aura-blue.html.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance.
+-->
+  <main id="app">
+    <section class="screen splash active" id="splash" aria-label="Accueil SchoolSafe">
+      <div class="splash-bubbles" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>
+      <p class="splash-note" aria-hidden="true"><i data-lucide="heart"></i><span>Des enfants plus en sécurité<br>pour un meilleur demain</span></p>
+      <div class="splash-center">
+        <img class="brand-shield splash-shield" src="./schoolsafe-logo.png" alt="Logo SchoolSafe">
+        <p class="splash-tagline" aria-hidden="true"><i></i>L'école en toute confiance<i></i></p>
+        <h1 class="splash-slogan" tabindex="-1"><span class="line">Chaque enfant <em>protégé</em>.</span><span class="line">Chaque parent <em>informé</em>.</span></h1>
+        <p class="splash-description">Présences, suivi scolaire et échanges avec les familles : votre école réunie dans un même espace.</p>
+        <button class="splash-tap" id="enterSplash" type="button"><span>Commencer</span> <i data-lucide="arrow-right"></i></button>
+        <div class="splash-country"><i></i><i data-lucide="shield"></i> République démocratique du Congo<i></i></div>
+      </div>
+    </section>
+
+    <section class="screen auth-screen" id="auth" data-auth-view="presentation" data-login-layout="companion" aria-label="Connexion SchoolSafe">
+      <div class="auth-media" aria-hidden="true">
+        <img id="authImageA" class="auth-image" hidden alt="">
+        <img id="authImageB" class="auth-image" alt="">
+      </div>
+      <div class="auth-shade" aria-hidden="true"></div>
+      <header class="auth-topbar">
+        <button class="brand-button" id="backToSplash" type="button" aria-label="Revenir à l'accueil"><span class="auth-shield" aria-hidden="true"><img src="./schoolsafe-logo.png" alt=""></span><span class="auth-wordmark">School<strong>Safe</strong></span></button>
+        <p class="auth-motto">Ensemble pour une école<br>plus sûre et plus connectée</p>
+        <div class="language-switch" role="group" aria-label="Langue">
+          <button class="selected" type="button" data-language="fr" aria-pressed="true">FR</button>
+          <button type="button" data-language="en" aria-pressed="false">EN</button>
+        </div>
+      </header>
+      <div class="auth-layout">
+        <div class="auth-message">
+          <h1>Bienvenue sur SchoolSafe</h1>
+          <p>Un espace plus sûr et plus connecté pour toute la communauté scolaire.</p>
+        </div>
+        <aside class="auth-values" aria-label="Les engagements SchoolSafe">
+          <ul>
+            <li><span class="auth-value-icon"><i data-lucide="shield-check" aria-hidden="true"></i></span><div><strong>Éduquer</strong><p>Des outils pour apprendre et grandir</p></div></li>
+            <li><span class="auth-value-icon"><i data-lucide="users" aria-hidden="true"></i></span><div><strong>Protéger</strong><p>Les élèves en sécurité à chaque étape</p></div></li>
+            <li><span class="auth-value-icon"><i data-lucide="wifi" aria-hidden="true"></i></span><div><strong>Connecter</strong><p>Une école plus proche des familles</p></div></li>
+            <li><span class="auth-value-icon"><i data-lucide="heart" aria-hidden="true"></i></span><div><strong>Pour demain</strong><p>Un avenir meilleur ensemble</p></div></li>
+          </ul>
+          <p class="auth-signature">Avec vous,<br>pour leur avenir</p>
+        </aside>
+        <div class="auth-dialogue" id="authJaspeDialogue" aria-live="polite" aria-atomic="true"></div>
+        <div class="auth-jaspe" id="authJaspe" aria-hidden="true"></div>
+        <form class="login-panel" id="loginForm" novalidate>
+          <div class="panel-brand">
+            <span class="auth-panel-person" aria-hidden="true"><i data-lucide="user-round"></i></span>
+            <span class="auth-panel-logo" aria-hidden="true"><span class="auth-shield" aria-hidden="true"><img src="./schoolsafe-logo.png" alt=""></span><span class="auth-wordmark">School<strong>Safe</strong></span></span>
+            <div><b>Connexion</b><span>Accédez à votre établissement</span></div>
+          </div>
+          <div class="login-method" role="group" aria-label="Mode de connexion">
+            <button class="selected" type="button" data-login-mode="email" aria-pressed="true"><i data-lucide="mail"></i> E-mail</button>
+            <button type="button" data-login-mode="phone" aria-pressed="false"><i data-lucide="phone"></i> Téléphone</button>
+          </div>
+          <div class="ss-field" id="emailIdentity">
+            <label class="ss-label" for="emailIdentifier">Adresse e-mail</label>
+            <div class="ss-input-shell">
+              <i data-lucide="mail"></i>
+              <input class="ss-input" id="emailIdentifier" name="emailIdentifier" type="email" autocomplete="username" placeholder="nom@ecole.cd">
+            </div>
+          </div>
+          <div class="ss-field hidden" id="phoneIdentity">
+            <label class="ss-label" for="phoneIdentifier">Numéro de téléphone</label>
+            <div class="ss-input-shell phone-shell">
+              <span class="dial-code">+243</span>
+              <input class="ss-input" id="phoneIdentifier" name="phoneIdentifier" type="tel" inputmode="tel" autocomplete="tel" placeholder="81 000 00 00">
+            </div>
+          </div>
+          <div class="label-row">
+            <label class="ss-label" for="password">Mot de passe</label>
+            <button class="text-button" type="button" id="forgotPassword">Mot de passe oublié</button>
+          </div>
+          <div class="ss-input-shell">
+            <i data-lucide="lock-keyhole"></i>
+            <input class="ss-input" id="password" name="password" type="password" autocomplete="current-password" placeholder="Votre mot de passe">
+            <button class="ss-icon-button" id="togglePassword" type="button" aria-label="Afficher le mot de passe" title="Afficher le mot de passe">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
+          <label class="ss-checkbox check-row"><input type="checkbox" name="remember" id="remember"><span>Rester connecté sur cet appareil</span></label>
+          <div class="ss-field hidden" id="otpIdentity">
+            <label class="ss-label" for="otpIdentifier">Code de vérification</label>
+            <div class="ss-input-shell">
+              <i data-lucide="key-round"></i>
+              <input class="ss-input" id="otpIdentifier" name="otpIdentifier" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="6">
+            </div>
+          </div>
+          <button class="ss-button ss-button--primary login-button" type="submit">Se connecter <i data-lucide="arrow-right"></i></button>
+          <button class="demo-access demo-access--button" type="button" id="demoEntry"><i data-lucide="flask-conical"></i><span>Accéder à la démonstration (données fictives)</span></button>
+          <div class="ss-field demo-role-field">
+            <label class="ss-label" for="demoRole">Profil à prévisualiser</label>
+            <select class="ss-select" id="demoRole" name="demoRole">
+              <option value="admin">Administrateur principal</option>
+              <option value="school_head">Chef d’établissement</option>
+              <option value="pedagogy">Responsable pédagogique</option>
+              <option value="admissions">Responsable administratif et admissions</option>
+              <option value="secretary">Secrétaire scolaire</option>
+              <option value="finance">Responsable financier</option>
+              <option value="cashier">Agent de caisse</option>
+              <option value="accountant">Comptable</option>
+              <option value="hr">Responsable RH</option>
+              <option value="teacher">Enseignant</option>
+              <option value="guard">Agent de contrôle d’accès</option>
+              <option value="nurse">Infirmier</option>
+              <option value="canteen">Responsable cantine</option>
+              <option value="communication">Responsable communication et site</option>
+              <option value="parent">Parent ou responsable légal</option>
+            </select>
+          </div>
+          <details class="auth-other-access">
+            <summary>Configurer l’école et autres accès</summary>
+          <div class="first-install">
+            <span>Nouvelle instance SchoolSafe</span>
+            <button class="ss-button ss-button--secondary" id="startSetup" type="button">Configurer l'école</button>
+          </div>
+          <button class="ss-button ss-button--secondary preview-profile-button" id="previewWorkspace" type="button"><i data-lucide="layout-dashboard"></i> Aperçu du profil Administrateur</button>
+          </details>
+        </form>
+      </div>
+      <footer class="auth-footer">
+        <span><i data-lucide="shield-check"></i> Accès protégé</span>
+        <span>Version 2.0 · Étape 2</span>
+      </footer>
+    </section>
+
+    <!-- INC-7 : choix explicite du profil/école — nouvel écran, APPELÉ APRÈS
+         l'écran de connexion. Les 3 écrans protégés ne sont pas modifiés. -->
+    <section class="screen auth-screen profile-choice-screen" id="profileChoice" aria-label="Choisir le profil SchoolSafe">
+      <div class="auth-shell">
+        <div class="auth-card">
+          <header class="auth-card-head">
+            <img src="./schoolsafe-logo.png" alt="" class="auth-card-logo">
+            <div>
+              <p class="auth-card-kicker">Identité vérifiée</p>
+              <h2>Choisir l'école et le profil</h2>
+              <p class="auth-card-sub">Votre compte a plusieurs espaces. Choisissez celui à ouvrir.</p>
+            </div>
+          </header>
+          <div class="profile-choice-list" id="profileChoiceList" role="listbox" aria-label="Profils disponibles"></div>
+          <button class="ss-button ss-button--secondary" id="profileChoiceCancel" type="button">
+            <i data-lucide="arrow-left"></i> Retour à la connexion
+          </button>
+        </div>
+        <footer class="auth-footer">
+          <span><i data-lucide="shield-check"></i> Contexte validé par le serveur</span>
+        </footer>
+      </div>
+    </section>
+
+    <section class="screen setup-screen" id="setup" aria-label="Configuration de l'école">
+      <aside class="setup-sidebar">
+        <button class="setup-brand" id="setupHome" type="button">
+          <img src="./schoolsafe-logo.png" alt="">
+          <span>School<strong>Safe</strong></span>
+        </button>
+        <div class="setup-caption">Configuration de l'instance</div>
+        <nav id="stepNav" aria-label="Étapes de configuration"></nav>
+        <div class="setup-security">
+          <i data-lucide="shield-check"></i>
+          <p><b>Instance mono-école</b><span>Aucune donnée n'est envoyée dans cette prévisualisation.</span></p>
+        </div>
+      </aside>
+      <div class="setup-main">
+        <header class="setup-header">
+          <div>
+            <span id="stepCounter">Étape 1 sur 7</span>
+            <h1 id="stepTitle">Identité de l'école</h1>
+          </div>
+          <button class="ss-icon-button ss-icon-button--light" id="closeSetup" type="button" aria-label="Fermer" title="Fermer"><i data-lucide="x"></i></button>
+        </header>
+        <div class="setup-progress"><span id="progressBar"></span></div>
+        <form id="setupForm">
+          <div class="step-content" id="stepContent"></div>
+          <footer class="setup-actions">
+            <button class="ss-button ss-button--secondary" id="prevStep" type="button"><i data-lucide="arrow-left"></i> Retour</button>
+            <span class="draft-state"><i data-lucide="cloud-off"></i> Brouillon local</span>
+            <button class="ss-button" id="nextStep" type="button">Continuer <i data-lucide="arrow-right"></i></button>
+          </footer>
+        </form>
+      </div>
+    </section>
+
+    <section class="screen workspace-screen" id="workspace" aria-label="Espace SchoolSafe">
+      <!-- Sidebar desktop -->
+      <aside class="workspace-sidebar" id="workspaceSidebar">
+        <div class="workspace-brand"><span class="school-brand-logos"><img src="./schoolsafe-logo.png" alt="Logo SchoolSafe"><img data-school-logo hidden alt="" referrerpolicy="no-referrer"></span><span class="workspace-wordmark">School<strong>Safe</strong></span><button class="close-workspace-menu" id="closeWorkspaceMenu" type="button" aria-label="Fermer le menu"><i data-lucide="x"></i></button></div>
+        <nav class="workspace-nav" id="workspaceNav" aria-label="Navigation principale">
+          <button class="active" type="button"><i data-lucide="layout-dashboard"></i><span>Tableau de bord</span></button>
+          <div class="nav-section"><span>Résumé école</span></div>
+          <button type="button"><i data-lucide="gauge"></i><span>Pilotage</span></button>
+          <button type="button"><i data-lucide="school"></i><span>École</span></button>
+          <button type="button"><i data-lucide="users-round"></i><span>Personnel</span></button>
+          <button type="button"><i data-lucide="book-open-check"></i><span>Pédagogie</span></button>
+          <button type="button"><i data-lucide="wallet-cards"></i><span>Finances</span></button>
+          <button type="button"><i data-lucide="calculator"></i><span>Comptabilité</span></button>
+          <button type="button"><i data-lucide="messages-square"></i><span>Communication</span></button>
+          <button type="button"><i data-lucide="file-chart-column"></i><span>Contrôle et rapports</span></button>
+          <div class="nav-section"><span>Système</span></div>
+          <button type="button"><i data-lucide="settings"></i><span>Paramètres</span></button>
+          <button type="button" id="permissionsNav"><i data-lucide="shield-ellipsis"></i><span>Rôles et accès</span></button>
+          <button type="button"><i data-lucide="scroll-text"></i><span>Audit et journaux</span></button>
+          <button type="button"><i data-lucide="plug"></i><span>Intégrations</span></button>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="sidebar-user">
+            <img id="sidebarAvatar" src="./schoolsafe-logo.png" alt="">
+            <div><b id="sidebarUserName">Administrateur</b><small id="sidebarUserStatus">En ligne</small></div>
+          </div>
+          <label class="sidebar-theme"><i data-lucide="moon"></i><span>Mode sombre</span><span class="theme-toggle"><input type="checkbox" id="sidebarThemeToggle"><span></span></span></label>
+          <div class="sidebar-copyright">SchoolSafe V5 · Votre allié serein et fort, près de vous.</div>
+          <button class="workspace-back" id="workspaceBack" type="button"><i data-lucide="log-out"></i><span>Retour à la connexion</span></button>
+        </div>
+      </aside>
+      <button class="workspace-menu-backdrop" id="workspaceMenuBackdrop" type="button" aria-label="Fermer le menu"></button>
+
+      <div class="workspace-main">
+        <!-- Topbar desktop -->
+        <header class="workspace-topbar" id="workspaceTopbar">
+          <div class="topbar-search">
+            <i data-lucide="search"></i>
+            <input type="text" placeholder="Rechercher dans SchoolSafe…" aria-label="Rechercher">
+            <span class="search-shortcut">⌘K</span>
+          </div>
+          <div class="topbar-tools">
+            <div class="topbar-tool-wrap" id="topbarNotificationsWrap">
+              <button class="topbar-icon" id="topbarNotifications" type="button" aria-label="Notifications" aria-haspopup="true" aria-expanded="false"><i data-lucide="bell"></i><span class="badge" id="topbarNotificationsBadge">3</span></button>
+            </div>
+            <div class="topbar-tool-wrap" id="topbarMessagesWrap">
+              <button class="topbar-icon" id="topbarMessages" type="button" aria-label="Messages" aria-haspopup="true" aria-expanded="false"><i data-lucide="mail"></i><span class="badge" id="topbarMessagesBadge">2</span></button>
+            </div>
+            <button class="topbar-campus" id="topbarCampus" type="button">
+              <i data-lucide="school"></i>
+              <span id="workspaceSchoolName">Campus Central</span>
+              <i data-lucide="chevron-down"></i>
+            </button>
+            <select class="topbar-role-switch" id="workspaceRoleSwitch" aria-label="Changer de rôle" hidden></select>
+            <div class="topbar-tool-wrap" id="topbarProfileWrap">
+              <button class="topbar-profile" id="topbarProfile" type="button" aria-label="Profil" aria-haspopup="true" aria-expanded="false">
+                <img id="topbarAvatar" src="./schoolsafe-logo.png" alt="">
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div class="workspace-content">
+          <div class="workspace-demo-banner" id="workspaceDemoBanner" role="status" hidden><i data-lucide="info"></i><span>Mode aperçu — données fictives.</span></div>
+
+          <header class="mobile-header workspace-mobile-header">
+            <div class="mobile-brand"><span class="school-brand-logos"><img src="./schoolsafe-logo.png" alt="Logo SchoolSafe"><img data-school-logo hidden alt="" referrerpolicy="no-referrer"></span><span>School<strong>Safe</strong></span></div>
+            <div class="mobile-tools">
+              <button class="topbar-icon" id="mobileNotifications" type="button" aria-label="Notifications" aria-haspopup="true" aria-expanded="false"><i data-lucide="bell"></i><span class="badge" id="mobileNotificationsBadge">3</span></button>
+              <button class="topbar-icon" id="mobileMessages" type="button" aria-label="Messages" aria-haspopup="true" aria-expanded="false"><i data-lucide="mail"></i><span class="badge" id="mobileMessagesBadge">2</span></button>
+              <button class="topbar-profile" id="mobileProfile" type="button" aria-label="Profil" aria-haspopup="true" aria-expanded="false"><img id="mobileTopbarAvatar" src="./schoolsafe-logo.png" alt=""></button>
+            </div>
+          </header>
+
+          <nav class="workspace-breadcrumb" id="workspaceBreadcrumb" aria-label="Fil d’Ariane" hidden>
+            <button class="workspace-breadcrumb__back" id="workspaceBreadcrumbBack" type="button"><i data-lucide="arrow-left"></i></button>
+            <ol>
+              <li><button type="button" id="workspaceBreadcrumbHome">Tableau de bord</button></li>
+              <li id="workspaceBreadcrumbModule" aria-current="page"></li>
+            </ol>
+          </nav>
+
+          <section id="jaspeDashboardWelcome" class="dashboard-hero jaspe-hero" aria-label="Votre assistante Jaspe">
+            <div class="jaspe-hero__scene">
+            <button type="button" class="jaspe-hero__character" id="jaspeHeroLauncher" data-jaspe-open aria-label="Ouvrir Jaspe en entier et discuter" aria-haspopup="dialog" aria-controls="jaspePanelOverlay">
+              <span class="jaspe-character-host" id="jaspeDashboardCharacter">
+                <img class="jaspe-character-fallback" src="./assets/jaspe2d/attente-v13/adossee-detouree.png" alt="" decoding="async">
+              </span>
+              <span class="jaspe-hero__open-hint"><i data-lucide="expand"></i><span>Ouvrir JASPE</span></span>
+            </button>
+            <div class="jaspe-hero__speech">
+              <div class="jaspe-hero__identity"><span>Votre assistante SchoolSafe</span><h1>JASPE <i data-lucide="sparkles" aria-hidden="true"></i></h1></div>
+              <div class="jaspe-hero__bubble"><strong>Bonjour <span id="jaspeHeroName"></span> !</strong><p>Je vous aide à vous concentrer sur l’essentiel.</p></div>
+              <div class="jaspe-hero__badges"><span><i data-lucide="sprout"></i> Plus simple</span><span><i data-lucide="shield-check"></i> Plus sûr</span><span><i data-lucide="heart"></i> Plus serein</span></div>
+            </div>
+            <aside class="jaspe-hero__about"><i data-lucide="sparkles" aria-hidden="true"></i><h2>À vos côtés,<br>chaque jour.</h2><p>Un quotidien scolaire plus simple et plus sûr.</p><ul><li><i data-lucide="circle-check"></i> Vous informe</li><li><i data-lucide="circle-check"></i> Vous accompagne</li><li><i data-lucide="circle-check"></i> Vous aide à agir</li></ul><small>L’intelligence au service<br>de chaque enfant.</small></aside>
+            </div>
+            <div class="jaspe-hero__chat" data-jaspe-chat>
+              <div class="safe-chat-log" data-jaspe-chat-log role="status" aria-live="polite" aria-label="Réponse de Jaspe"></div>
+              <div class="safe-chat-input-row"><input type="text" data-jaspe-chat-input aria-label="Votre question à Jaspe" autocomplete="off" placeholder="Posez votre question à Jaspe…"><button type="button" data-jaspe-chat-send aria-label="Envoyer à Jaspe"><i data-lucide="arrow-up"></i></button><button type="button" id="jaspeHeroMic" data-jaspe-audio aria-label="Parler à Jaspe dans le tableau de bord" aria-pressed="false"><i data-lucide="mic"></i><span>Audio</span></button></div>
+              <p id="jaspeHeroAudioStatus" class="jaspe-audio-status" role="status" hidden></p>
+              <div class="jaspe-voice-controls"><button type="button" id="jaspeHeroVoice" data-jaspe-voice disabled>Écouter la réponse</button></div>
+              <p class="jaspe-access-message" id="jaspeAccessMessage" role="status" hidden>Jaspe n’est pas activée pour ce compte.</p>
+            </div>
+          </section>
+
+          <!-- ===== DASHBOARD CONTAINER ===== -->
+          <div class="workspace-grid" id="dashboardContainer">
+
+          <!-- ===== DASHBOARD DESKTOP ===== -->
+          <div class="ss-dashboard-desktop" id="dashboardDesktop">
+            <div class="dashboard-header-row">
+              <div class="dashboard-greeting">
+                <h2 id="desktopGreeting">Bonjour, Administrateur 👋</h2>
+                <p>Voici un aperçu de votre établissement.</p>
+              </div>
+              <div class="dashboard-year">
+                <i data-lucide="calendar"></i>
+                <select id="desktopYearSelect" aria-label="Année scolaire">
+                  <option>2024 - 2025</option>
+                  <option>2025 - 2026</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="dashboard-kpi" id="dashboardKpi">
+              <article class="kpi-card"><span class="kpi-icon blue"><i data-lucide="users"></i></span><div><b id="kpiStudents">—</b><span>Élèves inscrits</span><small id="kpiStudentsTrend">—</small></div></article>
+              <article class="kpi-card"><span class="kpi-icon green"><i data-lucide="user-check"></i></span><div><b id="kpiStaff">—</b><span>Personnel actif</span><small id="kpiStaffTrend">—</small></div></article>
+              <article class="kpi-card"><span class="kpi-icon gold"><i data-lucide="graduation-cap"></i></span><div><b id="kpiClasses">—</b><span>Classes</span><small id="kpiClassesTrend">—</small></div></article>
+              <article class="kpi-card"><span class="kpi-icon purple"><i data-lucide="book-open"></i></span><div><b id="kpiSubjects">—</b><span>Matières</span><small id="kpiSubjectsTrend">—</small></div></article>
+              <article class="kpi-card"><span class="kpi-icon cyan"><i data-lucide="wallet"></i></span><div><b id="kpiRevenue">—</b><span>Recettes (mois)</span><small id="kpiRevenueTrend">—</small></div></article>
+              <article class="kpi-card"><span class="kpi-icon coral"><i data-lucide="triangle-alert"></i></span><div><b id="kpiAlerts">—</b><span>Alertes actives</span><small id="kpiAlertsCta">Voir les alertes</small></div></article>
+            </div>
+
+            <div class="dashboard-body">
+              <div class="dashboard-body-main">
+                <section class="dashboard-section dashboard-features">
+                  <header><h3 id="desktopToolsTitle">Fonctionnalités</h3><p class="dashboard-section-subtitle">Ce que vous faites dans SchoolSafe</p></header>
+                  <div class="module-grid" id="desktopModuleGrid" tabindex="-1" aria-labelledby="desktopToolsTitle"></div>
+                </section>
+                <section class="dashboard-section ecosystem-row" aria-label="Écosystème SchoolSafe">
+                  <header><h3>Écosystème SchoolSafe</h3><span class="ecosystem-hint">Services connectés</span></header>
+                  <div class="ecosystem-grid" id="ecosystemGrid">
+                    <button type="button" class="ecosystem-card ecosystem-card--security" data-ecosystem="security">
+                      <span class="ecosystem-card__icon"><i data-lucide="scan-line"></i></span>
+                      <span class="ecosystem-card__title">Sécurité &amp; Accès</span>
+                      <span class="ecosystem-card__desc">Entrées, sorties et contrôle QR</span>
+                      <span class="ecosystem-card__status" data-status="active">Actif</span>
+                    </button>
+                    <button type="button" class="ecosystem-card ecosystem-card--cards" data-ecosystem="cards">
+                      <span class="ecosystem-card__icon"><i data-lucide="id-card"></i></span>
+                      <span class="ecosystem-card__title">Cartes élèves</span>
+                      <span class="ecosystem-card__desc">Émission et impression protégées</span>
+                      <span class="ecosystem-card__status" data-status="active">Actif</span>
+                    </button>
+                    <button type="button" class="ecosystem-card ecosystem-card--guardian" data-ecosystem="guardian">
+                      <span class="ecosystem-card__icon"><i data-lucide="heart-handshake"></i></span>
+                      <span class="ecosystem-card__title">Guardian</span>
+                      <span class="ecosystem-card__desc">Personnes autorisées de retrait</span>
+                      <span class="ecosystem-card__status" data-status="active">Actif</span>
+                    </button>
+                    <button type="button" class="ecosystem-card ecosystem-card--watch" data-ecosystem="watch">
+                      <span class="ecosystem-card__icon"><i data-lucide="watch"></i></span>
+                      <span class="ecosystem-card__title">SchoolSafe Watch</span>
+                      <span class="ecosystem-card__desc">Bracelets élèves connectés</span>
+                      <span class="ecosystem-card__status" data-status="soon">Bientôt</span>
+                    </button>
+                    <button type="button" class="ecosystem-card ecosystem-card--staffid" data-ecosystem="staffid">
+                      <span class="ecosystem-card__icon"><i data-lucide="badge-check"></i></span>
+                      <span class="ecosystem-card__title">StaffID</span>
+                      <span class="ecosystem-card__desc">Identification du personnel</span>
+                      <span class="ecosystem-card__status" data-status="soon">Bientôt</span>
+                    </button>
+                    <button type="button" class="ecosystem-card ecosystem-card--lab" data-ecosystem="lab">
+                      <span class="ecosystem-card__icon"><i data-lucide="flask-conical"></i></span>
+                      <span class="ecosystem-card__title">Lab</span>
+                      <span class="ecosystem-card__desc">Expérimentations pédagogiques</span>
+                      <span class="ecosystem-card__status" data-status="soon">Bientôt</span>
+                    </button>
+                  </div>
+                </section>
+
+
+                <div class="dashboard-bottom-grid">
+                  <section class="dashboard-section">
+                    <header><h3>Fréquentation scolaire</h3><button class="section-period" type="button">Ce mois <i data-lucide="chevron-down"></i></button></header>
+                    <div class="chart-placeholder" id="attendanceChart">
+                      <div class="chart-empty"><i data-lucide="bar-chart-2"></i><span>Données de fréquentation indisponibles en mode démo.</span></div>
+                    </div>
+                  </section>
+                  <section class="dashboard-section">
+                    <header><h3>Synthèse financière</h3><button class="section-period" type="button">Ce mois <i data-lucide="chevron-down"></i></button></header>
+                    <div class="chart-placeholder" id="financeChart">
+                      <div class="chart-empty"><i data-lucide="pie-chart"></i><span>Données financières indisponibles en mode démo.</span></div>
+                    </div>
+                  </section>
+                  <section class="dashboard-section">
+                    <header><h3>Top alertes</h3><button class="section-link" type="button">Voir tout <i data-lucide="chevron-right"></i></button></header>
+                    <div class="alert-list" id="topAlerts">
+                      <div class="alert-empty"><i data-lucide="inbox"></i><span>Aucune alerte urgente.</span></div>
+                    </div>
+                  </section>
+                </div>
+              </div>
+
+              <aside class="dashboard-right-column">
+                <section class="dashboard-section">
+                  <header><h3>Alertes importantes</h3><button class="section-link" type="button">Tout voir <i data-lucide="chevron-right"></i></button></header>
+                  <div class="alert-list compact" id="importantAlerts">
+                    <div class="alert-empty"><i data-lucide="inbox"></i><span>Aucune alerte importante.</span></div>
+                  </div>
+                </section>
+              </aside>
+            </div>
+          </div>
+
+          <!-- ===== DASHBOARD MOBILE ===== -->
+          <div class="ss-dashboard-mobile" id="dashboardMobile">
+            <div class="mobile-greeting-row">
+              <div class="mobile-greeting">
+                <h2 id="mobileGreeting">Bonjour, Administrateur 👋</h2>
+                <p>Voici un aperçu de votre établissement.</p>
+              </div>
+              <div class="mobile-year">
+                <i data-lucide="calendar"></i>
+                <select id="mobileYearSelect" aria-label="Année scolaire">
+                  <option>2024 - 2025</option>
+                  <option>2025 - 2026</option>
+                </select>
+              </div>
+            </div>
+
+            <section class="mobile-section">
+              <header><h3 id="mobileToolsTitle">Fonctionnalités</h3></header>
+              <div class="quick-access-grid" id="mobileQuickAccess" tabindex="-1" aria-labelledby="mobileToolsTitle"></div>
+            </section>
+
+            <div class="mobile-kpi" id="mobileKpi">
+              <article class="kpi-card"><span class="kpi-icon blue"><i data-lucide="users"></i></span><div><b id="mkpiStudents">—</b><span>Élèves</span><small id="mkpiStudentsTrend">—</small></div></article>
+              <article class="kpi-card"><span class="kpi-icon purple"><i data-lucide="user-check"></i></span><div><b id="mkpiTeachers">—</b><span>Enseignants</span><small id="mkpiTeachersTrend">—</small></div></article>
+              <article class="kpi-card"><span class="kpi-icon green"><i data-lucide="school"></i></span><div><b id="mkpiClasses">—</b><span>Classes</span><small id="mkpiClassesTrend">—</small></div></article>
+              <article class="kpi-card"><span class="kpi-icon gold"><i data-lucide="activity"></i></span><div><b id="mkpiPresence">—</b><span>Taux de présence</span><small id="mkpiPresenceTrend">—</small></div></article>
+            </div>
+
+                <section class="mobile-section ecosystem-row" aria-label="Écosystème SchoolSafe">
+                  <header><h3>Écosystème SchoolSafe</h3><span class="ecosystem-hint">Services connectés</span></header>
+                  <div class="ecosystem-grid" id="ecosystemGridMobile">
+                    <button type="button" class="ecosystem-card ecosystem-card--security" data-ecosystem="security">
+                      <span class="ecosystem-card__icon"><i data-lucide="scan-line"></i></span>
+                      <span class="ecosystem-card__title">Sécurité &amp; Accès</span>
+                      <span class="ecosystem-card__desc">Entrées, sorties et contrôle QR</span>
+                      <span class="ecosystem-card__status" data-status="active">Actif</span>
+                    </button>
+                    <button type="button" class="ecosystem-card ecosystem-card--cards" data-ecosystem="cards">
+                      <span class="ecosystem-card__icon"><i data-lucide="id-card"></i></span>
+                      <span class="ecosystem-card__title">Cartes élèves</span>
+                      <span class="ecosystem-card__desc">Émission et impression protégées</span>
+                      <span class="ecosystem-card__status" data-status="active">Actif</span>
+                    </button>
+                    <button type="button" class="ecosystem-card ecosystem-card--guardian" data-ecosystem="guardian">
+                      <span class="ecosystem-card__icon"><i data-lucide="heart-handshake"></i></span>
+                      <span class="ecosystem-card__title">Guardian</span>
+                      <span class="ecosystem-card__desc">Personnes autorisées de retrait</span>
+                      <span class="ecosystem-card__status" data-status="active">Actif</span>
+                    </button>
+                    <button type="button" class="ecosystem-card ecosystem-card--watch" data-ecosystem="watch">
+                      <span class="ecosystem-card__icon"><i data-lucide="watch"></i></span>
+                      <span class="ecosystem-card__title">SchoolSafe Watch</span>
+                      <span class="ecosystem-card__desc">Bracelets élèves connectés</span>
+                      <span class="ecosystem-card__status" data-status="soon">Bientôt</span>
+                    </button>
+                    <button type="button" class="ecosystem-card ecosystem-card--staffid" data-ecosystem="staffid">
+                      <span class="ecosystem-card__icon"><i data-lucide="badge-check"></i></span>
+                      <span class="ecosystem-card__title">StaffID</span>
+                      <span class="ecosystem-card__desc">Identification du personnel</span>
+                      <span class="ecosystem-card__status" data-status="soon">Bientôt</span>
+                    </button>
+                    <button type="button" class="ecosystem-card ecosystem-card--lab" data-ecosystem="lab">
+                      <span class="ecosystem-card__icon"><i data-lucide="flask-conical"></i></span>
+                      <span class="ecosystem-card__title">Lab</span>
+                      <span class="ecosystem-card__desc">Expérimentations pédagogiques</span>
+                      <span class="ecosystem-card__status" data-status="soon">Bientôt</span>
+                    </button>
+                  </div>
+                </section>
+            <section class="mobile-section">
+              <header><h3>Alertes importantes</h3><button class="section-link" type="button">Tout voir <i data-lucide="chevron-right"></i></button></header>
+              <div class="alert-list" id="mobileImportantAlerts">
+                <div class="alert-empty"><i data-lucide="inbox"></i><span>Aucune alerte importante.</span></div>
+              </div>
+            </section>
+
+
+          </div>
+
+          </div>
+          <!-- ===== /DASHBOARD CONTAINER ===== -->
+
+          <section class="parent-portal" id="parentPortal" aria-label="Espace Parent" hidden></section>
+          <section class="teacher-pedagogy-portal" id="teacherPedagogyPortal" aria-label="Espace pédagogique affecté" hidden></section>
+          <section class="guard-security-portal" id="guardSecurityPortal" aria-label="Espace Gardien affecté" hidden></section>
+
+          <!-- Anciens éléments conservés pour compatibilité JS -->
+          <div hidden>
+            <span id="workspaceRole"></span>
+            <span id="workspaceTitle">Tableau de bord</span>
+            <span id="workspaceInitials"></span>
+            <span id="workspaceProfileName"></span>
+            <span id="workspaceEyebrow"></span>
+            <span id="workspaceWelcomeTitle"></span>
+            <span id="workspaceWelcomeCopy"></span>
+            <span id="statusRole"></span>
+            <span id="statusScope"></span>
+            <span id="priorityScope"></span>
+            <div id="workspaceToday"></div>
+            <div id="workspaceBranches"></div>
+            <div id="statusBranchList"></div>
+          </div>
+
+          <!-- ===== MODULES EXISTANTS ===== -->
+          <section class="protected-module" id="cardsProtected"><span class="metric-icon green"><i data-lucide="badge-check"></i></span><div><b>Production de cartes SchoolSafe</b><p>Sous-système protégé, conservé à l’identique et branché uniquement par contrat.</p></div><span class="protected-state"><i data-lucide="lock-keyhole"></i> Intact</span></section>
+          <section class="pedagogy-module" id="pedagogyModule" hidden>
+            <header class="pedagogy-module-header">
+              <button class="ss-button ss-button--secondary" id="closePedagogyModule" type="button"><i data-lucide="arrow-left"></i> Tableau de bord</button>
+              <div><span>Espace pédagogique</span><h2 id="pedagogyModuleTitle">Devoirs et cotations</h2><p>Configuration locale de démonstration. Aucune donnée distante n’est utilisée.</p></div>
+              <span class="local-draft"><i data-lucide="cloud-off"></i> Brouillon local</span>
+            </header>
+            <nav class="pedagogy-tabs" id="pedagogyTabs" aria-label="Fonctions pédagogiques">
+              <button class="active" type="button" data-pedagogy-tab="assignments"><i data-lucide="notebook-pen"></i><span>Devoirs</span></button>
+              <button type="button" data-pedagogy-tab="grades"><i data-lucide="star"></i><span>Cotations</span></button>
+              <button type="button" data-pedagogy-tab="rules"><i data-lucide="calculator"></i><span>Calculs</span></button>
+              <button type="button" data-pedagogy-tab="bulletin"><i data-lucide="file-text"></i><span>Bulletin continu</span></button>
+              <button type="button" data-pedagogy-tab="remediation"><i data-lucide="life-buoy"></i><span>Rattrapage</span></button>
+              <button type="button" data-pedagogy-tab="certifications"><i data-lucide="scroll-text"></i><span>Épreuves nationales</span></button>
+              <button type="button" data-pedagogy-tab="parent"><i data-lucide="contact-round"></i><span>Vue parent</span></button>
+            </nav>
+            <div class="pedagogy-content" id="pedagogyContent"></div>
+          </section>
+          <section class="pedagogy-module palmares-module" id="palmaresModule" hidden>
+            <header class="pedagogy-module-header palmares-module-header">
+              <button class="ss-button ss-button--secondary" id="closePalmaresModule" type="button"><i data-lucide="arrow-left"></i> Tableau de bord</button>
+              <div><span>Classement mensuel</span><h2 id="palmaresModuleTitle">Palmarès</h2><p>Top 10 par classe et par école, basé sur les cotes publiées.</p></div>
+              <span class="local-draft"><i data-lucide="trophy"></i> Motivation</span>
+            </header>
+            <div class="palmares-content" id="palmaresContent"></div>
+          </section>
+          <section class="pedagogy-module finance-module" id="financeModule" hidden>
+            <header class="pedagogy-module-header finance-module-header">
+              <button class="ss-button ss-button--secondary" id="closeFinanceModule" type="button"><i data-lucide="arrow-left"></i> Tableau de bord</button>
+              <div><span>Espace financier</span><h2 id="financeModuleTitle">Situation financière</h2><p>SchoolSafe enregistre les opérations reçues par l’école sans traiter de paiement en ligne.</p></div>
+              <span class="local-draft"><i data-lucide="landmark"></i> Finance</span>
+            </header>
+            <nav class="pedagogy-tabs finance-tabs" id="financeTabs" aria-label="Fonctions financières">
+              <button class="active" type="button" data-finance-tab="overview"><i data-lucide="chart-pie"></i><span>Vue financière</span></button>
+              <button type="button" data-finance-tab="fees"><i data-lucide="settings"></i><span>Structure des frais</span></button>
+              <button type="button" data-finance-tab="assignments"><i data-lucide="users-round"></i><span>Affectation des frais</span></button>
+              <button type="button" data-finance-tab="canteen"><i data-lucide="utensils"></i><span>Cantine financière</span></button>
+              <button type="button" data-finance-tab="remediation-finance"><i data-lucide="life-buoy"></i><span>Rattrapage financier</span></button>
+              <button type="button" data-finance-tab="exemptions"><i data-lucide="shield-check"></i><span>Exemptions</span></button>
+              <button type="button" data-finance-tab="campaigns"><i data-lucide="calendar-check-2"></i><span>Campagnes de contrôle</span></button>
+              <button type="button" data-finance-tab="cash"><i data-lucide="wallet"></i><span>Encaissements</span></button>
+              <button type="button" data-finance-tab="receipts"><i data-lucide="receipt-text"></i><span>Reçus</span></button>
+              <button type="button" data-finance-tab="cash-register"><i data-lucide="landmark"></i><span>Caisse</span></button>
+              <button type="button" data-finance-tab="balances"><i data-lucide="badge-alert"></i><span>Soldes</span></button>
+              <button type="button" data-finance-tab="reports"><i data-lucide="file-chart-column"></i><span>Rapports</span></button>
+              <button type="button" data-finance-tab="family"><i data-lucide="contact-round"></i><span>Ma famille</span></button>
+            </nav>
+            <div class="pedagogy-content finance-content" id="financeContent"></div>
+          </section>
+          <section class="pedagogy-module accounting-module" id="accountingModule" hidden>
+            <header class="pedagogy-module-header accounting-module-header">
+              <button class="ss-button ss-button--secondary" id="closeAccountingModule" type="button"><i data-lucide="arrow-left"></i> Tableau de bord</button>
+              <div><span>Comptabilité / Trésorerie</span><h2 id="accountingModuleTitle">Synthèse de trésorerie</h2><p>Lecture frontend des opérations Finance visibles, sans comptabilité légale inventée.</p></div>
+              <span class="local-draft"><i data-lucide="database-zap"></i> BACKEND_LATER</span>
+            </header>
+            <nav class="pedagogy-tabs accounting-tabs" id="accountingTabs" aria-label="Fonctions Comptabilité et Trésorerie">
+              <button class="active" type="button" data-accounting-tab="dashboard"><i data-lucide="layout-dashboard"></i><span>Vue d’ensemble</span></button>
+              <button type="button" data-accounting-tab="journal"><i data-lucide="notebook-tabs"></i><span>Journal</span></button>
+              <button type="button" data-accounting-tab="expenses"><i data-lucide="receipt"></i><span>Dépenses</span></button>
+              <button type="button" data-accounting-tab="treasury"><i data-lucide="landmark"></i><span>Trésorerie</span></button>
+              <button type="button" data-accounting-tab="closing"><i data-lucide="lock-keyhole"></i><span>Clôture</span></button>
+              <button type="button" data-accounting-tab="reconciliation"><i data-lucide="list-checks"></i><span>Rapprochement</span></button>
+              <button type="button" data-accounting-tab="reports"><i data-lucide="file-chart-column"></i><span>Rapports</span></button>
+            </nav>
+            <div class="pedagogy-content accounting-content" id="accountingContent"></div>
+          </section>
+          <section class="pedagogy-module hr-module" id="hrModule" hidden>
+            <header class="pedagogy-module-header hr-module-header">
+              <button class="ss-button ss-button--secondary" id="closeHrModule" type="button"><i data-lucide="arrow-left"></i> Tableau de bord</button>
+              <div><span>Personnel / Ressources humaines</span><h2 id="hrModuleTitle">Tableau de bord RH</h2><p>Données fictives non sensibles pour préparer les futures fonctions RH.</p></div>
+              <span class="local-draft"><i data-lucide="database-zap"></i> DÉMONSTRATION · BACKEND_LATER</span>
+            </header>
+            <nav class="pedagogy-tabs hr-tabs" id="hrTabs" aria-label="Fonctions Ressources humaines">
+              <button class="active" type="button" data-hr-tab="dashboard"><i data-lucide="layout-dashboard"></i><span>Vue d’ensemble</span></button>
+              <button type="button" data-hr-tab="staff"><i data-lucide="contact-round"></i><span>Personnel</span></button>
+              <button type="button" data-hr-tab="contracts"><i data-lucide="files"></i><span>Contrats</span></button>
+              <button type="button" data-hr-tab="assignments"><i data-lucide="user-cog"></i><span>Affectations</span></button>
+              <button type="button" data-hr-tab="absence"><i data-lucide="calendar-x"></i><span>Absences</span></button>
+              <button type="button" data-hr-tab="attendance"><i data-lucide="clipboard-check"></i><span>Présence</span></button>
+              <button type="button" data-hr-tab="biometric"><i data-lucide="scan-face"></i><span>Biométrie</span></button>
+              <button type="button" data-hr-tab="payroll"><i data-lucide="banknote"></i><span>Paie</span></button>
+              <button type="button" data-hr-tab="reports"><i data-lucide="file-chart-column"></i><span>Rapports RH</span></button>
+            </nav>
+            <div class="pedagogy-content hr-content" id="hrContent"></div>
+          </section>
+          <section class="pedagogy-module inventory-module" id="inventoryModule" hidden>
+            <header class="pedagogy-module-header inventory-module-header">
+              <button class="ss-button ss-button--secondary" id="closeInventoryModule" type="button"><i data-lucide="arrow-left"></i> Tableau de bord</button>
+              <div><span>Stock / Inventaire</span><h2 id="inventoryModuleTitle">Stock et achats internes</h2><p>Moteur frontend générique pour les articles, mouvements et approvisionnements.</p></div>
+              <span class="local-draft"><i data-lucide="database-zap"></i> DÉMONSTRATION · BACKEND_LATER</span>
+            </header>
+            <nav class="pedagogy-tabs inventory-tabs" id="inventoryTabs" aria-label="Fonctions Stock, Inventaire et Achats internes">
+              <button class="active" type="button" data-inventory-tab="dashboard"><i data-lucide="layout-dashboard"></i><span>Vue d’ensemble</span></button>
+              <button type="button" data-inventory-tab="catalog"><i data-lucide="boxes"></i><span>Catalogue</span></button>
+              <button type="button" data-inventory-tab="levels"><i data-lucide="warehouse"></i><span>Niveaux</span></button>
+              <button type="button" data-inventory-tab="movements"><i data-lucide="arrow-left-right"></i><span>Mouvements</span></button>
+              <button type="button" data-inventory-tab="procurement"><i data-lucide="shopping-cart"></i><span>Achats internes</span></button>
+              <button type="button" data-inventory-tab="receipts"><i data-lucide="package-check"></i><span>Réceptions</span></button>
+              <button type="button" data-inventory-tab="reports"><i data-lucide="file-chart-column"></i><span>Rapports</span></button>
+            </nav>
+            <div class="pedagogy-content inventory-content" id="inventoryContent"></div>
+          </section>
+          <section class="pedagogy-module communication-module" id="communicationModule" hidden>
+            <header class="pedagogy-module-header communication-module-header">
+              <button class="ss-button ss-button--secondary" id="closeCommunicationModule" type="button"><i data-lucide="arrow-left"></i> Tableau de bord</button>
+              <div><span>Communications / Convocations / Notifications</span><h2 id="communicationModuleTitle">Communication scolaire</h2><p>Préparation frontend bornée par Access_Law, sans envoi ni publication réelle.</p></div>
+              <span class="local-draft"><i data-lucide="radio-tower"></i> FRONTEND · BACKEND_LATER</span>
+            </header>
+            <nav class="pedagogy-tabs communication-tabs" id="communicationTabs" aria-label="Fonctions Communication">
+              <button class="active" type="button" data-communication-tab="dashboard"><i data-lucide="layout-dashboard"></i><span>Vue d’ensemble</span></button>
+              <button type="button" data-communication-tab="messages"><i data-lucide="messages-square"></i><span>Messages</span></button>
+              <button type="button" data-communication-tab="announcements"><i data-lucide="megaphone"></i><span>Annonces</span></button>
+              <button type="button" data-communication-tab="convocations"><i data-lucide="mail-plus"></i><span>Convocations</span></button>
+              <button type="button" data-communication-tab="notifications"><i data-lucide="bell"></i><span>Notifications</span></button>
+              <button type="button" data-communication-tab="channels"><i data-lucide="radio-tower"></i><span>Canaux / Site</span></button>
+              <button type="button" data-communication-tab="events"><i data-lucide="calendar-days"></i><span>Événements</span></button>
+              <button type="button" data-communication-tab="handoffs"><i data-lucide="route"></i><span>Liaisons</span></button>
+            </nav>
+            <div class="pedagogy-content communication-content" id="communicationContent"></div>
+          </section>
+          <section class="pedagogy-module document-center-module" id="documentCenterModule" hidden>
+            <header class="pedagogy-module-header document-center-module-header">
+              <button class="ss-button ss-button--secondary" id="closeDocumentCenter" type="button"><i data-lucide="arrow-left"></i> Tableau de bord</button>
+              <div><span>Centre transversal</span><h2>Centre de documents</h2><p>Retrouvez uniquement les aperçus et sorties autorisés dans votre périmètre.</p></div>
+              <span class="local-draft"><i data-lucide="shield-check"></i> APERÇU · FRONTEND</span>
+            </header>
+            <div class="pedagogy-content document-center-content" id="documentCenterContent"></div>
+          </section>
+          <section class="administration-module" id="administrationModule" hidden></section>
+          <section class="pedagogy-module security-module" id="securityModule" hidden>
+            <header class="pedagogy-module-header security-module-header">
+              <button class="ss-button ss-button--secondary" id="closeSecurityModule" type="button"><i data-lucide="arrow-left"></i> Tableau de bord</button>
+              <div><span>Sécurité et contrôle</span><h2>Sécurité du portail</h2><p>Contrôlez une personne autorisée ou utilisez le scanner SchoolSafe existant.</p></div>
+              <span class="local-draft"><i data-lucide="cloud-off"></i> Démo locale · BACKEND_LATER</span>
+            </header>
+            <div class="pedagogy-content security-content" id="securityContent"></div>
+          </section>
+          <section class="pedagogy-module fee-control-module" id="feeControlModule" hidden>
+            <header class="pedagogy-module-header fee-control-module-header">
+              <button class="ss-button ss-button--secondary" id="closeFeeControlModule" type="button"><i data-lucide="arrow-left"></i> Tableau de bord</button>
+              <div><span>Contrôle des frais</span><h2>Contrôle par QR</h2><p>Vérifiez le statut financier d’un élève lors d’un contrôle.</p></div>
+              <span class="local-draft"><i data-lucide="badge-check"></i> Contrôle financier</span>
+            </header>
+            <div class="pedagogy-content fee-control-content" id="feeControlContent"></div>
+          </section>
+          <section class="pedagogy-module reports-module" id="reportsModule" hidden>
+            <header class="pedagogy-module-header reports-module-header">
+              <button class="ss-button ss-button--secondary" id="closeReportsModule" type="button"><i data-lucide="arrow-left"></i> Tableau de bord</button>
+              <div><span>Contrôle et rapports</span><h2>Historiques, audit et rapports administratifs</h2><p>Consultez l’activité de l’école et produisez les rapports attendus.</p></div>
+              <span class="local-draft"><i data-lucide="file-chart-column"></i> DÉMONSTRATION · BACKEND_LATER</span>
+            </header>
+            <nav class="pedagogy-tabs reports-tabs" id="reportsTabs" aria-label="Fonctions Contrôle et rapports">
+              <button class="active" type="button" data-reports-tab="history" aria-pressed="true"><i data-lucide="history"></i><span>Historiques</span></button>
+              <button type="button" data-reports-tab="audit" aria-pressed="false"><i data-lucide="list-checks"></i><span>Audit des actions</span></button>
+              <button type="button" data-reports-tab="administrative" aria-pressed="false"><i data-lucide="file-chart-column"></i><span>Rapports administratifs</span></button>
+              <button type="button" data-reports-tab="exports" aria-pressed="false"><i data-lucide="file-down"></i><span>Exports PDF et Excel</span></button>
+            </nav>
+            <div class="pedagogy-content reports-content" id="reportsContent"></div>
+          </section>
+          <section class="pedagogy-module pilotage-module" id="pilotageModule" hidden>
+            <header class="pedagogy-module-header pilotage-module-header">
+              <button class="ss-button ss-button--secondary" id="closePilotageModule" type="button"><i data-lucide="arrow-left"></i> Tableau de bord</button>
+              <div><span>Pilotage</span><h2>Centre de décision</h2><p>Alertes, indicateurs et actions à traiter.</p></div>
+              <span class="local-draft"><i data-lucide="gauge"></i> Vue directrice</span>
+            </header>
+            <nav class="pedagogy-tabs pilotage-tabs" id="pilotageTabs" aria-label="Fonctions de pilotage">
+              <button class="active" type="button" data-pilotage-tab="dashboard" aria-pressed="true"><i data-lucide="layout-dashboard"></i><span>Tableau de bord</span></button>
+              <button type="button" data-pilotage-tab="alerts" aria-pressed="false"><i data-lucide="triangle-alert"></i><span>Alertes</span></button>
+            </nav>
+            <div class="pedagogy-content pilotage-content" id="pilotageContent"></div>
+          </section>
+          <section class="access-console" id="accessConsole" hidden>
+            <header class="access-header"><div><span>Administration des accès</span><h2 id="accessConsoleTitle">Attribuer un rôle et limiter son périmètre</h2><p id="accessConsoleDescription">Le modèle du rôle active les branches et actions utiles; l’Administrateur principal peut ensuite retirer une permission ou réduire son périmètre.</p></div><button class="ss-button ss-button--secondary" id="closeAccessConsole" type="button"><i data-lucide="x"></i> Fermer</button></header>
+            <div id="nativeAccessContent" class="native-access" hidden aria-live="polite"></div>
+            <div class="access-layout" id="accessDemoLayout">
+              <aside class="staff-list" id="staffList"></aside>
+              <div class="permission-editor">
+                <div class="editor-identity"><span id="editorAvatar">GA</span><div><h3 id="editorName">M. X</h3><p id="editorAssignment">Agent de contrôle d’accès</p></div><span class="template-state"><i data-lucide="wand-sparkles"></i> Modèle automatique</span></div>
+                <div class="permission-fields">
+                  <label>Rôle<select id="editorRole"></select></label>
+                  <label>Type de périmètre<select id="scopeType"><option value="portal">Portail</option><option value="class">Classe</option><option value="cycle">Cycle</option><option value="service">Service</option><option value="children">Enfants rattachés</option><option value="instance">Toute l’instance</option></select></label>
+                  <label>Valeur du périmètre<input id="scopeValue" value="Portail principal"></label>
+                </div>
+                <section class="access-data-policy" id="accessDataPolicy" hidden></section>
+                <div class="permission-tree" id="permissionTree"></div>
+                <footer class="permission-actions"><span><i data-lucide="info"></i> Démonstration locale uniquement</span><button class="ss-button" id="savePermissions" type="button"><i data-lucide="save"></i> Enregistrer le brouillon</button></footer>
+              </div>
+            </div>
+          </section>
+          <section id="schoolModule" class="module-container school-module" hidden>
+            <header class="module-header">
+              <button class="module-back" type="button" id="closeSchoolModule" aria-label="Retour"><i data-lucide="arrow-left"></i></button>
+              <h2 id="schoolModuleTitle">École & Personnel</h2>
+            </header>
+            <div class="school-tabs" id="schoolTabs">
+              <button type="button" data-school-tab="school">Mon école</button>
+              <button type="button" data-school-tab="staff">Mon équipe</button>
+              <button type="button" data-school-tab="students">Élèves</button>
+              <button type="button" data-school-tab="structure">Structure</button>
+            </div>
+            <div id="schoolContent"></div>
+          </section>
+          <section class="cards-studio" id="cardsStudio" hidden>
+            <header class="cards-studio-header">
+              <button class="ss-button ss-button--secondary" id="closeCardsStudio" type="button"><i data-lucide="arrow-left"></i> Tableau de bord</button>
+              <div><span>Production de cartes</span><h2>Cartes élèves SchoolSafe</h2><p>Sélectionnez une classe puis un élève, vérifiez l'aperçu et demandez l'impression.</p></div>
+            </header>
+            <div class="cards-studio-layout">
+              <aside class="cards-studio-panel">
+                <label for="cardsClassSelect">Classe</label>
+                <select id="cardsClassSelect"><option value="">Choisir une classe</option></select>
+                <label>Élèves</label>
+                <div class="cards-student-list" id="cardsStudentList">
+                  <div class="ss-state ss-state--empty ss-state--compact"><span class="ss-state__icon"><i data-lucide="users"></i></span><h3 class="ss-state__title">Aucun élève</h3><p class="ss-state__text">Sélectionnez une classe pour afficher les élèves.</p></div>
+                </div>
+                <label class="cards-select-all">
+                  <input type="checkbox" id="cardsSelectAll"> Tout sélectionner
+                </label>
+                <label for="cardsPatStyle">Style du patrimoine</label>
+                <select id="cardsPatStyle">
+                  <option value="vignette">Vignette</option>
+                  <option value="fond">Fond</option>
+                  <option value="both" selected>Vignette + Fond</option>
+                </select>
+                <div class="cards-actions">
+                  <button class="ss-button" id="cardsRenderBtn" type="button" disabled><i data-lucide="eye"></i> Générer l'aperçu</button>
+                  <button class="ss-button" id="cardsRequestPrintBtn" type="button" disabled><i data-lucide="send"></i> Envoyer la sélection</button>
+                  <button class="ss-button ss-button--secondary" id="cardsBuildBatchBtn" type="button"><i data-lucide="package"></i> Préparer le lot ZIP</button>
+                  <button class="ss-button ss-button--secondary" id="cardsLossReportBtn" type="button" disabled><i data-lucide="circle-alert"></i> Signaler perte/vol</button>
+                  <button class="ss-button ss-button--secondary" id="cardsReplaceBtn" type="button" disabled><i data-lucide="refresh-cw"></i> Remplacer la carte</button>
+                  <button class="ss-button ss-button--secondary" id="cardsReprintBtn" type="button" disabled><i data-lucide="printer"></i> Réimprimer</button>
+                  <button class="ss-button ss-button--secondary" id="cardsDistributeBtn" type="button" disabled><i data-lucide="badge-check"></i> Distribuer</button>
+                </div>
+                <div class="cards-status" id="cardsStatus"></div>
+              </aside>
+              <div class="cards-preview-wrap">
+                <div id="cardsPreview" class="ss-card-studio">
+                  <div class="ss-state ss-state--empty"><span class="ss-state__icon"><i data-lucide="credit-card"></i></span><h3 class="ss-state__title">Aucun aperçu</h3><p class="ss-state__text">Sélectionnez une classe et un élève, puis générez l'aperçu.</p></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+      <nav class="ss-bottom-nav" id="workspaceBottomNav" hidden aria-label="Navigation rapide">
+        <button class="ss-bottom-nav__item active" type="button" data-bottom-nav="dashboard" aria-label="Dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </button>
+        <button class="ss-bottom-nav__item ss-bottom-nav__jaspe" type="button" data-bottom-nav="jaspe" aria-label="Jaspe — maintenir pour la faire sortir" aria-haspopup="dialog" aria-controls="jaspePanelOverlay"><span class="jaspe-nav-avatar"><img src="./assets/jaspe2d/attente-v13/adossee-detouree.png" alt=""></span><span>JASPE</span></button>
+        <button class="ss-bottom-nav__item" type="button" data-bottom-nav="menu" aria-label="Menu">
+          <i data-lucide="menu"></i>
+          <span>Menu</span>
+        </button>
+      </nav>
+
+      <!-- Dropdowns partagés desktop / mobile -->
+      <div class="topbar-dropdown topbar-dropdown--notifications" id="notificationsDropdown" hidden>
+        <div class="topbar-dropdown__header"><h4>Notifications</h4><button class="text-button" type="button" id="markAllRead" hidden>Tout marquer comme lu</button></div>
+        <div class="topbar-dropdown__body"><div class="topbar-dropdown__empty"><i data-lucide="bell-off"></i><span>Aucune notification disponible.</span></div></div>
+      </div>
+      <div class="topbar-dropdown topbar-dropdown--messages" id="messagesDropdown" hidden>
+        <div class="topbar-dropdown__header"><h4>Messages</h4></div>
+        <div class="topbar-dropdown__body"><div class="topbar-dropdown__empty"><i data-lucide="mail-off"></i><span>Aucun message disponible.</span></div></div>
+      </div>
+      <div class="topbar-dropdown topbar-dropdown--profile" id="profileDropdown" hidden>
+        <div class="topbar-dropdown__header">
+          <img id="profileDropdownAvatar" src="./schoolsafe-logo.png" alt="">
+          <div><b id="profileDropdownName">Administrateur</b><span id="profileDropdownRole">Administrateur principal</span></div>
+        </div>
+        <div class="topbar-dropdown__body">
+          <button class="topbar-dropdown__item" type="button" id="profileDropdownSettings"><i data-lucide="settings"></i> Paramètres</button>
+          <button class="topbar-dropdown__item" type="button" id="profileDropdownLogout"><i data-lucide="log-out"></i> Retour à la connexion</button>
+        </div>
+      </div>
+
+      <!-- Menu d’actions rapides (bouton +) -->
+      <div class="ss-fab-menu" id="workspaceFabMenu" hidden>
+        <div class="ss-fab-menu__backdrop" id="workspaceFabMenuBackdrop"></div>
+        <div class="ss-fab-menu__panel" id="workspaceFabMenuPanel" role="menu" aria-label="Actions rapides">
+          <div class="ss-fab-menu__title">Nouvelle action</div>
+          <div class="ss-fab-menu__actions" id="workspaceFabMenuActions"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <button class="sync-panel-backdrop" id="syncPanelBackdrop" type="button" aria-label="Fermer l’état de synchronisation" hidden></button>
+  <aside class="sync-panel" id="syncPanel" role="dialog" aria-modal="true" aria-labelledby="syncPanelTitle" hidden>
+    <header>
+      <div><span>Continuité SchoolSafe</span><h2 id="syncPanelTitle">État de synchronisation</h2></div>
+      <button class="ss-icon-button ss-icon-button--light" id="closeSyncPanel" type="button" aria-label="Fermer" title="Fermer"><i data-lucide="x"></i></button>
+    </header>
+    <section class="sync-summary" id="syncSummary" role="status" aria-live="polite"></section>
+    <section class="sync-priorities">
+      <header><h3>Ordre automatique de reprise</h3><small>Les tâches essentielles passent en premier</small></header>
+      <ol>
+        <li><i data-lucide="scan-line"></i><span><b>Scans et sécurité</b><small>Entrées, sorties et alertes</small></span></li>
+        <li><i data-lucide="messages-square"></i><span><b>Messages urgents</b><small>Alertes et convocations</small></span></li>
+        <li><i data-lucide="notebook-pen"></i><span><b>Devoirs</b><small>Pièces jointes et cotations</small></span></li>
+        <li><i data-lucide="clipboard-check"></i><span><b>Présences et services</b><small>Personnel, biométrie et cantine</small></span></li>
+        <li><i data-lucide="landmark"></i><span><b>Gestion</b><small>Pédagogie, finances et administration</small></span></li>
+      </ol>
+    </section>
+    <section class="sync-queue">
+      <header><h3>File de l’appareil</h3><small id="syncQueueCount">Aucune opération en attente</small></header>
+      <div id="syncQueueList"></div>
+    </section>
+    <aside class="sync-boundary"><i data-lucide="shield-check"></i><p>Cette prévisualisation confirme les opérations localement pour tester le parcours. Elle ne prouve aucune synchronisation avec le serveur de l’école.</p></aside>
+    <footer>
+      <button class="ss-button ss-button--secondary" id="installPwaButton" type="button" hidden><i data-lucide="download"></i> Installer SchoolSafe</button>
+      <button class="ss-button" id="syncNowButton" type="button"><i data-lucide="refresh-cw"></i> Synchroniser maintenant</button>
+    </footer>
+  </aside>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- BLOC 2 — Panneau conversation JASPE plein écran (appel de Jaspe) -->
+  <dialog class="jaspe-panel-overlay" id="jaspePanelOverlay" aria-labelledby="jaspePanelTitle" aria-modal="false">
+    <div class="jaspe-panel-layout">
+      <div class="jaspe-full-stage" id="jaspeFullStage" aria-label="Jaspe en corps entier"><span class="jaspe-full-caption">Toujours à vos côtés.</span></div>
+      <section class="jaspe-panel" id="jaspePanel">
+        <header class="jaspe-panel__header"><div><span class="jaspe-panel__eyebrow">Votre assistante SchoolSafe</span><h2 id="jaspePanelTitle">Un moment avec Jaspe</h2></div><button class="jaspe-panel__close" id="jaspePanelClose" type="button" aria-label="Fermer et ramener Jaspe dans le bandeau"><i data-lucide="x"></i></button></header>
+        <div class="jaspe-panel__modes"><button type="button" data-jaspe-mode="text" aria-pressed="true"><i data-lucide="message-circle"></i> Écrit</button><button type="button" data-jaspe-mode="audio" aria-pressed="false"><i data-lucide="mic"></i> Audio</button></div>
+        <div class="jaspe-panel__body" id="jaspePanelBody" role="status" aria-live="polite" aria-label="Réponse de Jaspe"></div>
+        <p class="jaspe-panel__status" id="jaspePanelStatus" role="status" hidden></p>
+        <div class="jaspe-voice-controls"><button type="button" id="jaspePanelVoice" data-jaspe-voice disabled>Écouter la réponse</button></div>
+        <form class="jaspe-panel__footer" id="jaspePanelForm"><label class="sr-only" for="jaspePanelInput">Votre question à Jaspe</label><input id="jaspePanelInput" autocomplete="off" placeholder="Écrivez à Jaspe…"><button id="jaspePanelMic" type="button" aria-label="Démarrer l’écoute" aria-pressed="false" hidden><i data-lucide="mic"></i></button><button id="jaspePanelSend" type="submit" aria-label="Envoyer le message"><i data-lucide="arrow-up"></i></button></form>
+      </section>
+    </div>
+  </dialog>
+
+</body>
+</html>

@@ -1,0 +1,531 @@
+.accounting-module,
+.accounting-content {
+  color: var(--ss-text-primary);
+  background: var(--ss-bg-primary);
+}
+
+.accounting-module-header {
+  background: var(--ss-gradient-module);
+}
+
+.accounting-dashboard,
+.accounting-shortcuts,
+.accounting-future,
+.accounting-journal,
+.accounting-expenses,
+.accounting-expense-boundary,
+.accounting-treasury,
+.accounting-closing,
+.accounting-closing-summary,
+.accounting-reconciliation,
+.accounting-reports,
+.accounting-report-currencies {
+  display: grid;
+  gap: var(--ss-space-4);
+}
+
+.accounting-dashboard > header,
+.accounting-journal > header,
+.accounting-expenses > header,
+.accounting-expense-boundary > header,
+.accounting-treasury > header,
+.accounting-closing > header,
+.accounting-reconciliation > header,
+.accounting-reports > header,
+.accounting-shortcuts,
+.accounting-future {
+  padding: var(--ss-space-5);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-surface-raised);
+}
+
+.accounting-dashboard > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ss-space-4);
+}
+
+.accounting-journal > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ss-space-4);
+}
+
+.accounting-expenses > header,
+.accounting-expense-boundary > header,
+.accounting-treasury > header,
+.accounting-closing > header,
+.accounting-reconciliation > header,
+.accounting-reports > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ss-space-4);
+}
+
+.accounting-dashboard h3,
+.accounting-shortcuts h3,
+.accounting-future h3 {
+  margin: var(--ss-space-1) 0;
+  color: var(--ss-text-primary);
+}
+
+.accounting-dashboard p,
+.accounting-future p,
+.accounting-dashboard small,
+.accounting-shortcuts > header span {
+  color: var(--ss-text-secondary);
+}
+
+.accounting-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ss-space-3);
+}
+
+.accounting-dashboard-metric {
+  min-width: 0;
+  min-height: 104px;
+  display: flex;
+  align-items: center;
+  gap: var(--ss-space-3);
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-border-subtle);
+  border-radius: var(--ss-radius-md);
+  background: var(--ss-bg-secondary);
+}
+
+.accounting-dashboard-metric > span {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--ss-radius-md);
+  color: var(--ss-domain-comptabilite);
+  background: var(--ss-domain-comptabilite-bg);
+}
+
+.accounting-dashboard-metric small,
+.accounting-dashboard-metric b {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.accounting-boundary {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ss-space-3);
+  padding: var(--ss-space-4);
+  color: var(--ss-info-text);
+  border: 1px solid var(--ss-info-border);
+  border-radius: var(--ss-radius-md);
+  background: var(--ss-info-bg);
+}
+
+.accounting-boundary p {
+  margin: 0;
+  color: inherit;
+}
+
+.accounting-boundary-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: var(--ss-space-2) var(--ss-space-3);
+  border: 1px solid var(--ss-warning-border);
+  border-radius: var(--ss-radius-full);
+  color: var(--ss-warning-text);
+  background: var(--ss-warning-bg);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-bold);
+}
+
+.accounting-shortcuts > div {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--ss-space-3);
+}
+
+.accounting-journal-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr)) minmax(200px, 1.5fr);
+  gap: var(--ss-space-3);
+}
+
+.accounting-journal-filters label {
+  display: grid;
+  gap: var(--ss-space-2);
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-semibold);
+}
+
+.accounting-journal-filters :is(input, select) {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--ss-space-2) var(--ss-space-3);
+  border: 1px solid var(--ss-border-strong);
+  border-radius: var(--ss-radius);
+  color: var(--ss-text-primary);
+  background: var(--ss-bg-secondary);
+}
+
+.accounting-currency-summaries {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--ss-space-3);
+}
+
+.accounting-currency-summaries article {
+  display: grid;
+  gap: var(--ss-space-1);
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-md);
+  background: var(--ss-bg-secondary);
+}
+
+.accounting-currency-summaries small,
+.accounting-currency-summaries span { color: var(--ss-text-secondary); }
+
+.accounting-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-md);
+}
+
+.accounting-table {
+  width: 100%;
+  min-width: 1100px;
+  border-collapse: collapse;
+  background: var(--ss-bg-primary);
+}
+
+.accounting-expense-table { min-width: 820px; }
+
+.accounting-expense-boundary {
+  padding: var(--ss-space-5);
+  border: 1px solid var(--ss-warning-border);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-warning-bg);
+}
+
+.accounting-expense-boundary form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ss-space-3);
+}
+
+.accounting-expense-boundary label {
+  display: grid;
+  gap: var(--ss-space-2);
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-semibold);
+}
+
+.accounting-expense-boundary :is(input, select, button) {
+  width: 100%;
+  min-height: 44px;
+}
+
+.accounting-expense-boundary :is(input, select) {
+  padding: var(--ss-space-2) var(--ss-space-3);
+  border: 1px solid var(--ss-border-strong);
+  border-radius: var(--ss-radius);
+  color: var(--ss-text-primary);
+  background: var(--ss-bg-primary);
+}
+
+.accounting-expense-boundary button:disabled { cursor: not-allowed; opacity: .62; }
+.accounting-boundary--warning { color: var(--ss-warning-text); border-color: var(--ss-warning-border); background: var(--ss-bg-primary); }
+
+.accounting-treasury-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--ss-space-4);
+}
+
+.accounting-treasury-card {
+  min-width: 0;
+  padding: var(--ss-space-5);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-surface-raised);
+}
+
+.accounting-treasury-card > header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ss-space-3);
+  margin-bottom: var(--ss-space-3);
+}
+
+.accounting-treasury-card > header span {
+  color: var(--ss-domain-comptabilite);
+  font-size: var(--ss-text-xl);
+  font-weight: var(--ss-font-extrabold);
+}
+
+.accounting-treasury-card > header b {
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-xs);
+}
+
+.accounting-opening-missing,
+.accounting-missing-currency {
+  padding: var(--ss-space-3);
+  border: 1px solid var(--ss-warning-border);
+  border-radius: var(--ss-radius-md);
+  color: var(--ss-warning-text);
+  background: var(--ss-warning-bg);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-bold);
+}
+
+.accounting-treasury-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ss-space-3);
+  margin: var(--ss-space-4) 0 0;
+}
+
+.accounting-treasury-card dl div {
+  min-width: 0;
+  padding: var(--ss-space-3);
+  border: 1px solid var(--ss-border-subtle);
+  border-radius: var(--ss-radius);
+  background: var(--ss-bg-primary);
+}
+
+.accounting-treasury-card dt { color: var(--ss-text-secondary); font-size: var(--ss-text-xs); }
+.accounting-treasury-card dd { margin: var(--ss-space-1) 0 0; overflow-wrap: anywhere; font-weight: var(--ss-font-bold); }
+.accounting-missing-currency { display: flex; flex-wrap: wrap; gap: var(--ss-space-2); }
+
+.accounting-closing-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ss-space-2);
+}
+
+.accounting-closing-steps span,
+.accounting-closing-state {
+  padding: var(--ss-space-2) var(--ss-space-3);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-full);
+  color: var(--ss-text-secondary);
+  background: var(--ss-bg-secondary);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-bold);
+}
+
+.accounting-closing form {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--ss-space-3);
+  padding: var(--ss-space-5);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-lg);
+  background: var(--ss-surface-raised);
+}
+
+.accounting-closing form label {
+  display: grid;
+  gap: var(--ss-space-2);
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-semibold);
+}
+
+.accounting-closing form :is(input, select, textarea) {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--ss-space-2) var(--ss-space-3);
+  border: 1px solid var(--ss-border-strong);
+  border-radius: var(--ss-radius);
+  color: var(--ss-text-primary);
+  background: var(--ss-bg-primary);
+}
+
+.accounting-closing-observation { grid-column: 1 / -1; }
+.accounting-closing form button { min-height: 44px; align-self: end; }
+.accounting-closing-summary { padding: var(--ss-space-5); border: 1px solid var(--ss-warning-border); border-radius: var(--ss-radius-lg); background: var(--ss-warning-bg); }
+.accounting-closing-summary > header { display: flex; justify-content: space-between; gap: var(--ss-space-3); }
+.accounting-closing-summary dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ss-space-3); }
+.accounting-closing-summary dl div { padding: var(--ss-space-3); border-radius: var(--ss-radius); background: var(--ss-bg-primary); }
+.accounting-closing-summary dt { color: var(--ss-text-secondary); font-size: var(--ss-text-xs); }
+.accounting-closing-summary dd { margin: var(--ss-space-1) 0 0; font-weight: var(--ss-font-bold); overflow-wrap: anywhere; }
+.accounting-closing-state { display: flex; gap: var(--ss-space-2); width: fit-content; }
+
+.accounting-reconciliation-chain {
+  display: flex;
+  align-items: center;
+  gap: var(--ss-space-2);
+  max-width: 100%;
+  overflow-x: auto;
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-md);
+  background: var(--ss-surface-raised);
+}
+
+.accounting-reconciliation-chain span {
+  flex: 0 0 auto;
+  padding: var(--ss-space-2) var(--ss-space-3);
+  border-radius: var(--ss-radius-full);
+  color: var(--ss-text-primary);
+  background: var(--ss-bg-primary);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-bold);
+}
+
+.accounting-reconciliation-summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ss-space-2);
+  color: var(--ss-text-secondary);
+}
+
+.accounting-reconciliation-summary b { color: var(--ss-text-primary); font-size: var(--ss-text-3xl); }
+.accounting-reconciliation-table { min-width: 850px; }
+.accounting-review-only { display: inline-flex; padding: var(--ss-space-1) var(--ss-space-2); border-radius: var(--ss-radius-full); color: var(--ss-info-text); background: var(--ss-info-bg); font-size: var(--ss-text-xs); font-weight: var(--ss-font-bold); }
+
+.accounting-report-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 260px));
+  gap: var(--ss-space-3);
+}
+
+.accounting-report-filters label {
+  display: grid;
+  gap: var(--ss-space-2);
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-semibold);
+}
+
+.accounting-report-filters input {
+  min-height: 44px;
+  padding: var(--ss-space-2) var(--ss-space-3);
+  border: 1px solid var(--ss-border-strong);
+  border-radius: var(--ss-radius);
+  color: var(--ss-text-primary);
+  background: var(--ss-bg-secondary);
+}
+
+.accounting-report-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ss-space-3);
+}
+
+.accounting-report-overview article,
+.accounting-report-currencies article {
+  min-width: 0;
+  display: grid;
+  gap: var(--ss-space-2);
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-md);
+  background: var(--ss-surface-raised);
+}
+
+.accounting-report-overview small,
+.accounting-report-overview span,
+.accounting-report-currencies span,
+.accounting-report-currencies dt { color: var(--ss-text-secondary); }
+.accounting-report-overview b { overflow-wrap: anywhere; }
+
+.accounting-report-currencies > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--ss-space-3);
+}
+
+.accounting-report-currencies article header { display: flex; justify-content: space-between; gap: var(--ss-space-2); }
+.accounting-report-currencies article dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ss-space-2); margin: 0; }
+.accounting-report-currencies article dl div { min-width: 0; padding: var(--ss-space-2); border-radius: var(--ss-radius); background: var(--ss-bg-primary); }
+.accounting-report-currencies dd { margin: var(--ss-space-1) 0 0; overflow-wrap: anywhere; font-weight: var(--ss-font-bold); }
+
+.accounting-report-legal-boundary {
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-warning-border);
+  border-radius: var(--ss-radius-md);
+  color: var(--ss-warning-text);
+  background: var(--ss-warning-bg);
+}
+.accounting-report-legal-boundary p { margin-bottom: 0; color: inherit; }
+
+.accounting-table :is(th, td) {
+  padding: var(--ss-space-3);
+  border-bottom: 1px solid var(--ss-border-subtle);
+  text-align: left;
+  vertical-align: top;
+}
+
+.accounting-table th {
+  color: var(--ss-text-secondary);
+  background: var(--ss-bg-secondary);
+}
+
+.accounting-direction {
+  display: inline-flex;
+  padding: var(--ss-space-1) var(--ss-space-2);
+  border-radius: var(--ss-radius-full);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-bold);
+}
+
+.accounting-direction--in { color: var(--ss-success-text); background: var(--ss-success-bg); }
+.accounting-direction--out { color: var(--ss-warning-text); background: var(--ss-warning-bg); }
+.accounting-empty { padding: var(--ss-space-6); color: var(--ss-text-secondary); text-align: center; }
+
+.accounting-dashboard-action {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ss-space-2);
+  padding: var(--ss-space-3);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius-md);
+  color: var(--ss-text-primary);
+  background: var(--ss-bg-primary);
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .accounting-dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .accounting-shortcuts > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .accounting-journal-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .accounting-expense-boundary form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .accounting-closing form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .accounting-closing-summary dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .accounting-report-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 520px) {
+  .accounting-dashboard > header { flex-direction: column; }
+  .accounting-journal > header { flex-direction: column; }
+  .accounting-expenses > header,
+  .accounting-expense-boundary > header,
+  .accounting-treasury > header { flex-direction: column; }
+  .accounting-closing > header { flex-direction: column; }
+  .accounting-reconciliation > header { flex-direction: column; }
+  .accounting-reports > header { flex-direction: column; }
+  .accounting-dashboard-grid,
+  .accounting-shortcuts > div { grid-template-columns: 1fr; }
+  .accounting-journal-filters { grid-template-columns: 1fr; }
+  .accounting-expense-boundary form { grid-template-columns: 1fr; }
+  .accounting-treasury-card dl { grid-template-columns: 1fr; }
+  .accounting-closing form,
+  .accounting-closing-summary dl { grid-template-columns: 1fr; }
+  .accounting-report-filters,
+  .accounting-report-overview,
+  .accounting-report-currencies article dl { grid-template-columns: 1fr; }
+}

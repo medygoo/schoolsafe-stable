@@ -1,0 +1,15 @@
+{
+  "date": "2026-09-16",
+  "tool": "image_gen.imagegen (outil intégré)",
+  "reference": "app/assets/jaspe2d/assise-v1/parole-clair.png",
+  "steps": [
+    {
+      "output": "parole-deux-mains-clair.png",
+      "prompt": "Use case: identity-preserve.\nEdit the supplied JASPE 2x2 animation sprite sheet to create a NEW action: SPEAKING WITH BOTH HANDS MOVING.\nKeep EXACTLY the existing 2 columns x 2 rows grid, canvas 1536x1024, equal cells 768x512, no gutters, no borders, no labels. Each frame keeps the same camera, girl scale, face position and fixed desk/props registration as the reference. Same recognizable JASPE, warm brown skin, big brown eyes, two curly puff buns, small stud earrings, white short sleeve shirt, navy pinafore, striped tie. Same pale blue background #EAF4FC, pale wood desk, CLOSED navy book on viewer LEFT and navy pencil cup on viewer RIGHT. Desk and props stay completely still.\nONLY change the speaking pose: neither hand supports her cheek any more. BOTH hands are visible and perform a small, natural explanatory gesture above the table. Her torso and head stay almost still, looking at the viewer; preserve face identity and head size. Both elbows stay close to the desk. No clapping, no pointing, no raised arms above shoulders.\nFour coherent successive keyframes, read left-to-right then next row:\n1 top-left: both forearms close to the desk, both hands gently lifted near the center, relaxed fingers, palms angled inward/upward. Lips slightly parted.\n2 top-right: BOTH hands rise a little to lower-chest height and open outwards, palms upward, fingers comfortably separated; mouth softly open in speech.\n3 bottom-left: BOTH hands extend slightly farther outward in a welcoming explanation, one a little higher than the other for natural asymmetry, palms upward/outward. Mouth rounded slightly as saying 'oh'.\n4 bottom-right: BOTH hands move back toward the middle and down toward the table, fingers relaxing; lips nearly closed with a small smile, preparing to return to frame 1.\nKeep the change between frames modest so this loops smoothly. Exactly two hands and two arms, five anatomically coherent fingers per visible hand. No change in lighting, no new objects, no text, no UI, no checkerboard. This is a 2D raster sprite sheet, not a video or 3D asset."
+    },
+    {
+      "output": "parole-deux-mains-sombre.png",
+      "prompt": "Use case: precise-object-edit. Edit the supplied 2x2 JASPE SPEAKING WITH BOTH HANDS sprite sheet. Replace ONLY the pale blue backgrounds in all four cells with DARK NAVY #19334F. Preserve exact canvas 1536x1024 and 2x2 equal grid, no gutters or borders. Preserve each of the four speaking poses, BOTH hands and their distinct positions in each frame, facial identity, mouth shapes, warm brown skin brightness, two curly puff buns, white/navy uniform, closed book, desk and pencil cup exactly. Foreground remains equally bright. Same registration, camera, scale and fixed props. No pale outline around curls or hands. No extra changes, no text, no transparency, no checkerboard. Return one 2D PNG sprite sheet for dark theme."
+    }
+  ]
+}

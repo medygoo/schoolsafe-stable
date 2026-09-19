@@ -1,0 +1,264 @@
+/* --------------------------------------------------------------------------
+   Harmonisation visuelle profonde — Documents, Communication, Administration,
+   Jaspe logiciel. Aucune surface 3D, aucun changement d'autorisation.
+   -------------------------------------------------------------------------- */
+
+.document-center-module {
+  --harmony-accent: var(--ss-domain-documents);
+  --harmony-accent-2: var(--ss-domain-documents-2);
+  --harmony-soft: var(--ss-domain-documents-bg);
+}
+
+.communication-module {
+  --harmony-accent: var(--ss-domain-communication);
+  --harmony-accent-2: var(--ss-domain-communication-2);
+  --harmony-soft: var(--ss-domain-communication-bg);
+}
+
+.administration-module {
+  --harmony-accent: var(--ss-domain-administration);
+  --harmony-accent-2: var(--ss-domain-administration-2);
+  --harmony-soft: var(--ss-domain-administration-bg);
+}
+
+.jaspe-card,
+.administration-module .administration-jaspe {
+  --harmony-accent: var(--ss-domain-jaspe);
+  --harmony-accent-2: var(--ss-domain-jaspe-2);
+  --harmony-soft: var(--ss-domain-jaspe-bg);
+}
+
+:where(.document-center-module, .communication-module, .administration-module, .jaspe-card) {
+  --harmony-line: color-mix(in srgb, var(--harmony-accent) 28%, var(--ss-border-default));
+  --harmony-ring: color-mix(in srgb, var(--harmony-accent) 38%, transparent);
+  accent-color: var(--harmony-accent);
+}
+
+.administration-module .administration-jaspe {
+  --harmony-line: color-mix(in srgb, var(--harmony-accent) 28%, var(--ss-border-default));
+  --harmony-ring: color-mix(in srgb, var(--harmony-accent) 38%, transparent);
+}
+
+/* En-têtes internes et navigation : hiérarchie stable dans chaque domaine. */
+:where(.document-center-module, .communication-module, .administration-module)
+  :is(
+    .document-center__summary,
+    .document-center__filters,
+    .communication-view-header,
+    .communication-dashboard > header,
+    .communication-messages > header,
+    .communication-announcements > header,
+    .communication-convocations > header,
+    .communication-notifications > header,
+    .communication-channels > header,
+    .communication-events > header,
+    .communication-handoffs > header,
+    .administration-view-heading,
+    .administration-summary
+  ) {
+  border-inline-start: 4px solid var(--harmony-accent);
+  border-radius: var(--ss-radius-lg);
+  padding: var(--ss-space-3) var(--ss-space-4);
+  background: linear-gradient(110deg, var(--harmony-soft), transparent 78%);
+}
+
+:where(.document-center-module, .communication-module, .administration-module)
+  :is(.document-center__summary span, .communication-view-header span, .administration-view-heading span) {
+  color: var(--harmony-accent);
+}
+
+/* Cartes et composants métier jusqu'au contenu réel. */
+.document-center-module :is(
+  .document-card,
+  .document-center__history,
+  .document-center__notice,
+  .document-center__empty,
+  .document-center__history-empty
+),
+.communication-module :is(
+  .communication-card,
+  .communication-preview,
+  .communication-draft,
+  .communication-category-grid > article,
+  .communication-channel-grid > article,
+  .communication-event-grid > article,
+  .communication-handoff-grid > article
+),
+.administration-module :is(
+  .administration-card,
+  .administration-accounts,
+  .administration-permissions,
+  .administration-inspector,
+  .administration-simulation,
+  .administration-jaspe,
+  .administration-jaspe-domain,
+  .administration-mutation,
+  .administration-confirm
+),
+.jaspe-card {
+  border-top: 3px solid var(--harmony-accent);
+  border-inline-color: var(--harmony-line);
+  border-bottom-color: var(--harmony-line);
+  border-radius: var(--ss-radius-xl);
+  background-image: linear-gradient(145deg, color-mix(in srgb, var(--harmony-soft) 58%, transparent), transparent 44%);
+  box-shadow: var(--ss-shadow-sm);
+}
+
+:where(.document-center-module, .communication-module, .administration-module)
+  :is(.document-card, .communication-card, .administration-card, .administration-jaspe-domain):hover {
+  border-inline-color: var(--harmony-accent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--harmony-accent) 12%, transparent);
+  transform: translateY(-1px);
+}
+
+/* Icônes et mini-KPI. */
+:where(.document-center-module, .communication-module, .administration-module)
+  :is(
+    .document-card__icon,
+    .communication-card__icon,
+    .administration-card__icon,
+    .administration-jaspe-base > i,
+    .administration-jaspe-domain > i
+  ) {
+  color: var(--harmony-accent);
+  background: linear-gradient(145deg, var(--harmony-soft), color-mix(in srgb, var(--harmony-accent-2) 14%, transparent));
+  box-shadow: inset 0 0 0 1px var(--harmony-line);
+}
+
+/* Formulaires, filtres, recherche et focus clavier. */
+:where(.document-center-module, .communication-module, .administration-module)
+  :is(
+    form,
+    .document-center__filters,
+    .communication-form,
+    .administration-form-grid,
+    .administration-permission-filters,
+    .administration-inspector-form,
+    .administration-simulation-form
+  ) {
+  border-top: 3px solid var(--harmony-accent);
+  border-radius: var(--ss-radius-xl);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--harmony-soft) 72%, var(--ss-bg-primary)), var(--ss-bg-primary) 52%);
+}
+
+:where(.document-center-module, .communication-module, .administration-module)
+  :is(label, .ss-label) {
+  color: var(--ss-text-primary);
+  font-weight: 650;
+}
+
+:where(.document-center-module, .communication-module, .administration-module)
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+  min-height: 44px;
+  border-color: var(--harmony-line);
+  background-color: var(--ss-bg-primary);
+}
+
+:where(.document-center-module, .communication-module, .administration-module)
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea):focus-visible {
+  border-color: var(--harmony-accent);
+  outline: 3px solid var(--harmony-accent);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 5px var(--harmony-ring);
+}
+
+:where(.document-center-module, .communication-module, .administration-module, .jaspe-card)
+  :is(button, .ss-button, [role="button"], [tabindex="0"]) {
+  min-height: 44px;
+}
+
+:where(.document-center-module, .communication-module, .administration-module, .jaspe-card)
+  :is(button, .ss-button, [role="button"], [tabindex="0"]):focus-visible {
+  outline: 3px solid var(--harmony-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--harmony-ring);
+}
+
+:where(.document-center-module, .communication-module, .administration-module)
+  .ss-button:not(.ss-button--secondary):not(.ss-button--danger) {
+  border-color: var(--harmony-accent);
+  background: linear-gradient(135deg, var(--harmony-accent), var(--harmony-accent-2));
+  color: var(--ss-text-on-brand, #fff);
+}
+
+:where(.document-center-module, .communication-module, .administration-module)
+  .ss-button--secondary:hover {
+  border-color: var(--harmony-accent);
+  color: var(--harmony-accent);
+  background: var(--harmony-soft);
+}
+
+/* Tableaux Administration : scroller interne et en-tête marine. */
+:where(.document-center-module, .communication-module, .administration-module)
+  :is([class*="table-wrap"], [class*="table-wrapper"], .administration-permission-list) {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  border: 1px solid var(--harmony-line);
+  border-radius: var(--ss-radius-lg);
+}
+
+:where(.document-center-module, .communication-module, .administration-module) table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+:is(.document-center-module, .communication-module, .administration-module) table thead th {
+  border-bottom: 2px solid var(--harmony-accent);
+  background: color-mix(in srgb, var(--harmony-soft) 82%, var(--ss-bg-secondary));
+  color: var(--ss-text-primary);
+}
+
+:is(.document-center-module, .communication-module, .administration-module) table tbody tr:hover td {
+  background: color-mix(in srgb, var(--harmony-soft) 62%, transparent);
+}
+
+/* États informatifs et frontières BACKEND_LATER, jamais les badges sémantiques. */
+:where(.document-center-module, .communication-module, .administration-module)
+  :is(
+    .document-center__notice,
+    .communication-boundary,
+    .communication-ready-boundary,
+    .communication-submit-boundary,
+    .communication-final-boundary,
+    .administration-notice,
+    .administration-boundaries,
+    [class$="-boundary-chip"]
+  ) {
+  border-color: color-mix(in srgb, var(--ss-blue-600) 32%, var(--ss-border-default));
+  background: color-mix(in srgb, var(--ss-blue-500) 10%, var(--ss-bg-primary));
+  color: var(--ss-blue-700);
+}
+
+/* Jaspe logiciel : accent électrique/violet dans la gouvernance, sans 3D. */
+.administration-module .administration-jaspe :is(.administration-jaspe-base, .administration-jaspe-domain, .administration-jaspe-limit, .administration-jaspe-boundary) {
+  border-color: var(--harmony-line);
+}
+
+.administration-module .administration-jaspe :is(.administration-jaspe-base, .administration-jaspe-domain) {
+  border-top: 3px solid var(--harmony-accent);
+  border-radius: var(--ss-radius-lg);
+  background-image: linear-gradient(145deg, color-mix(in srgb, var(--harmony-soft) 62%, transparent), transparent 48%);
+}
+
+@media (max-width: 720px) {
+  :where(.document-center-module, .communication-module, .administration-module)
+    :is(.pedagogy-tabs, .document-center__filters, .administration-permission-filters) {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  :where(.document-center-module, .communication-module, .administration-module)
+    :is(.communication-view-header, .administration-view-heading, .document-center__summary) {
+    align-items: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(.document-center-module, .communication-module, .administration-module)
+    :is(.document-card, .communication-card, .administration-card, .administration-jaspe-domain) {
+    transition: border-color var(--ss-transition-fast), box-shadow var(--ss-transition-fast), transform var(--ss-transition-fast);
+  }
+}

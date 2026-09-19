@@ -1,0 +1,72 @@
+{
+  "date": "2026-09-16",
+  "tool": "image_gen.imagegen (outil intégré)",
+  "reference": "docs/design/jaspe-assise-v1/jaspe-assise-accueil-clair-v1.png",
+  "grid": {
+    "columns": 2,
+    "rows": 2,
+    "order": "left-to-right, top-to-bottom"
+  },
+  "steps": [
+    {
+      "name": "parole-clair",
+      "prompt": "Use case: identity-preserve. Create ONE production animation SPRITE SHEET using the supplied reference. The single output PNG is a strict 2 columns × 2 rows grid of FOUR frames. Each equal cell has a 3:2 ratio, and must fill exactly half the canvas width and half the canvas height. Total canvas 3072x2048 preferred. NO gaps, NO gutters, NO panel borders, NO labels or frame numbers. Each cell is a complete independently framed copy of the reference scene scaled to fit, with identical camera, desk, props and character scale. ORDER: top-left frame 1, top-right frame 2, bottom-left frame 3, bottom-right frame 4.\nIdentity invariant: same existing JASPE girl as reference, same exact face, warm brown skin, large brown eyes, two curly puff buns, small stud earrings, white short sleeved shirt, navy pinafore and striped navy tie. Child proportions unchanged. Same pale wood desk, closed navy book at left and navy pencil cup at right, all stationary. Do not move desk or props between frames. Do not zoom or reframe. Only the requested tiny character movement changes.\nThe supplied reference already defines perfect frame composition; duplicate its placement exactly in each of the four cells. Background across every cell is the same smooth PALE BLUE #EAF4FC as reference. No transparency, no checkerboard. This remains a 2D raster illustration, no UI or text.\n\nAction: SPEAKING with a gentle explanatory gesture of her LEFT hand, on viewer's RIGHT. Her RIGHT elbow and hand on viewer's LEFT stay supporting her cheek, as reference, throughout. She looks at the viewer throughout.\nFrame 1: exact reference welcoming pose, left forearm resting on desk, lips just parted.\nFrame 2: left elbow stays on desk; left forearm begins lifting a little, fingers relaxed, mouth softly open as if saying 'ah'.\nFrame 3: left palm faces gently upward at lower-chest height, fingers natural, offering an explanation, mouth rounded slightly as if 'oh'.\nFrame 4: left hand descends halfway toward the desk, lips nearly closed.\nSmall controlled movement, not big waving; preserve her identity and all fixed scene registration. Four clear sequential keyframes for a looping speech gesture.",
+      "output": "parole-clair.png",
+      "status": "retenu"
+    },
+    {
+      "name": "reflexion-clair",
+      "prompt": "Use case: identity-preserve. Edit the supplied animation sprite sheet into a THINKING / SCRATCHING-HAIR sequence. Preserve the exact 2x2 grid, canvas size, framing and character scale in EACH cell. No gutters or borders. The desk, book and pencil cup must stay pixel-aligned at the same coordinates as the supplied sheet. Preserve exact JASPE identity, face, hair, uniform and pale blue background.\nChange only the character pose, in four coherent consecutive SMALL steps read left-to-right then next row.\nHer LEFT forearm (viewer RIGHT) rests on the tabletop throughout, as top-left reference cell. Her RIGHT elbow (viewer LEFT) stays resting on the desk throughout.\nFrame 1 top-left: closed lips, thoughtful gaze slightly upward; right hand still supports her cheek like reference.\nFrame 2 top-right: right fingertips slide up from cheek to temple, head and elbow stay almost still.\nFrame 3 bottom-left: right fingers gently reach the lower edge of her curly puff near her temple; she lightly scratches her hair once, thoughtful raised eyebrows.\nFrame 4 bottom-right: fingertips move slightly back down toward temple, small thoughtful smile, preparing to return to frame 1.\nNo big arm swings, no changing identity, no changing face proportions, no second hand near the head, no moving props. Single 2D PNG sprite sheet, 2 columns x 2 rows, exact same placement of fixed elements and camera as reference. NO labels, text or UI.",
+      "output": "reflexion-clair.png",
+      "status": "retenu"
+    },
+    {
+      "name": "sourire-clair",
+      "prompt": "Use case: identity-preserve. Edit the supplied 2x2 animation sprite sheet into an IDLE / SMILE / BLINK sequence. Preserve exact grid, framing and desk/props pixel registration in each cell. Every cell is same camera and scale as reference, no gutters, borders or labels. Same exact JASPE face, warm brown skin, large brown eyes, two curly puff buns and white/navy school uniform. Same pale blue background. Single 1536x1024 or higher same-ratio PNG.\nALL FOUR FRAMES have the exact seated pose of the TOP LEFT reference cell: right cheek supported by right hand (viewer LEFT), left forearm resting on the table (viewer RIGHT). No hand gesture in this sheet. All desk/props/arms/body stay perfectly stationary. Only facial expression changes gently:\nFrame 1 top-left: warm small CLOSED MOUTH smile, eyes looking at viewer, lips fully closed.\nFrame 2 top-right: smile slightly broadens, cheeks lift a little, eyes softly narrowing but open.\nFrame 3 bottom-left: a natural blink with eyelids fully CLOSED, same warm closed mouth smile.\nFrame 4 bottom-right: eyes open again looking at viewer, affectionate slightly brighter CLOSED MOUTH smile.\nKeep exact face identity and face size. No teeth or open mouth, no head turn, no zoom, no body shift. Four coherent small facial animation keyframes.",
+      "output": "sourire-clair.png",
+      "status": "retenu"
+    },
+    {
+      "name": "lecture-clair",
+      "prompt": "Use case: identity-preserve. Edit this 2x2 sprite sheet to create a READING sequence of the same JASPE. Preserve exact 2x2 equal cell grid, framing, head scale, pale blue backdrop, desk and pencil cup registration in every frame. Same girl identity, face, two curly puff buns, white/navy uniform. No gutters, borders, labels or text.\nIn ALL four cells: the existing navy book is now OPEN in front of JASPE at the center of the desk instead of closed at the left. Only one book. Both forearms are on the desk; her hands rest naturally near either side of the open book. The desk and cup never move. Small motions only, face scale and camera unchanged.\nFrame 1 top-left: she smiles softly toward the viewer with the open book before her, both hands holding the book.\nFrame 2 top-right: eyes and chin lower slightly to read the pages, both hands still by book.\nFrame 3 bottom-left: still looking down, her LEFT hand on viewer RIGHT gently lifts one page edge a little. No extra fingers or arms.\nFrame 4 bottom-right: page settles back, eyes return toward viewer, a small closed-mouth smile.\nA coherent small reading gesture, 2D raster animation keyframes. Same total canvas dimensions and grid as input. Keep desk and cup fixed across all four cells. No text or interface.",
+      "output": "lecture-clair.png",
+      "status": "remplacé par lecture-sourire"
+    },
+    {
+      "name": "parole-sombre",
+      "prompt": "Use case: precise-object-edit. Edit the supplied animation SPRITE SHEET. Replace ONLY the pale blue backgrounds in ALL FOUR cells with DARK NAVY #19334F. Preserve the exact 2x2 grid, image dimensions, each frame's pose, JASPE's exact identity, face, hair, uniform, mouth/eyes/hand expressions, desk, book and pencil cup. All foreground pixels keep their brightness; only background becomes dark navy. No rescaling or reframe, no gaps, no gutters, no extra border. The navy must reach every empty space, including around curls and between the body and hands, with natural clean edges and no pale halo. Keep the exact animation sequence and fixed camera/desk registration. No checkerboard or transparency requested. No text, numbers or UI.",
+      "output": "parole-sombre.png",
+      "status": "retenu"
+    },
+    {
+      "name": "reflexion-sombre",
+      "prompt": "Use case: precise-object-edit. Edit the supplied animation SPRITE SHEET. Replace ONLY the pale blue backgrounds in ALL FOUR cells with DARK NAVY #19334F. Preserve the exact 2x2 grid, image dimensions, each frame's pose, JASPE's exact identity, face, hair, uniform, mouth/eyes/hand expressions, desk, book and pencil cup. All foreground pixels keep their brightness; only background becomes dark navy. No rescaling or reframe, no gaps, no gutters, no extra border. The navy must reach every empty space, including around curls and between the body and hands, with natural clean edges and no pale halo. Keep the exact animation sequence and fixed camera/desk registration. No checkerboard or transparency requested. No text, numbers or UI.",
+      "output": "reflexion-sombre.png",
+      "status": "retenu"
+    },
+    {
+      "name": "sourire-sombre",
+      "prompt": "Use case: precise-object-edit. Edit the supplied animation SPRITE SHEET. Replace ONLY the pale blue backgrounds in ALL FOUR cells with DARK NAVY #19334F. Preserve the exact 2x2 grid, image dimensions, each frame's pose, JASPE's exact identity, face, hair, uniform, mouth/eyes/hand expressions, desk, book and pencil cup. All foreground pixels keep their brightness; only background becomes dark navy. No rescaling or reframe, no gaps, no gutters, no extra border. The navy must reach every empty space, including around curls and between the body and hands, with natural clean edges and no pale halo. Keep the exact animation sequence and fixed camera/desk registration. No checkerboard or transparency requested. No text, numbers or UI.",
+      "output": "sourire-sombre.png",
+      "status": "retenu"
+    },
+    {
+      "name": "lecture-sombre",
+      "prompt": "Use case: precise-object-edit. Edit the supplied animation SPRITE SHEET. Replace ONLY the pale blue backgrounds in ALL FOUR cells with DARK NAVY #19334F. Preserve the exact 2x2 grid, image dimensions, each frame's pose, JASPE's exact identity, face, hair, uniform, mouth/eyes/hand expressions, desk, book and pencil cup. All foreground pixels keep their brightness; only background becomes dark navy. No rescaling or reframe, no gaps, no gutters, no extra border. The navy must reach every empty space, including around curls and between the body and hands, with natural clean edges and no pale halo. Keep the exact animation sequence and fixed camera/desk registration. No checkerboard or transparency requested. No text, numbers or UI.",
+      "output": "lecture-sombre.png",
+      "status": "remplacé par lecture-sourire"
+    },
+    {
+      "name": "lecture-sourire-clair",
+      "prompt": "Use case: precise-object-edit. Modify ONLY the facial smile in the supplied 2x2 READING sprite sheet. The user wants JASPE to SMILE WHILE READING. Keep EXACTLY the existing four sequential reading poses, same gaze directions, same identity and scale, same two curly puff buns, uniform, hands, fingers, open book, page-turn positions, desk, cup, pale blue background, 2x2 grid, no gutters, canvas 1536x1024.\nTop-left and bottom-right frames: retain her warm welcoming smile directed toward the viewer.\nTop-right and bottom-left frames: she still looks down at the book but now has a more clearly visible gentle happy CLOSED-MOUTH smile, slightly raised cheeks, softly lifted mouth corners. Not laughing, no open mouth, not talking, no teeth; she enjoys reading.\nDo not change anything else. Keep all object registration and framing identical so these four frames can animate coherently. No text or UI.",
+      "output": "lecture-clair.png",
+      "status": "retenu"
+    },
+    {
+      "name": "lecture-sourire-sombre",
+      "prompt": "Use case: precise-object-edit. Edit the supplied animation SPRITE SHEET. Replace ONLY the pale blue backgrounds in ALL FOUR cells with DARK NAVY #19334F. Preserve the exact 2x2 grid, image dimensions, each frame's pose, JASPE's exact identity, face, hair, uniform, mouth/eyes/hand expressions, desk, book and pencil cup. All foreground pixels keep their brightness; only background becomes dark navy. No rescaling or reframe, no gaps, no gutters, no extra border. The navy must reach every empty space, including around curls and between the body and hands, with natural clean edges and no pale halo. Keep the exact animation sequence and fixed camera/desk registration. No checkerboard or transparency requested. No text, numbers or UI.",
+      "output": "lecture-sombre.png",
+      "status": "retenu"
+    }
+  ]
+}

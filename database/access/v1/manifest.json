@@ -1,0 +1,37 @@
+{
+  "access_version": "schoolsafe-access-v1",
+  "requires_baseline": "schoolsafe-vps-v1",
+  "target": "one SchoolSafe database per environment (TEST/PROD); role templates are global reference data",
+  "units": [
+    {
+      "order": 1,
+      "name": "role_templates",
+      "file": "01_role_templates.sql",
+      "sha256": "ced0935d0ee562c1cd636dc6d8856d13d54338b9a976488fc71b428648e2e9c8"
+    },
+    {
+      "order": 2,
+      "name": "provision_bridge",
+      "file": "02_provision_bridge.sql",
+      "sha256": "00c330fbc921d8fa4608b822b9308cecfb377c053f4c6bed720e166727a6a87e"
+    },
+    {
+      "order": 3,
+      "name": "control_context",
+      "file": "03_control_context.sql",
+      "sha256": "9dfa8fb501d7d289d6abfea18901627da49721b8d6e1d3c0364f3d0018e0e1f5"
+    },
+    {
+      "order": 4,
+      "name": "role_assignments",
+      "file": "04_role_assignments.sql",
+      "sha256": "620f15afe2acd333ec2a93a24b6dbcc8378df4e20002872d1354d844f1d58c98"
+    },
+    {
+      "order": 5,
+      "name": "custom_roles",
+      "file": "05_custom_roles.sql",
+      "sha256": "8afe995795f077424f696b3bc1bf409c865cf6bdc6a5b065f74003e959f8407c"
+    }
+  ]
+}

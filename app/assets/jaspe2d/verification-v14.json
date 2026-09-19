@@ -1,0 +1,113 @@
+{
+  "version": 14,
+  "checkedAt": "2026-09-08T17:26:06.951Z",
+  "status": "closed-current-image-version",
+  "decision": "Conserver la version actuelle ; mettre le système vidéo de côté et passer au prochain point après vérification.",
+  "pwaTests": {
+    "passed": 87,
+    "failed": 0
+  },
+  "layoutConfigurations": 9,
+  "checks": [
+    {
+      "test": "animated-welcome-and-entry",
+      "width": 1366,
+      "model": 2,
+      "errors": [],
+      "videoRequests": 0
+    },
+    {
+      "test": "animated-welcome-and-entry",
+      "width": 390,
+      "model": 1,
+      "errors": [],
+      "videoRequests": 0
+    },
+    {
+      "test": "animated-welcome-and-entry",
+      "width": 390,
+      "model": 2,
+      "errors": [],
+      "videoRequests": 0
+    },
+    {
+      "test": "reduced-motion",
+      "clockStable": true
+    },
+    {
+      "test": "missing-engine-library",
+      "portraitFallback": true,
+      "entryPreserved": true
+    },
+    {
+      "test": "phone-alternation",
+      "layouts": [
+        "companion",
+        "welcome"
+      ],
+      "stableWhileTyping": true
+    },
+    {
+      "test": "three-cutouts-alpha",
+      "alpha": [
+        {
+          "id": "leanPose",
+          "clear": 1201202,
+          "opaque": 341928
+        },
+        {
+          "id": "chairPose",
+          "clear": 979900,
+          "opaque": 544175
+        },
+        {
+          "id": "reading",
+          "clear": 1105620,
+          "opaque": 429265
+        }
+      ]
+    },
+    {
+      "test": "gallery-without-video",
+      "width": 1366,
+      "errors": [],
+      "videoRequests": 0
+    },
+    {
+      "test": "gallery-without-video",
+      "width": 390,
+      "errors": [],
+      "videoRequests": 0
+    },
+    {
+      "test": "gallery-without-video",
+      "width": 320,
+      "errors": [],
+      "videoRequests": 0
+    },
+    {
+      "test": "active-library-integrity",
+      "files": 33
+    }
+  ],
+  "integrity": {
+    "authHandlersPreserved": true,
+    "controlsPreserved": true,
+    "originalImagesUnchanged": 105
+  },
+  "video": {
+    "integrated": false,
+    "loadedInCurrentPages": false,
+    "trialArchived": true
+  },
+  "deferred": [
+    "Clips continus et système vidéo",
+    "Transitions complètes adossée, chaise et livre",
+    "Reprise réaliste de la marche"
+  ],
+  "limits": [
+    "V12 conserve ses limites de naturel et ses transitions historiques",
+    "Clavier natif et téléphone physique non testés",
+    "Cerveau, voix et backend métier non raccordés ou certifiés par cette clôture"
+  ]
+}

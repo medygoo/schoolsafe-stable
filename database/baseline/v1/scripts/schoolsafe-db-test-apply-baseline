@@ -1,0 +1,819 @@
+#!/bin/bash -p
+set -Eeuo pipefail
+
+IFS=$' \t\n'
+umask 077
+
+readonly PATH='/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+export PATH
+export LC_ALL='C'
+
+readonly DOCKER_HOST='unix:///var/run/docker.sock'
+readonly DOCKER_CONFIG='/run/schoolsafe-db-test-apply-baseline.docker-config'
+export DOCKER_HOST DOCKER_CONFIG
+unset BASH_ENV ENV CDPATH GLOBIGNORE DOCKER_CONTEXT DOCKER_TLS_VERIFY \
+  DOCKER_CERT_PATH DOCKER_API_VERSION
+
+readonly CONTAINER='schoolsafe-postgres-test'
+readonly OLD_CONTAINER='schoolsafe-postgres-test-pre-r1'
+readonly DATABASE='schoolsafe_test'
+readonly BOOTSTRAP_ROLE='schoolsafe_bootstrap'
+readonly NETWORK='schoolsafe-test-internal'
+readonly VOLUME='schoolsafe-pg-test-data'
+readonly BASELINE_DIR='/opt/schoolsafe/database/baseline/v1'
+readonly SELF_PATH='/usr/local/sbin/schoolsafe-db-test-apply-baseline'
+readonly SECRET_HOST_PATH='/etc/schoolsafe-db/test/secrets/postgres_bootstrap_password'
+readonly BASELINE_VERSION='schoolsafe-vps-v1'
+readonly EXPECTED_IMAGE_REPO_DIGEST='postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0'
+readonly CONFIRMATION='APPLY_SCHOOLSAFE_TEST_FROM_ZERO'
+readonly EXPECTED_MANIFEST_SHA256='22dfda6ba2549afbf5f0e9cf25a6165c8f4b34caa5eaa718454acbd8f2f5b2df'
+readonly EXPECTED_MANIFEST_JSON_SHA256='b90a82580df906f8c1bb80313c39f43f8ab869964221e860a9b22629859c4117'
+readonly EXPECTED_ACCESS_TEST_SHA256='23071e6ff96c15f6f66b802f29fb4b18a18d889249d919aa2af37183bd66a42c'
+readonly BACKUP_DIR='/var/backups/schoolsafe/test/pre-baseline'
+readonly LOCK_FILE='/run/schoolsafe-db-test-apply-baseline.lock'
+readonly POSTGRESQL_VERSION='17.11'
+
+readonly -a UNITS=(
+  01_roles.sql
+  02_schemas.sql
+  03_extensions.sql
+  04_app_tables.sql
+  05_iam.sql
+  06_audit_ops.sql
+  07_constraints_indexes.sql
+  08_internal_functions.sql
+  09_api_rpc.sql
+  10_triggers.sql
+  11_rls_acl.sql
+  12_seed_permissions.sql
+  13_verification.sql
+)
+
+readonly -a BASELINE_FILES=(
+  manifest.sha256
+  manifest.json
+  01_roles.sql
+  02_schemas.sql
+  03_extensions.sql
+  04_app_tables.sql
+  05_iam.sql
+  06_audit_ops.sql
+  07_constraints_indexes.sql
+  08_internal_functions.sql
+  09_api_rpc.sql
+  10_triggers.sql
+  11_rls_acl.sql
+  12_seed_permissions.sql
+  13_verification.sql
+  tests/from-zero-access-law.test.sql
+)
+
+CURRENT_STEP='startup'
+CURRENT_UNIT='none'
+BACKUP_FILE='not-created'
+BACKUP_SHA256='not-created'
+PREAPPLY_STATE=''
+FIRST_PASS_START_INDEX=0
+
+fail() {
+  printf 'SCHOOLSAFE DB-04C TEST BASELINE: FAIL\n' >&2
+  printf 'step=%s\n' "$CURRENT_STEP" >&2
+  printf 'unit=%s\n' "$CURRENT_UNIT" >&2
+  printf 'reason=%s\n' "$1" >&2
+  printf 'backup_file=%s\n' "$BACKUP_FILE" >&2
+  printf 'backup_sha256=%s\n' "$BACKUP_SHA256" >&2
+  exit 1
+}
+
+on_error() {
+  local status="$1"
+  local line="$2"
+  trap - ERR
+  printf 'SCHOOLSAFE DB-04C TEST BASELINE: FAIL\n' >&2
+  printf 'step=%s\n' "$CURRENT_STEP" >&2
+  printf 'unit=%s\n' "$CURRENT_UNIT" >&2
+  printf 'line=%s\n' "$line" >&2
+  printf 'exit_status=%s\n' "$status" >&2
+  printf 'backup_file=%s\n' "$BACKUP_FILE" >&2
+  printf 'backup_sha256=%s\n' "$BACKUP_SHA256" >&2
+  exit "$status"
+}
+
+trap 'on_error "$?" "$LINENO"' ERR
+
+[[ "$#" -eq 0 ]] || fail "this script accepts zero arguments only"
+[[ "$EUID" -eq 0 ]] || fail "root is required"
+[[ "$CONFIRMATION" == 'APPLY_SCHOOLSAFE_TEST_FROM_ZERO' ]] \
+  || fail "internal TEST confirmation mismatch"
+
+mode_is_not_group_or_other_writable() {
+  local path="$1"
+  local mode
+  local permission
+  mode="$(stat -c '%a' -- "$path")"
+  [[ "$mode" =~ ^[0-7]{3,4}$ ]] || return 1
+  permission=$((8#$mode))
+  (( (permission & 8#022) == 0 ))
+}
+
+verify_root_safe_dir() {
+  local path="$1"
+  [[ -d "$path" ]] || fail "required directory is missing: $path"
+  [[ ! -L "$path" ]] || fail "directory must not be a symlink: $path"
+  [[ "$(stat -c '%u:%g' -- "$path")" == '0:0' ]] \
+    || fail "directory must be root:root: $path"
+  mode_is_not_group_or_other_writable "$path" \
+    || fail "directory is writable by group or other: $path"
+}
+
+verify_root_safe_file() {
+  local path="$1"
+  [[ -f "$path" ]] || fail "required file is missing: $path"
+  [[ ! -L "$path" ]] || fail "file must not be a symlink: $path"
+  [[ "$(stat -c '%u:%g' -- "$path")" == '0:0' ]] \
+    || fail "file must be root:root: $path"
+  mode_is_not_group_or_other_writable "$path" \
+    || fail "file is writable by group or other: $path"
+}
+
+sha256_of() {
+  sha256sum -- "$1" | awk '{print $1}'
+}
+
+CURRENT_STEP="prechecks"
+
+for command_path in \
+  /usr/bin/awk \
+  /usr/bin/chmod \
+  /usr/bin/chown \
+  /usr/bin/cut \
+  /usr/bin/date \
+  /usr/bin/docker \
+  /usr/bin/find \
+  /usr/bin/flock \
+  /usr/bin/grep \
+  /usr/bin/install \
+  /usr/bin/mktemp \
+  /usr/bin/mv \
+  /usr/bin/sha256sum \
+  /usr/bin/sort \
+  /usr/bin/stat \
+  /usr/bin/tr; do
+  [[ -x "$command_path" ]] || fail "required executable is unavailable: $command_path"
+done
+
+[[ "${SUDO_COMMAND:-}" == "$SELF_PATH" ]] \
+  || fail "script must be invoked through sudo as $SELF_PATH"
+verify_root_safe_file "$SELF_PATH"
+[[ "$(stat -c '%a' -- "$SELF_PATH")" == '750' ]] \
+  || fail "script mode must be 750"
+
+verify_root_safe_dir '/run'
+if [[ -e "$LOCK_FILE" || -L "$LOCK_FILE" ]]; then
+  verify_root_safe_file "$LOCK_FILE"
+else
+  : > "$LOCK_FILE"
+  chown root:root -- "$LOCK_FILE"
+  chmod 0600 -- "$LOCK_FILE"
+fi
+verify_root_safe_file "$LOCK_FILE"
+exec {LOCK_FD}>"$LOCK_FILE"
+flock -n "$LOCK_FD" || fail "another baseline apply is already running"
+
+if [[ -e "$DOCKER_CONFIG" || -L "$DOCKER_CONFIG" ]]; then
+  verify_root_safe_dir "$DOCKER_CONFIG"
+else
+  install -d -o root -g root -m 0700 -- "$DOCKER_CONFIG"
+fi
+verify_root_safe_dir "$DOCKER_CONFIG"
+
+for directory in \
+  /opt \
+  /opt/schoolsafe \
+  /opt/schoolsafe/database \
+  /opt/schoolsafe/database/baseline \
+  "$BASELINE_DIR" \
+  "$BASELINE_DIR/tests"; do
+  verify_root_safe_dir "$directory"
+done
+
+if [[ -n "$(find "$BASELINE_DIR" -xdev -type l -print -quit)" ]]; then
+  fail "baseline tree contains a symlink"
+fi
+
+actual_directories="$(
+  find "$BASELINE_DIR" -xdev -mindepth 1 -type d -printf '%P\n' | sort
+)"
+[[ "$actual_directories" == 'tests' ]] \
+  || fail "baseline directory inventory is not exact"
+
+actual_files="$(
+  find "$BASELINE_DIR" -xdev -type f -printf '%P\n' | sort
+)"
+expected_files="$(printf '%s\n' "${BASELINE_FILES[@]}" | sort)"
+[[ "$actual_files" == "$expected_files" ]] \
+  || fail "baseline file inventory is not exact"
+
+for relative_path in "${BASELINE_FILES[@]}"; do
+  verify_root_safe_file "$BASELINE_DIR/$relative_path"
+done
+
+[[ "$(sha256_of "$BASELINE_DIR/manifest.sha256")" == "$EXPECTED_MANIFEST_SHA256" ]] \
+  || fail "manifest.sha256 does not match reviewed Git source"
+[[ "$(sha256_of "$BASELINE_DIR/manifest.json")" == "$EXPECTED_MANIFEST_JSON_SHA256" ]] \
+  || fail "manifest.json does not match reviewed Git source"
+[[ "$(sha256_of "$BASELINE_DIR/tests/from-zero-access-law.test.sql")" == "$EXPECTED_ACCESS_TEST_SHA256" ]] \
+  || fail "semantic test does not match reviewed Git source"
+
+(
+  cd -- "$BASELINE_DIR"
+  sha256sum --check --strict manifest.sha256
+)
+
+[[ -S /var/run/docker.sock ]] || fail "local Docker socket is unavailable"
+[[ ! -L /var/run/docker.sock ]] || fail "local Docker socket must not be a symlink"
+
+docker_cmd() {
+  /usr/bin/docker --host "$DOCKER_HOST" "$@"
+}
+
+[[ "$(docker_cmd inspect --format '{{.State.Running}}' "$CONTAINER")" == 'true' ]] \
+  || fail "TEST container is not running"
+[[ "$(docker_cmd inspect --format '{{.State.Health.Status}}' "$CONTAINER")" == 'healthy' ]] \
+  || fail "TEST container is not healthy"
+[[ "$(docker_cmd inspect --format '{{.State.Running}}' "$OLD_CONTAINER")" == 'false' ]] \
+  || fail "preserved pre-r1 container must exist and remain stopped"
+
+published_ports="$(docker_cmd port "$CONTAINER" 2>/dev/null || true)"
+[[ -z "$published_ports" ]] || fail "TEST container publishes a port"
+
+network_names="$(
+  docker_cmd inspect \
+    --format '{{range $name, $_ := .NetworkSettings.Networks}}{{printf "%s\n" $name}}{{end}}' \
+    "$CONTAINER" \
+    | /usr/bin/awk 'NF' \
+    | /usr/bin/sort
+)"
+[[ "$network_names" == "$NETWORK" ]] \
+  || fail "TEST container must use only $NETWORK"
+docker_cmd network inspect "$NETWORK" >/dev/null
+
+data_volume="$(
+  docker_cmd inspect \
+    --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql/data"}}{{.Name}}{{end}}{{end}}' \
+    "$CONTAINER"
+)"
+[[ "$data_volume" == "$VOLUME" ]] || fail "unexpected PostgreSQL data volume"
+
+volume_mounts="$(
+  docker_cmd inspect \
+    --format '{{range .Mounts}}{{if eq .Type "volume"}}{{printf "%s\n" .Name}}{{end}}{{end}}' \
+    "$CONTAINER" \
+    | /usr/bin/awk 'NF' \
+    | /usr/bin/sort
+)"
+[[ "$volume_mounts" == "$VOLUME" ]] \
+  || fail "TEST container must use only the approved named volume"
+docker_cmd volume inspect "$VOLUME" >/dev/null
+
+mount_inventory="$(
+  docker_cmd inspect \
+    --format '{{range .Mounts}}{{printf "%s|%s\n" .Type .Destination}}{{end}}' \
+    "$CONTAINER" \
+    | /usr/bin/awk 'NF' \
+    | /usr/bin/sort
+)"
+expected_mount_inventory=$'bind|/run/secrets/postgres_bootstrap_password\nvolume|/var/lib/postgresql/data'
+[[ "$mount_inventory" == "$expected_mount_inventory" ]] \
+  || fail "TEST container mount inventory is not exact"
+
+secret_mount_source="$(
+  docker_cmd inspect \
+    --format '{{range .Mounts}}{{if eq .Destination "/run/secrets/postgres_bootstrap_password"}}{{.Source}}{{end}}{{end}}' \
+    "$CONTAINER"
+)"
+[[ "$secret_mount_source" == "$SECRET_HOST_PATH" ]] \
+  || fail "bootstrap secret host path is unexpected"
+
+secret_mount_read_write="$(
+  docker_cmd inspect \
+    --format '{{range .Mounts}}{{if eq .Destination "/run/secrets/postgres_bootstrap_password"}}{{.RW}}{{end}}{{end}}' \
+    "$CONTAINER"
+)"
+[[ "$secret_mount_read_write" == 'false' ]] \
+  || fail "bootstrap secret mount must be read-only"
+
+container_image_id="$(docker_cmd inspect --format '{{.Image}}' "$CONTAINER")"
+[[ "$container_image_id" =~ ^sha256:[a-f0-9]{64}$ ]] \
+  || fail "TEST container image ID is invalid"
+docker_cmd image inspect \
+  --format '{{range .RepoDigests}}{{println .}}{{end}}' \
+  "$container_image_id" | grep -Fxq "$EXPECTED_IMAGE_REPO_DIGEST" \
+  || fail "PostgreSQL image digest is not the reviewed digest"
+
+docker_cmd exec "$CONTAINER" test -r /run/secrets/postgres_bootstrap_password \
+  || fail "bootstrap secret is not readable inside TEST container"
+
+run_psql() {
+  docker_cmd exec -i "$CONTAINER" /bin/sh -ceu '
+    readonly role="$1"
+    readonly database="$2"
+    shift 2
+    unset PGHOST PGPORT PGUSER PGDATABASE PGSERVICE PGSERVICEFILE PSQLRC
+    export PGPASSWORD="$(cat /run/secrets/postgres_bootstrap_password)"
+    exec /usr/bin/psql \
+      --host=/var/run/postgresql \
+      --no-password \
+      -X \
+      --set=ON_ERROR_STOP=1 \
+      --username "$role" \
+      --dbname "$database" \
+      "$@"
+  ' sh "$BOOTSTRAP_ROLE" "$DATABASE" "$@"
+}
+
+scalar_query() {
+  run_psql --tuples-only --no-align --command "$1" | tr -d '[:space:]'
+}
+
+# Précondition explicite : la vérification de l'unité 13 lit
+# shared_preload_libraries, réservé aux rôles privilégiés ; le contrôle
+# s'évalue au niveau de l'utilisateur de session (bootstrap). Grant
+# idempotent exécuté avant les préchecks, et couvert par la signature
+# des appartenances qu'ils vérifient.
+CURRENT_STEP='grant-pg-read-all-settings'
+CURRENT_UNIT='none'
+run_psql --command "grant pg_read_all_settings to $BOOTSTRAP_ROLE;"
+run_psql --command "do \$\$ begin if exists (select 1 from pg_catalog.pg_roles where rolname = 'schoolsafe_owner') then grant pg_read_all_settings to schoolsafe_owner; end if; end \$\$;"
+
+assert_scalar() {
+  local expected="$1"
+  local label="$2"
+  local query="$3"
+  local actual
+  actual="$(scalar_query "$query")"
+  [[ "$actual" == "$expected" ]] || fail "$label: expected $expected, got $actual"
+}
+
+assert_exact_schoolsafe_roles() {
+  local schoolsafe_membership_signature
+
+  assert_scalar '5' 'expected SchoolSafe role name count' \
+    "select pg_catalog.count(*) from pg_catalog.pg_roles where rolname in ('schoolsafe_owner','schoolsafe_migrator','schoolsafe_api','schoolsafe_worker','schoolsafe_auditor')"
+  assert_scalar '0' 'unsafe SchoolSafe role attribute count' \
+    "select pg_catalog.count(*) from pg_catalog.pg_roles where rolname in ('schoolsafe_owner','schoolsafe_migrator','schoolsafe_api','schoolsafe_worker','schoolsafe_auditor') and (rolsuper or rolcreatedb or rolcreaterole or rolreplication or rolbypassrls)"
+  assert_scalar '0' 'SchoolSafe INHERIT role count' \
+    "select pg_catalog.count(*) from pg_catalog.pg_roles where rolname in ('schoolsafe_owner','schoolsafe_migrator','schoolsafe_api','schoolsafe_worker','schoolsafe_auditor') and rolinherit"
+  assert_scalar '0' 'SchoolSafe LOGIN attribute mismatch count' \
+    "select pg_catalog.count(*) from pg_catalog.pg_roles where (rolname in ('schoolsafe_owner','schoolsafe_auditor') and rolcanlogin) or (rolname in ('schoolsafe_migrator','schoolsafe_api','schoolsafe_worker') and not rolcanlogin)"
+
+  schoolsafe_membership_signature="$(scalar_query \
+    "select coalesce(pg_catalog.string_agg(member_role.rolname || '>' || granted_role.rolname, ',' order by member_role.rolname, granted_role.rolname), '') from pg_catalog.pg_auth_members membership join pg_catalog.pg_roles granted_role on granted_role.oid = membership.roleid join pg_catalog.pg_roles member_role on member_role.oid = membership.member where granted_role.rolname in ('schoolsafe_owner','schoolsafe_migrator','schoolsafe_api','schoolsafe_worker','schoolsafe_auditor') or member_role.rolname in ('schoolsafe_owner','schoolsafe_migrator','schoolsafe_api','schoolsafe_worker','schoolsafe_auditor')")"
+  [[ "$schoolsafe_membership_signature" == 'schoolsafe_bootstrap>schoolsafe_migrator,schoolsafe_bootstrap>schoolsafe_owner,schoolsafe_migrator>schoolsafe_owner,schoolsafe_owner>pg_read_all_settings' ]] \
+    || fail "unexpected SchoolSafe membership"
+}
+
+assert_empty_pre_unit02_state() {
+  [[ "$pg_stat_statements_extension_count" == '0' ]] \
+    || fail "pre-existing pg_stat_statements extension"
+  [[ "$non_system_schema_count" == '0' ]] \
+    || fail "database is not from-zero: non-system schemas exist"
+  [[ "$public_relation_count" == '0' ]] \
+    || fail "public schema relation count: expected 0, got $public_relation_count"
+  [[ "$custom_schema_count" == '0' ]] \
+    || fail "database is not from-zero: SchoolSafe schemas exist"
+  [[ "$schema_versions_relation_count" == '0' ]] \
+    || fail "schema_versions relation count: expected 0, got $schema_versions_relation_count"
+}
+
+assert_scalar '170011' 'PostgreSQL version' 'show server_version_num'
+assert_scalar "$DATABASE" 'database name' 'select pg_catalog.current_database()'
+assert_scalar "$BOOTSTRAP_ROLE" 'bootstrap role' 'select current_user'
+
+preloaded_libraries="$(scalar_query 'show shared_preload_libraries')"
+case ",$preloaded_libraries," in
+  *,pg_stat_statements,*) ;;
+  *) fail "pg_stat_statements is not preloaded" ;;
+esac
+
+compute_query_id="$(scalar_query 'show compute_query_id')"
+[[ "$compute_query_id" == 'auto' || "$compute_query_id" == 'on' ]] \
+  || fail "compute_query_id must be auto or on"
+
+assert_scalar '1' 'pg_stat_statements availability' \
+  "select pg_catalog.count(*) from pg_catalog.pg_available_extensions where name = 'pg_stat_statements'"
+
+non_system_schema_count="$(scalar_query \
+  "select pg_catalog.count(*) from pg_catalog.pg_namespace where nspname !~ '^pg_' and nspname not in ('information_schema','public')")"
+public_relation_count="$(scalar_query \
+  "select pg_catalog.count(*) from pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public'")"
+custom_schema_count="$(scalar_query \
+  "select pg_catalog.count(*) from pg_catalog.pg_namespace where nspname in ('app','iam','audit','ops','api','legacy_cloud','auth')")"
+schema_versions_relation_count="$(scalar_query \
+  "select pg_catalog.count(*) from pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid = c.relnamespace where n.nspname = 'ops' and c.relname = 'schema_versions' and c.relkind in ('r','p')")"
+pg_stat_statements_extension_count="$(scalar_query \
+  "select pg_catalog.count(*) from pg_catalog.pg_extension where extname = 'pg_stat_statements'")"
+
+schoolsafe_application_role_count="$(scalar_query \
+  "select pg_catalog.count(*) from pg_catalog.pg_roles where pg_catalog.left(rolname, 11) = 'schoolsafe_' and rolname <> 'schoolsafe_bootstrap'")"
+
+case "$schoolsafe_application_role_count" in
+  0)
+    assert_empty_pre_unit02_state
+    PREAPPLY_STATE='FROM_ZERO'
+    printf 'preapply_state=FROM_ZERO\n'
+    ;;
+  5)
+    assert_exact_schoolsafe_roles
+    if [[ "$non_system_schema_count" == '0' \
+       && "$public_relation_count" == '0' \
+       && "$custom_schema_count" == '0' \
+       && "$schema_versions_relation_count" == '0' \
+       && "$pg_stat_statements_extension_count" == '0' ]]; then
+      assert_empty_pre_unit02_state
+      PREAPPLY_STATE='SAFE_PARTIAL_UNIT01'
+      printf 'preapply_state=SAFE_PARTIAL_UNIT01\n'
+    elif [[ "$non_system_schema_count" == '7' \
+         && "$public_relation_count" == '0' \
+         && "$custom_schema_count" == '7' \
+         && "$schema_versions_relation_count" == '1' \
+         && "$pg_stat_statements_extension_count" == '1' ]]; then
+      assert_scalar '1' 'pg_stat_statements installation in ops' \
+        "select pg_catalog.count(*) from pg_catalog.pg_extension e join pg_catalog.pg_namespace n on n.oid = e.extnamespace where e.extname = 'pg_stat_statements' and n.nspname = 'ops'"
+      assert_scalar '0' 'SchoolSafe schema owner mismatch count' \
+        "select pg_catalog.count(*) from pg_catalog.pg_namespace where nspname in ('app','iam','audit','ops','api','legacy_cloud','auth') and pg_catalog.pg_get_userbyid(nspowner) <> 'schoolsafe_owner'"
+      schema_version_count="$(scalar_query \
+        "select pg_catalog.count(*) from ops.schema_versions")"
+      if [[ "$schema_version_count" == '12' ]]; then
+        assert_scalar '12' 'exact recovered schema versions 1 through 12' \
+          "select pg_catalog.count(*) from ops.schema_versions sv join (values
+            (1::smallint,'schoolsafe-vps-v1','roles','01_roles.sql','10448f25fb7925391c66d872a11d13d2876667dddeaaa39e8ec785868c72e5fe'),
+            (2::smallint,'schoolsafe-vps-v1','schemas','02_schemas.sql','d588efaaa03f385db9f50db873e3b05321647cf39254f8ea822040c863d7ae40'),
+            (3::smallint,'schoolsafe-vps-v1','extensions','03_extensions.sql','d5614193bee6785294eaf2febae32480f41b53cc50b20406a2142222cc865528'),
+            (4::smallint,'schoolsafe-vps-v1','app_tables','04_app_tables.sql','e03e05a26f196bfa657c62971740af6d52522a3885fe3ec184abc60122fe8465'),
+            (5::smallint,'schoolsafe-vps-v1','iam','05_iam.sql','87fc9522b8b530e2c09858de46deaaf43570893472c2810b062f1ff044edf7d5'),
+            (6::smallint,'schoolsafe-vps-v1','audit_ops','06_audit_ops.sql','b21c242218945cfea044a5ae8c75694df930eca42b6ded3bea7520e9d3c2e661'),
+            (7::smallint,'schoolsafe-vps-v1','constraints_indexes','07_constraints_indexes.sql','7ffde1d41c06cbce867ea2f287fcb9223c0ecd76815c3f2afa8226672fc8ec89'),
+            (8::smallint,'schoolsafe-vps-v1','internal_functions','08_internal_functions.sql','b980a266c1c7ff3ee7ec646fdbfadefa7cab62680ed6fdbc6aee8a38e5a2a866'),
+            (9::smallint,'schoolsafe-vps-v1','api_rpc','09_api_rpc.sql','97bf44e8a68c3961ffe4ca12488a797c9e883a5e7a8bdabc9f04c17f1112212b'),
+            (10::smallint,'schoolsafe-vps-v1','triggers','10_triggers.sql','6690f7698c55b4903a81a56066fadd8383421904724429ee34aa8a726a831ab7'),
+            (11::smallint,'schoolsafe-vps-v1','rls_acl','11_rls_acl.sql','484e65146d0c43009c8261f52dea6a005c9fd2c521d835478206d0f9b79e9e04'),
+            (12::smallint,'schoolsafe-vps-v1','seed_permissions','12_seed_permissions.sql','8a347abde67b8efb91625346f0177be36445dd331f3c5450b40c945c252c79d2')
+          ) expected(unit_order, baseline_version, unit_name, file_name, sha256)
+            on expected.unit_order = sv.unit_order
+           and expected.baseline_version = sv.baseline_version
+           and expected.unit_name = sv.unit_name
+           and expected.file_name = sv.file_name
+           and expected.sha256 = sv.sha256"
+        assert_scalar '7' 'unit 10 trigger function presence' \
+          "select pg_catalog.count(*) from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace where (n.nspname, p.proname) in (('ops','set_updated_at'),('app','guard_same_school_reference'),('app','validate_student_enrollment'),('app','project_active_enrollment_class'),('app','require_operational_student'),('audit','capture_access_change'),('audit','prevent_event_mutation'))"
+        assert_scalar '9' 'unit 09 SECURITY DEFINER RPC count' \
+          "select pg_catalog.count(distinct p.proname) from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace where n.nspname = 'api' and p.proname in ('check_access','deactivate_other_academic_years','next_document_number','ensure_receipt_number','record_payment','cancel_payment','increment_card_print_count','create_student_draft','compensate_student_draft_creation') and p.prosecdef"
+        assert_scalar '60' 'permission seed presence' \
+          "select pg_catalog.count(*) from iam.permissions"
+        assert_scalar '7' 'scope seed presence' \
+          "select pg_catalog.count(*) from iam.scopes"
+        if ! run_psql <<'SQL'
+do $contamination_check$
+declare
+  candidate record;
+  table_has_rows boolean;
+begin
+  for candidate in
+    select n.nspname as schema_name, c.relname as table_name
+    from pg_catalog.pg_class c
+    join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+    where n.nspname in ('app','iam','audit','ops')
+      and c.relkind in ('r','p')
+      and (n.nspname, c.relname) not in (('ops','schema_versions'),('iam','permissions'),('iam','scopes'))
+  loop
+    execute pg_catalog.format('select exists (select 1 from %I.%I)', candidate.schema_name, candidate.table_name)
+      into table_has_rows;
+    if table_has_rows then
+      RAISE EXCEPTION 'SAFE_PARTIAL_UNIT12 rejected: table %.% already contains data', candidate.schema_name, candidate.table_name;
+    end if;
+  end loop;
+end
+$contamination_check$;
+SQL
+        then
+          fail "pre-existing SchoolSafe data outside ops.schema_versions and canonical seeds"
+        fi
+        PREAPPLY_STATE='SAFE_PARTIAL_UNIT12'
+        FIRST_PASS_START_INDEX=12
+        printf 'preapply_state=SAFE_PARTIAL_UNIT12\n'
+      elif [[ "$schema_version_count" == '9' ]]; then
+        assert_scalar '9' 'schema version row count' \
+          "select pg_catalog.count(*) from ops.schema_versions"
+      assert_scalar '9' 'exact recovered schema versions 1 through 9' \
+        "select pg_catalog.count(*) from ops.schema_versions sv join (values
+          (1::smallint,'schoolsafe-vps-v1','roles','01_roles.sql','10448f25fb7925391c66d872a11d13d2876667dddeaaa39e8ec785868c72e5fe'),
+          (2::smallint,'schoolsafe-vps-v1','schemas','02_schemas.sql','d588efaaa03f385db9f50db873e3b05321647cf39254f8ea822040c863d7ae40'),
+          (3::smallint,'schoolsafe-vps-v1','extensions','03_extensions.sql','d5614193bee6785294eaf2febae32480f41b53cc50b20406a2142222cc865528'),
+          (4::smallint,'schoolsafe-vps-v1','app_tables','04_app_tables.sql','e03e05a26f196bfa657c62971740af6d52522a3885fe3ec184abc60122fe8465'),
+          (5::smallint,'schoolsafe-vps-v1','iam','05_iam.sql','87fc9522b8b530e2c09858de46deaaf43570893472c2810b062f1ff044edf7d5'),
+          (6::smallint,'schoolsafe-vps-v1','audit_ops','06_audit_ops.sql','b21c242218945cfea044a5ae8c75694df930eca42b6ded3bea7520e9d3c2e661'),
+          (7::smallint,'schoolsafe-vps-v1','constraints_indexes','07_constraints_indexes.sql','7ffde1d41c06cbce867ea2f287fcb9223c0ecd76815c3f2afa8226672fc8ec89'),
+          (8::smallint,'schoolsafe-vps-v1','internal_functions','08_internal_functions.sql','b980a266c1c7ff3ee7ec646fdbfadefa7cab62680ed6fdbc6aee8a38e5a2a866'),
+          (9::smallint,'schoolsafe-vps-v1','api_rpc','09_api_rpc.sql','97bf44e8a68c3961ffe4ca12488a797c9e883a5e7a8bdabc9f04c17f1112212b')
+        ) expected(unit_order, baseline_version, unit_name, file_name, sha256)
+          on expected.unit_order = sv.unit_order
+         and expected.baseline_version = sv.baseline_version
+         and expected.unit_name = sv.unit_name
+         and expected.file_name = sv.file_name
+         and expected.sha256 = sv.sha256"
+      assert_scalar '0' 'unit 10 function residue' \
+        "select pg_catalog.count(*) from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace where (n.nspname, p.proname) in (('ops','set_updated_at'),('app','guard_same_school_reference'),('app','validate_student_enrollment'),('app','project_active_enrollment_class'),('app','require_operational_student'),('audit','capture_access_change'),('audit','prevent_event_mutation'))"
+      assert_scalar '0' 'unit 10 trigger residue' \
+        "select pg_catalog.count(*) from pg_catalog.pg_trigger t join pg_catalog.pg_class c on c.oid = t.tgrelid join pg_catalog.pg_namespace n on n.oid = c.relnamespace where n.nspname in ('app','iam','audit','ops') and not t.tgisinternal"
+      assert_scalar '0' 'unit 11 policy residue' \
+        "select pg_catalog.count(*) from pg_catalog.pg_policy policy join pg_catalog.pg_class c on c.oid = policy.polrelid join pg_catalog.pg_namespace n on n.oid = c.relnamespace where n.nspname in ('app','iam','audit','ops')"
+      assert_scalar '0' 'permission seed residue' \
+        "select pg_catalog.count(*) from iam.permissions"
+      assert_scalar '0' 'scope seed residue' \
+        "select pg_catalog.count(*) from iam.scopes"
+      assert_scalar '9' 'unit 09 SECURITY DEFINER RPC count' \
+        "select pg_catalog.count(distinct p.proname) from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace where n.nspname = 'api' and p.proname in ('check_access','deactivate_other_academic_years','next_document_number','ensure_receipt_number','record_payment','cancel_payment','increment_card_print_count','create_student_draft','compensate_student_draft_creation') and p.prosecdef"
+      assert_scalar '0' 'pre-existing ENABLE or FORCE RLS flag count' \
+        "select pg_catalog.count(*) from pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid = c.relnamespace where n.nspname in ('app','iam','audit','ops') and c.relkind in ('r','p') and (c.relrowsecurity or c.relforcerowsecurity)"
+      if ! run_psql <<'SQL'
+do $contamination_check$
+declare
+  candidate record;
+  table_has_rows boolean;
+begin
+  for candidate in
+    select n.nspname as schema_name, c.relname as table_name
+    from pg_catalog.pg_class c
+    join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+    where n.nspname in ('app','iam','audit','ops')
+      and c.relkind in ('r','p')
+      and (n.nspname, c.relname) <> ('ops','schema_versions')
+  loop
+    execute pg_catalog.format('select exists (select 1 from %I.%I)', candidate.schema_name, candidate.table_name)
+      into table_has_rows;
+    if table_has_rows then
+      raise exception 'SAFE_PARTIAL_UNIT09 rejected: table %.% already contains data', candidate.schema_name, candidate.table_name;
+    end if;
+  end loop;
+end
+$contamination_check$;
+SQL
+      then
+        fail "pre-existing SchoolSafe data outside ops.schema_versions"
+      fi
+      PREAPPLY_STATE='SAFE_PARTIAL_UNIT09'
+      FIRST_PASS_START_INDEX=9
+      printf 'preapply_state=SAFE_PARTIAL_UNIT09\n'
+      elif [[ "$schema_version_count" == '13' ]]; then
+        assert_scalar '13' 'exact recovered schema versions 1 through 13' \
+          "select pg_catalog.count(*) from ops.schema_versions sv join (values
+            (1::smallint,'schoolsafe-vps-v1','roles','01_roles.sql','10448f25fb7925391c66d872a11d13d2876667dddeaaa39e8ec785868c72e5fe'),
+            (2::smallint,'schoolsafe-vps-v1','schemas','02_schemas.sql','d588efaaa03f385db9f50db873e3b05321647cf39254f8ea822040c863d7ae40'),
+            (3::smallint,'schoolsafe-vps-v1','extensions','03_extensions.sql','d5614193bee6785294eaf2febae32480f41b53cc50b20406a2142222cc865528'),
+            (4::smallint,'schoolsafe-vps-v1','app_tables','04_app_tables.sql','e03e05a26f196bfa657c62971740af6d52522a3885fe3ec184abc60122fe8465'),
+            (5::smallint,'schoolsafe-vps-v1','iam','05_iam.sql','87fc9522b8b530e2c09858de46deaaf43570893472c2810b062f1ff044edf7d5'),
+            (6::smallint,'schoolsafe-vps-v1','audit_ops','06_audit_ops.sql','b21c242218945cfea044a5ae8c75694df930eca42b6ded3bea7520e9d3c2e661'),
+            (7::smallint,'schoolsafe-vps-v1','constraints_indexes','07_constraints_indexes.sql','7ffde1d41c06cbce867ea2f287fcb9223c0ecd76815c3f2afa8226672fc8ec89'),
+            (8::smallint,'schoolsafe-vps-v1','internal_functions','08_internal_functions.sql','b980a266c1c7ff3ee7ec646fdbfadefa7cab62680ed6fdbc6aee8a38e5a2a866'),
+            (9::smallint,'schoolsafe-vps-v1','api_rpc','09_api_rpc.sql','97bf44e8a68c3961ffe4ca12488a797c9e883a5e7a8bdabc9f04c17f1112212b'),
+            (10::smallint,'schoolsafe-vps-v1','triggers','10_triggers.sql','6690f7698c55b4903a81a56066fadd8383421904724429ee34aa8a726a831ab7'),
+            (11::smallint,'schoolsafe-vps-v1','rls_acl','11_rls_acl.sql','484e65146d0c43009c8261f52dea6a005c9fd2c521d835478206d0f9b79e9e04'),
+            (12::smallint,'schoolsafe-vps-v1','seed_permissions','12_seed_permissions.sql','8a347abde67b8efb91625346f0177be36445dd331f3c5450b40c945c252c79d2'),
+            (13::smallint,'schoolsafe-vps-v1','verification','13_verification.sql','7f4c20c7e7530d3bd27d2a45a75d342cf5fb662a9d100f7c62fb97ba6dae0d95')
+          ) expected(unit_order, baseline_version, unit_name, file_name, sha256)
+            on expected.unit_order = sv.unit_order
+           and expected.baseline_version = sv.baseline_version
+           and expected.unit_name = sv.unit_name
+           and expected.file_name = sv.file_name
+           and expected.sha256 = sv.sha256"
+        assert_scalar '60' 'permission seed presence' \
+          "select pg_catalog.count(*) from iam.permissions"
+        assert_scalar '7' 'scope seed presence' \
+          "select pg_catalog.count(*) from iam.scopes"
+        assert_scalar '9' 'unit 09 SECURITY DEFINER RPC count' \
+          "select pg_catalog.count(distinct p.proname) from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace where n.nspname = 'api' and p.proname in ('check_access','deactivate_other_academic_years','next_document_number','ensure_receipt_number','record_payment','cancel_payment','increment_card_print_count','create_student_draft','compensate_student_draft_creation') and p.prosecdef"
+        if ! run_psql <<'SQL'
+do $contamination_check$
+declare
+  candidate record;
+  table_has_rows boolean;
+begin
+  for candidate in
+    select n.nspname as schema_name, c.relname as table_name
+    from pg_catalog.pg_class c
+    join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+    where n.nspname in ('app','iam','audit','ops')
+      and c.relkind in ('r','p')
+      and (n.nspname, c.relname) not in (('ops','schema_versions'),('iam','permissions'),('iam','scopes'))
+  loop
+    execute pg_catalog.format('select exists (select 1 from %I.%I)', candidate.schema_name, candidate.table_name)
+      into table_has_rows;
+    if table_has_rows then
+      RAISE EXCEPTION 'SAFE_PARTIAL_UNIT13 rejected: table %.% already contains data', candidate.schema_name, candidate.table_name;
+    end if;
+  end loop;
+end
+$contamination_check$;
+SQL
+        then
+          fail "pre-existing SchoolSafe data outside ops.schema_versions and canonical seeds"
+        fi
+        PREAPPLY_STATE='SAFE_PARTIAL_UNIT13'
+        FIRST_PASS_START_INDEX=13
+        printf 'preapply_state=SAFE_PARTIAL_UNIT13\n'
+      else
+        fail "schema version row count: expected 9, 12 or 13, got $schema_version_count"
+      fi
+    else
+      fail "invalid SchoolSafe role recovery state: partial baseline does not exactly match unit 01, unit 09 or unit 12"
+    fi
+    ;;
+  *)
+    fail "invalid SchoolSafe role recovery state: unexpected SchoolSafe role count"
+    ;;
+esac
+
+CURRENT_STEP="backup"
+
+verify_root_safe_dir '/var'
+verify_root_safe_dir '/var/backups'
+for backup_directory in \
+  /var/backups/schoolsafe \
+  /var/backups/schoolsafe/test \
+  "$BACKUP_DIR"; do
+  if [[ -e "$backup_directory" || -L "$backup_directory" ]]; then
+    verify_root_safe_dir "$backup_directory"
+  else
+    install -d -o root -g root -m 0700 -- "$backup_directory"
+  fi
+  verify_root_safe_dir "$backup_directory"
+done
+verify_root_safe_dir "$BACKUP_DIR"
+[[ "$(stat -c '%a' -- "$BACKUP_DIR")" == '700' ]] \
+  || fail "backup directory mode must be 700"
+
+backup_timestamp="$(date -u '+%Y%m%dT%H%M%SZ')"
+backup_incomplete="$(
+  mktemp --tmpdir="$BACKUP_DIR" \
+    "schoolsafe_test_pre_baseline_${backup_timestamp}.dump.incomplete.XXXXXX"
+)"
+BACKUP_FILE="$BACKUP_DIR/schoolsafe_test_pre_baseline_${backup_timestamp}.dump"
+[[ ! -e "$BACKUP_FILE" && ! -L "$BACKUP_FILE" ]] \
+  || fail "validated backup destination already exists"
+chown root:root -- "$backup_incomplete"
+chmod 0600 -- "$backup_incomplete"
+
+docker_cmd exec "$CONTAINER" /bin/sh -ceu '
+  readonly role="$1"
+  readonly database="$2"
+  unset PGHOST PGPORT PGUSER PGDATABASE PGSERVICE PGSERVICEFILE
+  export PGPASSWORD="$(cat /run/secrets/postgres_bootstrap_password)"
+  exec /usr/bin/pg_dump \
+    --host=/var/run/postgresql \
+    --format=custom \
+    --no-password \
+    --username "$role" \
+    --dbname "$database"
+' sh "$BOOTSTRAP_ROLE" "$DATABASE" > "$backup_incomplete"
+
+[[ -s "$backup_incomplete" ]] || fail "pre-baseline backup is empty"
+docker_cmd exec -i "$CONTAINER" /usr/bin/pg_restore --list \
+  < "$backup_incomplete" >/dev/null
+verify_root_safe_file "$backup_incomplete"
+[[ "$(stat -c '%a' -- "$backup_incomplete")" == '600' ]] \
+  || fail "backup file mode must be 600"
+
+mv -- "$backup_incomplete" "$BACKUP_FILE"
+chown root:root -- "$BACKUP_FILE"
+chmod 0600 -- "$BACKUP_FILE"
+verify_root_safe_file "$BACKUP_FILE"
+BACKUP_SHA256="$(sha256_of "$BACKUP_FILE")"
+[[ "$BACKUP_SHA256" =~ ^[a-f0-9]{64}$ ]] \
+  || fail "backup SHA-256 is invalid"
+
+apply_unit() {
+  local file="$1"
+  CURRENT_UNIT="$file"
+  printf 'Applying %s\n' "$file"
+  run_psql < "$BASELINE_DIR/$file"
+  CURRENT_UNIT='none'
+}
+
+record_unit() {
+  local order="$1"
+  local file="$2"
+  local name="${file%.sql}"
+  local sha256
+  name="${name:3}"
+  sha256="$(awk -v target="$file" '$2 == target { print $1 }' "$BASELINE_DIR/manifest.sha256")"
+  [[ "$sha256" =~ ^[a-f0-9]{64}$ ]] || fail "missing manifest hash for $file"
+
+  CURRENT_UNIT="record:$file"
+  run_psql \
+    --set=unit_order="$order" \
+    --set=baseline_version="$BASELINE_VERSION" \
+    --set=unit_name="$name" \
+    --set=file_name="$file" \
+    --set=sha256="$sha256" \
+    <<'SQL'
+set role schoolsafe_owner;
+select ops.record_schema_version(
+  :'unit_order'::smallint,
+  :'baseline_version',
+  :'unit_name',
+  :'file_name',
+  :'sha256'
+);
+reset role;
+SQL
+  CURRENT_UNIT='none'
+}
+
+if [[ "$PREAPPLY_STATE" != 'SAFE_PARTIAL_UNIT09' && "$PREAPPLY_STATE" != 'SAFE_PARTIAL_UNIT12' && "$PREAPPLY_STATE" != 'SAFE_PARTIAL_UNIT13' ]]; then
+  CURRENT_STEP="apply-01-08"
+  for index in {0..7}; do
+    apply_unit "${UNITS[$index]}"
+  done
+
+  CURRENT_STEP='record-01-08'
+  for index in {0..7}; do
+    record_unit "$((index + 1))" "${UNITS[$index]}"
+  done
+  FIRST_PASS_START_INDEX=8
+fi
+
+if [[ "$FIRST_PASS_START_INDEX" -eq 9 ]]; then
+  CURRENT_STEP='apply-10-12'
+elif [[ "$FIRST_PASS_START_INDEX" -eq 12 ]]; then
+  CURRENT_STEP='apply-13-only'
+elif [[ "$FIRST_PASS_START_INDEX" -eq 13 ]]; then
+  CURRENT_STEP='verify-13-only'
+else
+  CURRENT_STEP='apply-09-12'
+fi
+for ((index = FIRST_PASS_START_INDEX; index <= 11; index++)); do
+  apply_unit "${UNITS[$index]}"
+  record_unit "$((index + 1))" "${UNITS[$index]}"
+done
+
+CURRENT_STEP='verification-first-pass'
+apply_unit 13_verification.sql
+record_unit 13 13_verification.sql
+apply_unit 13_verification.sql
+
+# Second full pass proves SQL-unit and schema-version idempotence.
+CURRENT_STEP='Second full pass'
+for index in "${!UNITS[@]}"; do
+  apply_unit "${UNITS[$index]}"
+  record_unit "$((index + 1))" "${UNITS[$index]}"
+done
+
+CURRENT_STEP="SchoolSafe semantic Access_Law rollback test"
+CURRENT_UNIT='tests/from-zero-access-law.test.sql'
+run_psql < "$BASELINE_DIR/tests/from-zero-access-law.test.sql"
+CURRENT_UNIT='none'
+
+CURRENT_STEP='post-apply-verification'
+
+assert_scalar '60' 'permission count' \
+  'select pg_catalog.count(*) from iam.permissions'
+assert_scalar '7' 'scope count' \
+  'select pg_catalog.count(*) from iam.scopes'
+assert_scalar '8' 'P0 RPC count' \
+  "select pg_catalog.count(distinct p.proname) from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace where n.nspname = 'api' and p.proname in ('deactivate_other_academic_years','next_document_number','ensure_receipt_number','record_payment','cancel_payment','increment_card_print_count','create_student_draft','compensate_student_draft_creation') and p.prosecdef"
+assert_scalar '0' 'tenant tables without FORCE RLS' \
+  "select pg_catalog.count(*) from pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid = c.relnamespace join pg_catalog.pg_attribute a on a.attrelid = c.oid and a.attname = 'school_id' and a.attnum > 0 and not a.attisdropped where n.nspname in ('app','iam','audit','ops') and c.relkind in ('r','p') and (not c.relrowsecurity or not c.relforcerowsecurity)"
+assert_scalar '0' 'Supabase auth.uid dependency' \
+  "select pg_catalog.count(*) from (select p.oid::text as object_id from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace where n.nspname in ('app','iam','audit','ops','api') and p.prokind = 'f' and pg_catalog.lower(case when p.prokind = 'f' then pg_catalog.pg_get_functiondef(p.oid) else '' end) like ('%auth.' || 'uid(%') union all select policy.oid::text from pg_catalog.pg_policy policy join pg_catalog.pg_class table_class on table_class.oid = policy.polrelid join pg_catalog.pg_namespace table_namespace on table_namespace.oid = table_class.relnamespace where table_namespace.nspname in ('app','iam','audit','ops') and pg_catalog.lower(coalesce(pg_catalog.pg_get_expr(policy.polqual, policy.polrelid), '') || ' ' || coalesce(pg_catalog.pg_get_expr(policy.polwithcheck, policy.polrelid), '')) like ('%auth.' || 'uid(%')) forbidden"
+assert_scalar '0' 'application BYPASSRLS roles' \
+  "select pg_catalog.count(*) from pg_catalog.pg_roles where rolname in ('schoolsafe_owner','schoolsafe_migrator','schoolsafe_api','schoolsafe_worker','schoolsafe_auditor') and rolbypassrls"
+assert_scalar '0' 'PUBLIC execute privileges' \
+  "select pg_catalog.count(*) from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace cross join lateral pg_catalog.aclexplode(coalesce(p.proacl, pg_catalog.acldefault('f', p.proowner))) acl where n.nspname in ('app','iam','audit','ops','api') and acl.grantee = 0 and acl.privilege_type = 'EXECUTE'"
+assert_scalar '0' 'schoolsafe_api direct table privileges' \
+  "select pg_catalog.count(*) from pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid = c.relnamespace where n.nspname in ('app','iam','audit','ops') and c.relkind in ('r','p') and (pg_catalog.has_table_privilege('schoolsafe_api', c.oid, 'select') or pg_catalog.has_table_privilege('schoolsafe_api', c.oid, 'insert') or pg_catalog.has_table_privilege('schoolsafe_api', c.oid, 'update') or pg_catalog.has_table_privilege('schoolsafe_api', c.oid, 'delete'))"
+assert_scalar '1' 'DENY by default' \
+  "select case when iam.current_user_id() is null and iam.current_profile_id() is null and iam.current_school_id() is null and iam.current_request_id() is null and not iam.context_is_valid() and not iam.can_access('school.manage') then 1 else 0 end"
+assert_scalar '13' 'schema version count' \
+  "select pg_catalog.count(*) from ops.schema_versions where baseline_version = 'schoolsafe-vps-v1'"
+assert_scalar '1' 'pg_stat_statements installation' \
+  "select pg_catalog.count(*) from pg_catalog.pg_extension e join pg_catalog.pg_namespace n on n.oid = e.extnamespace where e.extname = 'pg_stat_statements' and n.nspname = 'ops'"
+
+synthetic_test_rows="$(scalar_query \
+  "select pg_catalog.count(*) from app.schools where id in ('10000000-0000-4000-8000-000000000001'::uuid,'10000000-0000-4000-8000-000000000002'::uuid,'10000000-0000-4000-8000-000000000003'::uuid)")"
+[[ "$synthetic_test_rows" == '0' ]] \
+  || fail "synthetic Access_Law data was not rolled back"
+
+printf '\nSCHOOLSAFE DB-04C TEST BASELINE: PASS\n'
+printf 'postgresql=%s\n' "$POSTGRESQL_VERSION"
+printf 'baseline=%s\n' "$BASELINE_VERSION"
+printf 'units=%s\n' "${#UNITS[@]}"
+printf 'permissions=60\n'
+printf 'scopes=7\n'
+printf 'p0_rpc=8\n'
+printf 'idempotence=PASS\n'
+printf 'access_law_tests=PASS\n'
+printf 'multi_school_isolation=PASS\n'
+printf 'cross_school_fk=PASS\n'
+printf 'backup_file=%s\n' "$BACKUP_FILE"
+printf 'backup_sha256=%s\n' "$BACKUP_SHA256"

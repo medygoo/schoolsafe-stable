@@ -1,0 +1,190 @@
+{
+  "schema": 1,
+  "width": 1023,
+  "height": 1537,
+  "source": "V12 verrouillée",
+  "actions": [
+    "wave",
+    "joySway",
+    "guide",
+    "balance",
+    "jump",
+    "walk",
+    "hips",
+    "fidget",
+    "footTap",
+    "heelPlay",
+    "toePlay",
+    "attentive",
+    "deepThink",
+    "thumbsUp",
+    "worried"
+  ],
+  "files": {
+    "references/repos.png": {
+      "url": "../originals/rest.png",
+      "sha256": "5a9d45502948158dff4bf66e2d688e111ca14dd4259097f1d5d67b60d6378bf4",
+      "bytes": 1514386
+    },
+    "images/intermediaire-bas.png": {
+      "url": "intermediaire-bas.png",
+      "sha256": "1e539d04f2b480453602c26ac0e60376edc2dfd0c886886be2cacfc47a469fc7",
+      "bytes": 1633799
+    },
+    "images/intermediaire-exterieur.png": {
+      "url": "intermediaire-exterieur.png",
+      "sha256": "9d5ccf9e5c7fada3a09e85e5a0303a5bcdfda38f5692aac676c41b568e027206",
+      "bytes": 1598620
+    },
+    "images/preparer-salut.png": {
+      "url": "preparer-salut.png",
+      "sha256": "c4ab74c83a843cfb53d5b1cfd28b7cfb5382704687329a57a5a59afb3eecb790",
+      "bytes": 1629016
+    },
+    "images/salut.png": {
+      "url": "../originals/wave.png",
+      "sha256": "9465a164ffff3452c05dc6b97f535b5c57c30c3c144fdccdd1736dfc579ecd99",
+      "bytes": 1611578
+    },
+    "images/jupe-deux-mains.png": {
+      "url": "jupe-deux-mains.png",
+      "sha256": "b7a6653b05e48b125b7aca92656ae06b60a30c599554a9d141f078a40da2d95d",
+      "bytes": 1640614
+    },
+    "references/presenter.png": {
+      "url": "presenter.png",
+      "sha256": "4564c92ad7840043209fe161a9fbac3b18854c9f1a170fcfb94dbab056ff54e0",
+      "bytes": 1649119
+    },
+    "references/guider.png": {
+      "url": "../originals/guide.png",
+      "sha256": "8eaba3b2608a043f500145ec5bcb0d76e8a1f482bc0e97cd9c9a4e4428a5af04",
+      "bytes": 1589711
+    },
+    "references/pointer.png": {
+      "url": "pointer.png",
+      "sha256": "ca65548c80083cfb6cb0461fe8d4db311142070111ce6a3c27bc794daeff3ac1",
+      "bytes": 1647766
+    },
+    "images/preparer-hanches.png": {
+      "url": "preparer-hanches.png",
+      "sha256": "e592a5c938717bf41673eac78f18c9b8330f56b2c8f81ee939a8c0ce017c99c5",
+      "bytes": 1635973
+    },
+    "images/mains-hanches.png": {
+      "url": "mains-hanches.png",
+      "sha256": "f0cc39eb3af49315d832f4ebfc8b25ec5e32aef6ec1f6803edb44e38b96bfedb",
+      "bytes": 1587507
+    },
+    "images/preparer-equilibre.png": {
+      "url": "preparer-equilibre.png",
+      "sha256": "0c82ea9c4e4d35f3e7cfeab563d5b3a27988786fc3af8df8f5327e138a1e6c4b",
+      "bytes": 1559876
+    },
+    "images/equilibre-un-pied.png": {
+      "url": "equilibre-un-pied.png",
+      "sha256": "59990aa85342997db87861e8e324749594d4ec6a5fb668e50312af30680df342",
+      "bytes": 1585808
+    },
+    "images/jumpPrep.png": {
+      "url": "jumpPrep.png",
+      "sha256": "3125cf4a0afb7444898028481c2912789ad37ce3007293a50145b83465770b24",
+      "bytes": 1539595
+    },
+    "images/jumpLift.png": {
+      "url": "jumpLift.png",
+      "sha256": "286a4a95bb3d70f88a63f8b892c6d5984f1dd5f7252b0207facf917feeeace6e",
+      "bytes": 1534910
+    },
+    "images/jumpAir.png": {
+      "url": "jumpAir.png",
+      "sha256": "e2c873250c1a04ade207b22ccd1593175541a6d33d41795c72f8f9e47ff0707a",
+      "bytes": 1556946
+    },
+    "images/walkHalfL.png": {
+      "url": "walkHalfL.png",
+      "sha256": "2964064778ac6081bf966be31ed281d6e9c11dff955053a67296c8983a5bef99",
+      "bytes": 1547194
+    },
+    "images/walkL.png": {
+      "url": "walkL.png",
+      "sha256": "957e0b194e7a767707a7075a5d2c718eb277c65ee8078aaf9526beaa226a0edd",
+      "bytes": 1609271
+    },
+    "images/walkHalfR.png": {
+      "url": "walkHalfR.png",
+      "sha256": "bde9d66c81bb3f66317ec96184939d70dd4495c9c7cc54a754d23b6699c93056",
+      "bytes": 1567668
+    },
+    "images/walkR.png": {
+      "url": "walkR.png",
+      "sha256": "fade3bf6f788358df05e75e61bdb333bbf560f9fd83848dd4665b3d1ee949aa3",
+      "bytes": 1537639
+    },
+    "images/attentiveBody.png": {
+      "url": "../originals/attentiveBody.png",
+      "sha256": "9ff79e8b361c1edadaee3e5684dbe8ebbae6dfe7b45751e3edb95e43e7851aa2",
+      "bytes": 1631823
+    },
+    "images/chin1.png": {
+      "url": "../originals/chin1.png",
+      "sha256": "b7621372998d3cc024d1083add38e61285d607331c98c19760d2da2ee6f9a197",
+      "bytes": 1593664
+    },
+    "images/chin2.png": {
+      "url": "chin2.png",
+      "sha256": "b7621372998d3cc024d1083add38e61285d607331c98c19760d2da2ee6f9a197",
+      "bytes": 1593664
+    },
+    "images/chin3.png": {
+      "url": "chin3.png",
+      "sha256": "458768ce77f9bd7a5a6d10cc93d53711ae726a655a561be2ea92303ee425eab7",
+      "bytes": 1624032
+    },
+    "images/thumb1.png": {
+      "url": "thumb1.png",
+      "sha256": "1092b60d00e70cb5d092138cb23e015d26eb646ea9db01934f7ba80375698bdf",
+      "bytes": 1536263
+    },
+    "images/thumb2.png": {
+      "url": "../originals/thumb2.png",
+      "sha256": "a0e0c8eb9e59c11df06f2f761b98dcad7f8387201f4659b6c82ac5d1b0c186cb",
+      "bytes": 1611002
+    },
+    "images/thumb3.png": {
+      "url": "thumb3.png",
+      "sha256": "68b7fdac9ec1b5c3fad2b0ffee69a9c105f1341502a077cfcb92ecd4f9557ea6",
+      "bytes": 1544388
+    },
+    "images/worried1.png": {
+      "url": "../originals/worried1.png",
+      "sha256": "a6f8706132273d68c347ca79f6c5aa083689a4cdc31b75c159901e1ec98b54ea",
+      "bytes": 1595520
+    },
+    "images/worried2.png": {
+      "url": "worried2.png",
+      "sha256": "5d9b6ce2d24193a5ac79ac4494205e184e7406e0067b8079b351ee888ce539e4",
+      "bytes": 1543486
+    },
+    "images/worried3.png": {
+      "url": "worried3.png",
+      "sha256": "9aa22c43198bb05cc4d36ab8f0e874450e437c0135ef95eff4959959f2446cd4",
+      "bytes": 1616361
+    },
+    "images/smileMid.png": {
+      "url": "smileMid.png",
+      "sha256": "55b4bf9a91bb4675031e84c3d82106f35dbe9e9bd50b5890dc70326dd09b293e",
+      "bytes": 1589642
+    },
+    "images/grand-sourire.png": {
+      "url": "grand-sourire.png",
+      "sha256": "0ce1f7f8b751bc8d97e728563eace6bbdc30ece01c90fb0b51bbb3763549a2e1",
+      "bytes": 1582994
+    },
+    "references/paupières-fermées.png": {
+      "url": "eyelids-closed.png",
+      "sha256": "a638e4f41852234595451ae28b5b6b56f5ab15d399892cfbeecf9c93560b6f3e",
+      "bytes": 1559852
+    }
+  }
+}

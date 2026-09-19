@@ -1,0 +1,18 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.migration-staging/
+.worktrees/
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+*.log
+
+# Stable migration exclusions: no private files or unqualified portraits.
+.claude/
+app/login-kid-*.jpg
+database/baseline/v1/review/SECRETS_APPLICATION.md

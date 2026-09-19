@@ -1,0 +1,49 @@
+.native-access { padding: 20px; min-width: 0; }
+.native-access-tabs, .native-access-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 18px; }
+.native-access-tabs [aria-pressed="true"] { font-weight: 700; outline: 2px solid var(--ss-text-primary); outline-offset: -2px; }
+.native-access-people { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 10px; }
+.native-access-people li { min-width: 0; padding: 8px; border: 1px solid var(--ss-border); border-radius: 8px; overflow-wrap: anywhere; }
+.native-access-people button { display: block; width: 100%; text-align: left; min-height: 48px; white-space: normal; }
+.native-access-people span, .native-access-people code { display: block; margin-top: 5px; }
+[data-access-detail] { margin-top: 24px; }
+.native-access button:disabled { opacity: .5; cursor: default; }
+#accessConsole[data-session-mode="native"] { scroll-margin-top: 80px; }
+#accessConsole[data-session-mode="native"] .ss-button { background: var(--ss-surface); color: var(--ss-text-primary); border: 1px solid var(--ss-border); }
+.native-access-summary { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+.native-access-summary h3 { margin: 6px 0; }
+.native-access-summary p { margin: 4px 0; }
+.native-access-boundary { padding: 12px; border: 1px solid var(--ss-border); border-radius: 10px; }
+.native-access-filters { display: flex; flex-wrap: wrap; gap: 16px; }
+.native-access-filters label { display: flex; flex: 1; min-width: 200px; flex-direction: column; gap: 6px; }
+.native-access-filters input, .native-access-filters select { width: 100%; min-height: 44px; padding: 10px; color: inherit; background: var(--ss-surface); border: 1px solid var(--ss-border); border-radius: 8px; }
+.native-access-table { width: 100%; overflow-x: auto; }
+.native-access-table table { width: 100%; border-collapse: collapse; text-align: left; }
+.native-access-table caption { text-align: left; padding: 8px 0; }
+.native-access-table th, .native-access-table td { padding: 12px 10px; border-bottom: 1px solid var(--ss-border); vertical-align: top; overflow-wrap: anywhere; }
+.native-access-table code { display: block; margin-top: 5px; font-size: 12px; overflow-wrap: anywhere; }
+.native-access-state { font-weight: 700; }
+.native-access-state[data-state="denied"] { color: var(--ss-error-text); }
+.native-access-state[data-state="granted"] { color: var(--ss-success-text); }
+@media (max-width: 640px) {
+  .native-access { padding: 12px; }
+  .native-access-summary { flex-direction: column; }
+  .native-access-filters { flex-direction: column; }
+  .native-access-filters label { min-width: 0; }
+  .native-access-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .native-access-table tr { display: block; margin-bottom: 12px; border: 1px solid var(--ss-border); border-radius: 8px; padding: 6px; }
+  .native-access-table td { display: block; border: 0; padding: 6px; }
+  .native-access-table td::before { content: attr(data-label); display: block; font-size: 12px; opacity: .8; margin-bottom: 4px; }
+}
+/* Native role changes keep their target and confirmation in the same panel. */
+.native-access-editor { border: 1px solid var(--ss-border, #d8e1ee); border-radius: 12px; padding: 1rem; margin-block: 1rem; }
+.native-access-editor textarea { display: block; width: 100%; box-sizing: border-box; margin-block: .5rem; color: inherit; background: var(--ss-surface, transparent); border: 1px solid var(--ss-border, #d8e1ee); border-radius: 8px; padding: .65rem; }
+.native-access-confirm { display: flex; align-items: flex-start; gap: .5rem; margin-block: 1rem; }
+.native-access-editor details { overflow-wrap: anywhere; }
+.native-access-editor [data-role-current] { display: flex; flex-wrap: wrap; gap: .5rem; }
+.native-access-editor fieldset { border: 0; padding: 0; min-width: 0; }
+.native-access-composition { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; margin-block: 16px; }
+.native-access-composition section { border: 1px solid var(--ss-border); border-radius: 8px; padding: 12px; overflow-wrap: anywhere; }
+.native-access-composition section[hidden] { display: none; }
+.native-access-composition code { display: block; margin-block: 6px; font-size: 12px; }
+.native-access-composition small { display: block; margin-bottom: 8px; }
+.native-access-composition select { display: block; width: 100%; min-height: 44px; margin-block: 6px; color: inherit; background: var(--ss-surface); border: 1px solid var(--ss-border); border-radius: 8px; }

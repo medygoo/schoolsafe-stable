@@ -1,0 +1,749 @@
+ /* ============================================================
+    SchoolSafe V2 — Liquid Glass + Neumorphic Soft UI
+    Extension visuelle du Design System --ss-*.
+    Aucune règle fonctionnelle. DOM stable.
+    ============================================================ */
+ 
+ /* --------------------------------------------------------------------------
+    Tokens étendus (clair / sombre)
+    -------------------------------------------------------------------------- */
+ :root,
+ [data-theme="light"] {
+   --ss-glass-surface: rgba(255, 255, 255, 0.12);
+   --ss-glass-border: rgba(255, 255, 255, 0.28);
+   --ss-glass-highlight: rgba(255, 255, 255, 0.45);
+   --ss-neu-shadow-light: -4px -4px 12px rgba(255, 255, 255, 0.7);
+   --ss-neu-shadow-dark: 4px 4px 12px rgba(15, 23, 42, 0.08);
+   --ss-neu-inset-light: inset 2px 2px 6px rgba(255, 255, 255, 0.6);
+   --ss-neu-inset-dark: inset -2px -2px 6px rgba(15, 23, 42, 0.06);
+   --ss-glow-active: 0 0 18px rgba(37, 99, 235, 0.28);
+   --ss-glow-gold: 0 0 16px rgba(251, 191, 36, 0.32);
+ }
+ 
+[data-theme="dark"] {
+  --ss-glass-surface: rgba(24, 42, 74, 0.65);
+  --ss-glass-border: rgba(148, 163, 184, 0.18);
+  --ss-glass-highlight: rgba(148, 163, 184, 0.12);
+  --ss-neu-shadow-light: -5px -5px 14px rgba(30, 58, 138, 0.28);
+  --ss-neu-shadow-dark: 5px 5px 14px rgba(2, 6, 23, 0.52);
+  --ss-neu-inset-light: inset 3px 3px 8px rgba(30, 58, 138, 0.22);
+  --ss-neu-inset-dark: inset -3px -3px 8px rgba(2, 6, 23, 0.42);
+  --ss-glow-active: 0 0 26px rgba(96, 165, 250, 0.42);
+  --ss-glow-gold: 0 0 22px rgba(251, 191, 36, 0.38);
+}
+ 
+ /* --------------------------------------------------------------------------
+    Hero Dashboard — verre teinté profond + relief subtil
+    -------------------------------------------------------------------------- */
+ .dashboard-hero {
+   background: linear-gradient(
+     135deg,
+     color-mix(in srgb, var(--ss-bg-brand) 88%, transparent),
+     color-mix(in srgb, var(--ss-blue-700) 72%, transparent)
+   );
+   border: 1px solid var(--ss-glass-border);
+   box-shadow:
+     var(--ss-shadow-xl),
+     var(--ss-neu-shadow-light),
+     var(--ss-neu-shadow-dark);
+   backdrop-filter: blur(12px) saturate(120%);
+   -webkit-backdrop-filter: blur(12px) saturate(120%);
+   transition: transform var(--ss-transition-base), box-shadow var(--ss-transition-base);
+ }
+ 
+ .dashboard-hero:hover {
+   box-shadow:
+     var(--ss-shadow-xl),
+     var(--ss-glow-active);
+ }
+ 
+ /* --------------------------------------------------------------------------
+    KPI Exécutifs — Neumorphic Soft + micro-glow au survol
+    -------------------------------------------------------------------------- */
+ .kpi-card--executive {
+   background: var(--ss-bg-primary);
+   border: 1px solid var(--ss-border-subtle);
+   box-shadow:
+     var(--ss-neu-shadow-light),
+     var(--ss-neu-shadow-dark);
+   transition: transform var(--ss-transition-base), box-shadow var(--ss-transition-base);
+ }
+ 
+ .kpi-card--executive:hover {
+   transform: translateY(-2px);
+   box-shadow:
+     var(--ss-neu-shadow-light),
+     var(--ss-neu-shadow-dark),
+     var(--ss-glow-active);
+ }
+ 
+ /* --------------------------------------------------------------------------
+    Boutons importants — Liquid Glass modéré
+    -------------------------------------------------------------------------- */
+ .hero-cta--primary,
+ .auth-screen .login-button,
+ .ss-button--primary {
+   position: relative;
+   border: 1px solid var(--ss-glass-border);
+   box-shadow:
+     var(--ss-neu-shadow-light),
+     var(--ss-neu-shadow-dark);
+   transition: all var(--ss-transition-base);
+ }
+ 
+ .hero-cta--primary:hover,
+ .auth-screen .login-button:hover,
+ .ss-button--primary:hover {
+   box-shadow:
+     var(--ss-neu-shadow-light),
+     var(--ss-neu-shadow-dark),
+     var(--ss-glow-active);
+   transform: translateY(-1px);
+ }
+ 
+ .hero-cta--primary:active,
+ .auth-screen .login-button:active,
+ .ss-button--primary:active {
+   box-shadow:
+     var(--ss-neu-inset-light),
+     var(--ss-neu-inset-dark);
+   transform: translateY(0);
+ }
+ 
+ /* --------------------------------------------------------------------------
+    Écran de connexion — panneau Liquid Glass
+    -------------------------------------------------------------------------- */
+ #auth .login-panel {
+   background: linear-gradient(
+     150deg,
+     color-mix(in srgb, #ffffff 92%, transparent),
+     color-mix(in srgb, #f0f9ff 85%, transparent)
+   );
+   border: 1.5px solid var(--ss-glass-border);
+   box-shadow:
+     0 17px 35px rgba(131, 186, 228, 0.19),
+     var(--ss-neu-shadow-light),
+     var(--ss-neu-shadow-dark);
+   backdrop-filter: blur(14px) saturate(118%);
+   -webkit-backdrop-filter: blur(14px) saturate(118%);
+ }
+ 
+ #auth .login-method {
+   border-color: var(--ss-glass-border);
+   background: color-mix(in srgb, #e4f2ff 60%, transparent);
+   box-shadow:
+     var(--ss-neu-inset-light),
+     var(--ss-neu-inset-dark);
+ }
+ 
+ #auth .login-method button.selected {
+   box-shadow:
+     var(--ss-neu-shadow-light),
+     var(--ss-neu-shadow-dark),
+     var(--ss-glow-active);
+ }
+ 
+ #auth .ss-input-shell {
+   border-color: var(--ss-glass-border);
+   background: color-mix(in srgb, #f4faff 78%, transparent);
+   box-shadow: var(--ss-neu-inset-light);
+   transition: all var(--ss-transition-base);
+ }
+ 
+ #auth .ss-input-shell:focus-within {
+   box-shadow:
+     var(--ss-neu-inset-light),
+     var(--ss-glow-active);
+   border-color: color-mix(in srgb, var(--ss-blue-400) 60%, transparent);
+ }
+ 
+ /* --------------------------------------------------------------------------
+    Sélecteurs OTP / rôle démo — accent or + glow
+    -------------------------------------------------------------------------- */
+ #auth .demo-role-field .ss-select {
+   border: 1px solid var(--ss-glass-border);
+   box-shadow:
+     var(--ss-neu-shadow-light),
+     var(--ss-neu-shadow-dark);
+   transition: all var(--ss-transition-base);
+ }
+ 
+ #auth .demo-role-field .ss-select:focus {
+   box-shadow:
+     var(--ss-neu-shadow-light),
+     var(--ss-glow-gold);
+ }
+ 
+ /* --------------------------------------------------------------------------
+    Sidebar nav active — glow discret
+    -------------------------------------------------------------------------- */
+ .workspace-screen .workspace-nav button.active {
+   box-shadow:
+     var(--ss-neu-shadow-light),
+     var(--ss-glow-active);
+ }
+ 
+ /* --------------------------------------------------------------------------
+    Performance & accessibilité
+    -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-hero,
+  .kpi-card--executive,
+  .hero-cta--primary,
+  .auth-screen .login-button,
+  .ss-button--primary,
+  #auth .login-panel,
+  #auth .login-method button,
+  #auth .ss-input-shell,
+  #auth .demo-role-field .ss-select,
+  .workspace-screen .workspace-nav button.active {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+ /* --------------------------------------------------------------------------
+ Splash Screen — Liquid Glass + Neumorphic Soft UI
+ Premier écran bleu avec effets verre, relief et glow
+ -------------------------------------------------------------------------- */
+ .splash-tap {
+   position: relative;
+   background: linear-gradient(
+     135deg,
+     color-mix(in srgb, #3b82f6 85%, transparent),
+     color-mix(in srgb, #2563eb 78%, transparent)
+   );
+   border: 1.5px solid var(--ss-glass-border);
+   box-shadow:
+     0 8px 24px rgba(37, 99, 235, 0.32),
+     var(--ss-neu-shadow-light),
+     var(--ss-neu-shadow-dark),
+     inset 0 2px 8px rgba(255, 255, 255, 0.25),
+     inset 0 -4px 12px rgba(4, 17, 42, 0.18);
+   backdrop-filter: blur(12px) saturate(120%);
+   -webkit-backdrop-filter: blur(12px) saturate(120%);
+   transition: all var(--ss-transition-base);
+ }
+
+ .splash-tap:hover {
+   transform: translateY(-3px);
+   box-shadow:
+     0 12px 32px rgba(37, 99, 235, 0.42),
+     var(--ss-neu-shadow-light),
+     var(--ss-neu-shadow-dark),
+     var(--ss-glow-active),
+     inset 0 2px 8px rgba(255, 255, 255, 0.3),
+     inset 0 -4px 12px rgba(4, 17, 42, 0.2);
+   filter: brightness(1.08);
+ }
+
+ .splash-tap:active {
+   transform: translateY(0) scale(0.97);
+   box-shadow:
+     0 4px 12px rgba(37, 99, 235, 0.28),
+     var(--ss-neu-inset-light),
+     var(--ss-neu-inset-dark);
+   filter: brightness(0.95);
+ }
+
+ .splash-shield {
+   filter: drop-shadow(0 18px 32px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 24px rgba(96, 165, 250, 0.28));
+ }
+
+.splash-bubbles i {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 2px 8px rgba(255, 255, 255, 0.18);
+}
+
+/* --------------------------------------------------------------------------
+   Module cards — Liquid Glass + Neumorphic Soft UI
+   -------------------------------------------------------------------------- */
+.module-card {
+  position: relative;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, #ffffff 94%, transparent),
+    color-mix(in srgb, #f0f6ff 88%, transparent)
+  );
+  border: 1px solid var(--ss-glass-border);
+  box-shadow:
+    var(--ss-neu-shadow-light),
+    var(--ss-neu-shadow-dark);
+  transition: all var(--ss-transition-base);
+  overflow: hidden;
+}
+
+.module-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.module-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    var(--ss-neu-shadow-light),
+    var(--ss-neu-shadow-dark),
+    var(--ss-glow-active);
+}
+
+.module-card:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: var(--ss-neu-inset-light), var(--ss-neu-inset-dark);
+}
+
+.module-card__icon {
+  box-shadow: var(--ss-neu-shadow-light), var(--ss-neu-shadow-dark);
+}
+
+[data-theme="dark"] .module-card {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--ss-bg-primary) 92%, transparent),
+    color-mix(in srgb, #182a4a 88%, transparent)
+  );
+}
+
+[data-theme="dark"] .module-card::before {
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.08) 0%, transparent 50%);
+}
+
+/* --------------------------------------------------------------------------
+   Ecosystem row — SchoolSafe services
+   -------------------------------------------------------------------------- */
+.ecosystem-row { margin-bottom: 0; }
+
+.ecosystem-hint {
+  font-size: var(--ss-text-xs);
+  color: var(--ss-text-muted);
+  font-weight: var(--ss-font-semibold);
+}
+
+.ecosystem-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--ss-space-3);
+  padding: var(--ss-space-4) var(--ss-space-5) var(--ss-space-5);
+}
+
+.ecosystem-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ss-space-2);
+  padding: var(--ss-space-4) var(--ss-space-2);
+  border: 1px solid var(--ss-glass-border);
+  border-radius: var(--ss-radius-lg);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, #ffffff 94%, transparent),
+    color-mix(in srgb, #f0f6ff 88%, transparent)
+  );
+  box-shadow: var(--ss-neu-shadow-light), var(--ss-neu-shadow-dark);
+  color: var(--ss-text-primary);
+  font-size: var(--ss-text-sm);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--ss-transition-base);
+  overflow: hidden;
+  position: relative;
+}
+
+.ecosystem-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.ecosystem-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--ss-neu-shadow-light), var(--ss-neu-shadow-dark), var(--ss-glow-active);
+}
+
+.ecosystem-card:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: var(--ss-neu-inset-light), var(--ss-neu-inset-dark);
+}
+
+.ecosystem-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--ss-radius);
+  box-shadow: var(--ss-neu-shadow-light), var(--ss-neu-shadow-dark);
+}
+
+.ecosystem-card__icon svg { width: 22px; height: 22px; }
+
+.ecosystem-card__title {
+  font-size: var(--ss-text-sm);
+  font-weight: var(--ss-font-bold);
+  color: var(--ss-text-primary);
+}
+
+.ecosystem-card__desc {
+  font-size: var(--ss-text-xs);
+  color: var(--ss-text-secondary);
+  line-height: 1.3;
+}
+
+.ecosystem-card__status {
+  margin-top: auto;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-bold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ecosystem-card__status[data-status="active"] {
+  background: var(--ss-success-bg);
+  color: var(--ss-success-text);
+}
+
+.ecosystem-card__status[data-status="soon"] {
+  background: var(--ss-bg-secondary);
+  color: var(--ss-text-muted);
+}
+
+.ecosystem-card--watch .ecosystem-card__icon { background: #dbeafe; color: #1d4ed8; }
+.ecosystem-card--security .ecosystem-card__icon { background: #dcfce7; color: #059669; }
+.ecosystem-card--cards .ecosystem-card__icon { background: #fef9c3; color: #a16207; }
+.ecosystem-card--guardian .ecosystem-card__icon { background: #fce7f3; color: #be185d; }
+.ecosystem-card--staffid .ecosystem-card__icon { background: #ede9fe; color: #6d28d9; }
+.ecosystem-card--lab .ecosystem-card__icon { background: #cffafe; color: #0e7490; }
+
+[data-theme="dark"] .ecosystem-card {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--ss-bg-primary) 92%, transparent),
+    color-mix(in srgb, #182a4a 88%, transparent)
+  );
+}
+
+[data-theme="dark"] .ecosystem-card::before {
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.08) 0%, transparent 50%);
+}
+
+[data-theme="dark"] .ecosystem-card--watch .ecosystem-card__icon { background: rgba(29, 78, 216, 0.25); color: #93c5fd; }
+[data-theme="dark"] .ecosystem-card--security .ecosystem-card__icon { background: rgba(5, 150, 105, 0.25); color: #6ee7b7; }
+[data-theme="dark"] .ecosystem-card--cards .ecosystem-card__icon { background: rgba(161, 98, 7, 0.25); color: #fde68a; }
+[data-theme="dark"] .ecosystem-card--guardian .ecosystem-card__icon { background: rgba(190, 24, 93, 0.25); color: #f9a8d4; }
+[data-theme="dark"] .ecosystem-card--staffid .ecosystem-card__icon { background: rgba(109, 40, 217, 0.25); color: #c4b5fd; }
+[data-theme="dark"] .ecosystem-card--lab .ecosystem-card__icon { background: rgba(14, 116, 144, 0.25); color: #a5f3fc; }
+
+@media (max-width: 1100px) {
+  .ecosystem-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .ecosystem-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ecosystem-card { transition: none !important; transform: none !important; }
+  .module-card { transition: none !important; transform: none !important; }
+}
+
+/* --------------------------------------------------------------------------
+   MODE SOMBRE — lisibilité du tableau de bord
+   visuel-global.css code en dur des couleurs claires (fond blanc, pastels)
+   qui écrasent les tokens sombres. Ces contre-poids restaurent la lisibilité
+   en thème sombre avec le traitement Liquid Glass bleu nuit, sans toucher
+   au mode clair. Sélecteurs [data-theme="dark"] body.screen-workspace ...
+   pour gagner en spécificité.
+   -------------------------------------------------------------------------- */
+
+[data-theme="dark"] body.screen-workspace {
+  background: linear-gradient(180deg, #0b1630 0%, #0e1c36 100%);
+}
+
+[data-theme="dark"] body.screen-workspace .workspace-content {
+  background:
+    radial-gradient(720px 420px at 92% -6%, rgba(96, 165, 250, 0.10), transparent 60%),
+    radial-gradient(600px 380px at -6% 108%, rgba(103, 232, 249, 0.07), transparent 58%),
+    transparent;
+}
+
+/* ---------- Sidebar sombre ---------- */
+[data-theme="dark"] body.screen-workspace .workspace-sidebar {
+  background: #101d38;
+  border-right-color: #1e3050;
+  box-shadow: 4px 0 24px rgba(2, 6, 23, 0.55);
+}
+[data-theme="dark"] body.screen-workspace .workspace-wordmark { color: #e8f0ff; }
+[data-theme="dark"] body.screen-workspace .workspace-wordmark strong { color: #7fb3ff; }
+[data-theme="dark"] body.screen-workspace .workspace-nav button { color: #b9c8e4; }
+[data-theme="dark"] body.screen-workspace .workspace-nav button:hover {
+  background: rgba(96, 165, 250, 0.14);
+  color: #f2f7ff;
+}
+[data-theme="dark"] body.screen-workspace .nav-section span { color: #7e91b5; }
+[data-theme="dark"] body.screen-workspace .sidebar-footer { border-top-color: #1e3050; }
+[data-theme="dark"] body.screen-workspace .sidebar-user b { color: #e8f0ff; }
+[data-theme="dark"] body.screen-workspace .sidebar-user small { color: #9db0d3; }
+[data-theme="dark"] body.screen-workspace .sidebar-copyright { color: #6f83a8; }
+[data-theme="dark"] body.screen-workspace .sidebar-theme { color: #b9c8e4; }
+[data-theme="dark"] body.screen-workspace .workspace-back {
+  color: #c9d8f3;
+  background: rgba(96, 165, 250, 0.10);
+  border: 1px solid #24406b;
+}
+[data-theme="dark"] body.screen-workspace .workspace-back:hover {
+  background: rgba(96, 165, 250, 0.18);
+  color: #f2f7ff;
+}
+
+/* ---------- Topbar sombre ---------- */
+[data-theme="dark"] body.screen-workspace .workspace-topbar {
+  background: rgba(15, 27, 50, 0.92);
+  border-bottom-color: #1e3050;
+}
+[data-theme="dark"] body.screen-workspace .topbar-search {
+  background: #142540;
+  border: 1px solid #24406b;
+}
+[data-theme="dark"] body.screen-workspace .topbar-search input { color: #e8f0ff; }
+[data-theme="dark"] body.screen-workspace .topbar-search input::placeholder { color: #7e91b5; }
+[data-theme="dark"] body.screen-workspace .topbar-icon {
+  background: #142540;
+  border: 1px solid #24406b;
+  color: #c9d8f3;
+}
+[data-theme="dark"] body.screen-workspace .topbar-icon:hover { color: #f2f7ff; }
+[data-theme="dark"] body.screen-workspace .topbar-campus {
+  background: #142540;
+  border: 1px solid #24406b;
+  color: #e8f0ff;
+}
+
+/* ---------- Héro sombre — verre bleu nuit Liquid Glass ---------- */
+[data-theme="dark"] body.screen-workspace .dashboard-hero {
+  background: linear-gradient(120deg, rgba(22, 41, 77, 0.94) 0%, rgba(18, 35, 63, 0.90) 55%, rgba(16, 32, 58, 0.92) 100%);
+  border: 1px solid #24406b;
+  box-shadow: 0 18px 44px rgba(2, 6, 23, 0.55), var(--ss-neu-shadow-light), var(--ss-neu-shadow-dark);
+}
+[data-theme="dark"] body.screen-workspace .hero-label {
+  background: rgba(96, 165, 250, 0.16);
+  color: #9ec5ff;
+}
+[data-theme="dark"] body.screen-workspace .hero-copy h1 { color: #f2f7ff; }
+[data-theme="dark"] body.screen-workspace .hero-copy p { color: #b9c8e4; }
+[data-theme="dark"] body.screen-workspace .hero-date { color: #93c5fd; }
+
+/* ---------- KPI sombres ---------- */
+[data-theme="dark"] body.screen-workspace .kpi-card {
+  background: #13233e;
+  border: 1px solid #22375a;
+  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.45), inset 0 1px 0 rgba(148, 163, 184, 0.06);
+}
+[data-theme="dark"] body.screen-workspace .kpi-card:hover {
+  box-shadow: 0 16px 34px rgba(2, 6, 23, 0.55), var(--ss-glow-active);
+}
+
+/* ---------- Sections sombres ---------- */
+[data-theme="dark"] body.screen-workspace .dashboard-section {
+  background: #13233e;
+  border: 1px solid #22375a;
+  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.42);
+}
+
+/* ---------- Cartes modules & accès rapides — lisibilité sombre + relief ---------- */
+[data-theme="dark"] body.screen-workspace .module-card,
+[data-theme="dark"] body.screen-workspace .quick-access-item {
+  background: linear-gradient(145deg, rgba(23, 41, 74, 0.92) 0%, rgba(18, 32, 58, 0.88) 100%);
+  border: 1px solid #263c60;
+  box-shadow: 0 12px 26px rgba(2, 6, 23, 0.45), inset 0 1px 0 rgba(148, 163, 184, 0.08);
+}
+[data-theme="dark"] body.screen-workspace .module-card:hover,
+[data-theme="dark"] body.screen-workspace .quick-access-item:hover {
+  box-shadow: 0 18px 36px rgba(2, 6, 23, 0.55), var(--ss-glow-active);
+}
+[data-theme="dark"] body.screen-workspace .module-card__title { color: #eaf1ff; }
+[data-theme="dark"] body.screen-workspace .module-card__desc { color: #a9bcd9; }
+
+/* --------------------------------------------------------------------------
+   MODE CLAIR — cartes modules : pastels conservés (photo de référence)
+   + bordure verre, relief neumorphic et glow au survol.
+   Spécificité égale à visuel-global.css mais chargée en dernier : gagne.
+   -------------------------------------------------------------------------- */
+body.screen-workspace .module-card,
+body.screen-workspace .quick-access-item {
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 12px 26px rgba(30, 58, 138, 0.09),
+    var(--ss-neu-shadow-light),
+    var(--ss-neu-shadow-dark);
+}
+
+body.screen-workspace .module-card:hover,
+body.screen-workspace .quick-access-item:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 18px 36px rgba(30, 58, 138, 0.13),
+    var(--ss-glow-active);
+}
+
+body.screen-workspace .module-card:active,
+body.screen-workspace .quick-access-item:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow:
+    var(--ss-neu-inset-light),
+    var(--ss-neu-inset-dark);
+}
+
+/* Focus visible — accessibilité clavier cartes écosystème */
+.ecosystem-card:focus-visible,
+.module-card:focus-visible {
+  outline: 2px solid var(--ss-blue-500, #3b82f6);
+  outline-offset: 2px;
+}
+
+[data-theme="dark"] .ecosystem-card:focus-visible,
+[data-theme="dark"] .module-card:focus-visible {
+  outline-color: #93c5fd;
+}
+
+/* --------------------------------------------------------------------------
+   JASPE P4-ter — chat fixe du dashboard + personnage 2.5D
+   Sections [data-jaspe-chat] : log de conversation, saisie, miroir bulle.
+   -------------------------------------------------------------------------- */
+[data-jaspe-chat] .safe-chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 4px 2px;
+  scroll-behavior: smooth;
+}
+
+[data-jaspe-chat] .safe-chat-log--mobile {
+  max-height: 280px;
+}
+
+[data-jaspe-chat] .safe-chat-empty {
+  margin: 0;
+  padding: 12px 4px;
+  color: var(--ss-ink-soft, #475569);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.safe-history-line {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  max-width: 92%;
+}
+
+.safe-history-line b {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-bottom: 2px;
+}
+
+.safe-history-line--jaspe {
+  align-self: flex-start;
+  background: color-mix(in srgb, var(--ss-bg-brand, #1d4ed8) 8%, transparent);
+  border: 1px solid var(--ss-glass-border);
+  color: var(--ss-ink, #0f172a);
+}
+
+.safe-history-line--user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ss-bg-brand, #1d4ed8) 85%, transparent), color-mix(in srgb, var(--ss-blue-700, #1e40af) 80%, transparent));
+  border: 1px solid var(--ss-glass-border);
+  color: #ffffff;
+}
+
+[data-jaspe-chat] .safe-chat-input-row {
+  display: flex;
+  margin-top: 10px;
+}
+
+[data-jaspe-chat] .safe-chat-input-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--ss-glass-border);
+  background: var(--ss-glass-surface);
+  box-shadow:
+    var(--ss-neu-inset-light),
+    var(--ss-neu-inset-dark);
+  color: var(--ss-ink, #0f172a);
+  font-size: 0.92rem;
+}
+
+[data-jaspe-chat] .safe-chat-input-row input:focus-visible {
+  outline: 2px solid var(--ss-blue-500, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* JASPE 2.5D — personnage réel dans l'avatar flottant */
+.safe-avatar-stage .safe-avatar-visual {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Bulle flottante — lignes historique compactes */
+.safe-bubble .safe-history-line {
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  max-width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   Mode sombre — contre-poids lisibilité chat JASPE
+   -------------------------------------------------------------------------- */
+[data-theme="dark"] .safe-history-line--jaspe {
+  background: rgba(24, 42, 74, 0.85);
+  border-color: #263c60;
+  color: #eaf1ff;
+}
+
+[data-theme="dark"] .safe-history-line--jaspe b { color: #93c5fd; }
+
+[data-theme="dark"] .safe-history-line--user {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.92), rgba(30, 58, 138, 0.92));
+  border-color: #2c4a80;
+  color: #f4f8ff;
+}
+
+[data-theme="dark"] .safe-history-line--user b { color: #bfd4f8; }
+
+[data-theme="dark"] [data-jaspe-chat] .safe-chat-input-row input {
+  background: rgba(15, 26, 46, 0.9);
+  border-color: #263c60;
+  color: #eaf1ff;
+}
+
+[data-theme="dark"] [data-jaspe-chat] .safe-chat-empty {
+  color: #a9bcd9;
+}
+
+[data-theme="dark"] [data-jaspe-chat] .safe-chat-input-row input:focus-visible {
+  outline-color: #93c5fd;
+}
+
+/* Réduit le mouvement si l'utilisateur le demande */
+@media (prefers-reduced-motion: reduce) {
+  [data-jaspe-chat] .safe-chat-log { scroll-behavior: auto; }
+}

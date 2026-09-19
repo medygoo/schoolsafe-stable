@@ -1,0 +1,103 @@
+/* Compléments du Design System pour les états et la lisibilité du workspace. */
+
+/* === Dashboard states & readability overrides === */
+.workspace-demo-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 26px 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #fef3c7, #fff7ed);
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  font-size: 14px;
+  font-weight: 700;
+}
+.workspace-demo-banner[hidden] { display: none; }
+.workspace-demo-banner i { width: 18px; height: 18px; flex-shrink: 0; }
+
+.overview-state {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 90px;
+  padding: 18px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.9);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+.overview-state i { width: 20px; height: 20px; flex-shrink: 0; }
+.overview-unavailable { background: rgba(255,255,255,.06); color: rgba(255,255,255,.75); }
+.overview-empty { background: rgba(255,255,255,.06); color: rgba(255,255,255,.75); }
+.overview-error { background: rgba(239,68,68,.12); color: #fecaca; }
+
+.workspace-screen .workspace-content .overview-stat small { font-size: 12px; }
+.workspace-screen .workspace-content .overview-stat b { font-size: 18px; }
+.workspace-screen .workspace-content .overview-stat > div > span { font-size: 12px; color: rgba(255,255,255,.72); }
+
+.workspace-screen .workspace-content .today-item b { font-size: 14px; }
+.workspace-screen .workspace-content .today-item small { font-size: 12px; }
+
+.workspace-screen .workspace-heading span { font-size: 12px; }
+.workspace-screen .workspace-heading h1 { font-size: 26px; }
+
+.workspace-screen .workspace-content .action-button { font-size: 13px; }
+.workspace-screen .workspace-content .branch-head h3 { font-size: 16px; }
+.workspace-screen .workspace-content .branch-head p { font-size: 12px; }
+.workspace-screen .workspace-content .work-group h4 { font-size: 12px; }
+
+@media (max-width: 768px) {
+  .workspace-demo-banner { margin: 12px 16px 0; font-size: 13px; }
+  .workspace-screen .workspace-content .overview-stat small { font-size: 12px; }
+  .workspace-screen .workspace-content .overview-stat b { font-size: 16px; }
+  .workspace-screen .workspace-heading h1 { font-size: 20px; }
+}
+
+/* === UI-VIS-01 v2 — hiérarchie de lisibilité fonctionnelle === */
+.auth-screen :is(p, label, input, select, textarea, button),
+.setup-screen :is(p, label, input, select, textarea, button),
+.workspace-screen .workspace-content :is(
+  p,
+  li,
+  td,
+  th,
+  label,
+  input,
+  select,
+  textarea,
+  b,
+  strong,
+  dd
+) { font-size: 14px; }
+
+.workspace-screen .workspace-content h3 { font-size: 16px; }
+.workspace-screen .workspace-content h4 { font-size: 14px; }
+
+.workspace-nav :is(button, .workspace-back),
+.workspace-breadcrumb button,
+.pedagogy-tabs:not(.finance-tabs) button,
+.pilotage-tabs button,
+.school-tabs button,
+.ss-bottom-nav button,
+.remediation-nav button,
+.exam-switch button { min-height: 44px; font-size: 14px; line-height: 1.25; white-space: normal; overflow-wrap: anywhere; }
+
+@media (max-width: 768px) {
+  .pedagogy-tabs:not(.finance-tabs),
+  .pilotage-tabs { display: flex; grid-template-columns: none; overflow-x: auto; justify-content: flex-start; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+
+  .pedagogy-tabs:not(.finance-tabs) button,
+  .pilotage-tabs button { flex: 0 0 138px; min-height: 68px; flex-direction: row; justify-content: flex-start; gap: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.25; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+
+  .school-tabs { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+  .school-tabs button,
+  .ss-bottom-nav .ss-bottom-nav__item,
+  .remediation-nav button,
+  .exam-switch button { flex: 0 0 auto; min-height: 44px; font-size: 12px; }
+}

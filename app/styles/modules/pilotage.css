@@ -1,0 +1,189 @@
+.pilotage-dashboard {
+  display: grid;
+  gap: var(--ss-space-4);
+  padding: var(--ss-space-4);
+}
+
+.pilotage-dashboard header {
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--ss-space-4);
+  border-radius: var(--ss-radius);
+  color: var(--ss-text-on-brand);
+  background: var(--ss-gradient-module);
+}
+
+.pilotage-dashboard header span {
+  color: var(--ss-blue-300);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pilotage-dashboard header h2 {
+  margin: var(--ss-space-1) 0;
+  font-size: var(--ss-text-2xl);
+  font-weight: var(--ss-font-bold);
+}
+
+.pilotage-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--ss-space-3);
+}
+
+.pilotage-kpis article {
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--ss-space-4);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius);
+  background: var(--ss-bg-primary);
+  box-shadow: var(--ss-shadow-sm);
+}
+
+.pilotage-kpis article small {
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pilotage-kpis article b {
+  margin: var(--ss-space-1) 0;
+  font-size: var(--ss-text-2xl);
+  font-weight: var(--ss-font-extrabold);
+  color: var(--ss-text-primary);
+}
+
+.pilotage-kpis article span {
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-xs);
+}
+
+.pilotage-lockdown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ss-space-2);
+  padding: var(--ss-space-4);
+  border-radius: var(--ss-radius);
+  background: var(--ss-error-bg);
+  color: var(--ss-error-text);
+  font-size: var(--ss-text-base);
+  font-weight: var(--ss-font-bold);
+}
+
+.pilotage-alerts,
+.pilotage-alerts-list {
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius);
+  background: var(--ss-bg-primary);
+  overflow: hidden;
+}
+
+.pilotage-alerts h3,
+.pilotage-alerts-list h3 {
+  margin: 0;
+  padding: var(--ss-space-3) var(--ss-space-4);
+  border-bottom: 1px solid var(--ss-border-subtle);
+  font-size: var(--ss-text-base);
+  font-weight: var(--ss-font-bold);
+  color: var(--ss-text-primary);
+}
+
+.pilotage-alerts ul,
+.pilotage-alerts-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pilotage-alerts li,
+.pilotage-alerts-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ss-space-3);
+  padding: var(--ss-space-3) var(--ss-space-4);
+  border-bottom: 1px solid var(--ss-border-subtle);
+  font-size: var(--ss-text-sm);
+  color: var(--ss-text-primary);
+}
+
+.pilotage-alerts li:last-child,
+.pilotage-alerts-list li:last-child {
+  border-bottom: 0;
+}
+
+.pilotage-alerts-list li {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.pilotage-alerts-list li small {
+  grid-column: 2;
+  color: var(--ss-text-secondary);
+  font-size: var(--ss-text-xs);
+}
+
+.severity {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--ss-space-1) var(--ss-space-2);
+  border-radius: var(--ss-radius-sm);
+  font-size: var(--ss-text-xs);
+  font-weight: var(--ss-font-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.severity.low {
+  color: var(--ss-blue-700);
+  background: var(--ss-info-bg);
+}
+
+.severity.medium {
+  color: var(--ss-gold-600);
+  background: var(--ss-warning-bg);
+}
+
+.severity.high {
+  color: var(--ss-coral-700);
+  background: var(--ss-error-bg);
+}
+
+.severity.critical {
+  color: var(--ss-text-inverse);
+  background: var(--ss-coral-600);
+}
+
+.alert-actions {
+  grid-column: 3;
+  display: flex;
+  gap: var(--ss-space-2);
+}
+
+@media (max-width: 768px) {
+  .pilotage-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pilotage-alerts-list li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .pilotage-alerts-list li small {
+    grid-column: 1 / -1;
+  }
+
+  .alert-actions {
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+  }
+}

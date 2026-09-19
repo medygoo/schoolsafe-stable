@@ -1,0 +1,243 @@
+/* SchoolSafe Card Studio CSS — adapté du moteur historique */
+@import url('../../../assets/fonts/fonts.css');
+
+.ss-card-studio,.ss-card-studio *{box-sizing:border-box}
+.ss-card-studio{--ss-navy:#2b3740;--ss-navy2:#3d4b57;--ss-gold:#e8a91d;--ss-gold2:#f6c94e;--ss-cc:#c09018;--ss-cc-soft:#e5e8eb;--ss-cc-dark:#1c242c;font-family:'Nunito Sans','Segoe UI',sans-serif}
+.ss-card-studio .art{position:relative;border-radius:22px;overflow:hidden;background:#fff;box-shadow:0 22px 50px rgba(13,43,122,.22),0 3px 10px rgba(13,43,122,.12)}
+.ss-card-studio .face-tag{position:absolute;z-index:9;top:10px;left:10px;background:rgba(13,43,122,.78);color:#fff;font-size: 12px;font-weight:900;letter-spacing:1px;padding:3px 9px;border-radius:999px}
+.ss-card-studio .arc{position:absolute;left:0;right:0;display:flex;flex-direction:column;gap:2.5px;pointer-events:none}
+.ss-card-studio .arc i{height:3px;border-radius:3px}
+.ss-card-studio .arc i:nth-child(1){background:#e63946}
+.ss-card-studio .arc i:nth-child(2){background:#f77f00;margin:0 6%}
+.ss-card-studio .arc i:nth-child(3){background:#fcbf49;margin:0 12%}
+.ss-card-studio .arc i:nth-child(4){background:#2a9d8f;margin:0 18%}
+.ss-card-studio .arc i:nth-child(5){background:#7b5cd6;margin:0 24%}
+
+/* BADGE 340×540 */
+.ss-card-studio .badge{width:340px;height:540px;display:flex;flex-direction:column}
+.ss-card-studio .badge .head{position:relative;background:linear-gradient(155deg,var(--ss-navy) 12%,var(--ss-navy2) 55%,var(--ss-cc-dark));padding:14px 16px 40px;color:#fff;flex:none}
+.ss-card-studio .badge .head .arc{top:6px}
+.ss-card-studio .head-row{display:flex;align-items:center;gap:10px;position:relative;z-index:2;margin-top:8px}
+.ss-card-studio .logo-slot{width:46px;height:46px;border-radius:12px;border:2px dashed rgba(255,255,255,.6);background:rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;flex:none;font-size: 15px;line-height:1}
+.ss-card-studio .logo-slot img{width:100%;height:100%;object-fit:contain;border-radius:10px}
+.ss-card-studio .logo-slot span{font-size: 12px;font-weight:900;color:rgba(255,255,255,.9);text-align:center;line-height:1.2}
+.ss-card-studio .school{flex:1;min-width:0}
+.ss-card-studio .school .rdc{font-size: 12px;font-weight:900;letter-spacing:1.6px;color:var(--ss-gold2);text-transform:uppercase}
+.ss-card-studio .school .nm{font-family:'Baloo 2',cursive;font-size: 15.5px;font-weight:800;line-height:1.05;margin-top:1px}
+.ss-card-studio .school .slg{font-size: 12px;font-weight:700;opacity:.85;font-style:italic;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ss-card-studio .flag{border-radius:4px;overflow:hidden;flex:none;position:relative;background:#3061d6;box-shadow:0 2px 5px rgba(0,0,0,.3)}
+.ss-card-studio .badge .flag{width:30px;height:19px}
+.ss-card-studio .badge .flag::before,.ss-card-studio .carte .flag::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 40%,#f7d618 40%,#f7d618 46%,#ce1021 46%,#ce1021 58%,#f7d618 58%,#f7d618 64%,transparent 64%)}
+.ss-card-studio .badge .flag::after,.ss-card-studio .carte .flag::after{content:"★";position:absolute;top:-1px;left:3px;color:#f7d618}
+.ss-card-studio .badge .flag::after{font-size: 12px}
+.ss-card-studio .rolebar{position:absolute;left:50%;bottom:-16px;transform:translateX(-50%);z-index:5;background:linear-gradient(135deg,var(--ss-cc),var(--ss-cc-dark));color:#fff;border-radius:999px;font-family:'Baloo 2',cursive;font-size: 14.5px;font-weight:800;letter-spacing:1.5px;padding:7px 24px;box-shadow:0 8px 18px rgba(0,0,0,.2),inset 0 0 0 2.5px rgba(255,255,255,.35);white-space:nowrap}
+.ss-card-studio .badge .bodyz{flex:1;position:relative;padding:24px 18px 12px;display:flex;flex-direction:column;background:radial-gradient(90% 55% at 50% 0%,var(--ss-cc-soft) 0%,transparent 60%),repeating-linear-gradient(-45deg,transparent 0 26px,rgba(0,0,0,.02) 26px 27px),#fdfefe}
+.ss-card-studio .badge .brow{display:flex;gap:10px;align-items:flex-start;position:relative;z-index:2}
+.ss-card-studio .badge .pcol{flex:none;width:126px;display:flex;flex-direction:column;align-items:center;gap:7px}
+.ss-card-studio .badge .fcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.ss-card-studio .badge .frw{display:flex;align-items:center;gap:7px;background:#fff;border:1.5px solid #e8ecf6;border-radius:11px;padding:3px 8px;box-shadow:0 2px 6px rgba(23,32,58,.04)}
+.ss-card-studio .badge .frw .ic{width:20px;height:20px;border-radius:7px;display:grid;place-items:center;font-size: 12px;flex:none}
+.ss-card-studio .badge .frw .k{font-size: 12px;font-weight:900;letter-spacing:.6px;color:#5d6784;text-transform:uppercase}
+.ss-card-studio .badge .frw .v{font-size: 12px;font-weight:800;color:#17203a;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ss-card-studio .badge .qr-side{width:92px;height:92px;background:#fff;border-radius:14px;padding:6px;outline:3px solid var(--ss-cc);outline-offset:2px;overflow:hidden}
+.ss-card-studio .badge .pcol .scan{font-size: 12px;font-weight:900;color:#5d6784;letter-spacing:.7px}
+.ss-card-studio .deco{position:absolute;font-family:'Baloo 2',cursive;font-weight:800;color:var(--ss-cc);opacity:.15;pointer-events:none;user-select:none;z-index:1}
+.ss-card-studio .pat{display:flex;align-items:center;gap:9px;position:relative;z-index:2}
+.ss-card-studio .pat img{display:block;object-fit:cover;border-radius:14px;border:3px solid #fff;box-shadow:0 10px 20px rgba(0,0,0,.30);transform:rotate(-5deg);background:#fff}
+.ss-card-studio .pat .nm2{background:linear-gradient(135deg,#d9a43a,#f0c560);color:#1c2e57;font-size: 12px;font-weight:900;letter-spacing:1px;padding:3px 10px;border-radius:999px;transform:rotate(-2deg);box-shadow:0 3px 8px rgba(0,0,0,.18);white-space:nowrap}
+.ss-card-studio .pat.center{flex-direction:column;gap:5px;margin:auto auto 8px}
+.ss-card-studio .patveil{display:none;position:absolute;inset:0;z-index:0;background-size:cover;background-position:center}
+.ss-card-studio .patveil::after{content:"";position:absolute;inset:0;background:linear-gradient(165deg,rgba(255,255,255,.55),rgba(255,255,255,.68) 45%,rgba(255,255,255,.55))}
+.ss-card-studio .patveil.active{display:block}
+.ss-card-studio .bodyz>.patveil.active~*{position:relative;z-index:1}
+.ss-card-studio .badge .rows,.ss-card-studio .badge .foot,.ss-card-studio .carte .info,.ss-card-studio .carte .qr-col,.ss-card-studio .carte .vleft,.ss-card-studio .carte .vright{position:relative;z-index:2}
+.ss-card-studio .photo-wrap{width:126px;height:138px;position:relative}
+.ss-card-studio .badge .photo{width:118px;height:130px;margin:0 auto;border-radius:18px;overflow:hidden;position:relative;background:linear-gradient(160deg,#eef2fb,#dfe6f5);outline:4.5px solid var(--ss-cc);outline-offset:3px}
+.ss-card-studio .badge .photo img,.ss-card-studio .carte .photo img{width:100%;height:100%;object-fit:cover}
+.ss-card-studio .badge .photo .ph,.ss-card-studio .carte .photo .ph{position:absolute;inset:0;display:grid;place-items:center}
+.ss-card-studio .badge .photo .ph svg{width:74%;height:74%;opacity:.5}
+.ss-card-studio .carte .photo .ph svg{width:72%;height:72%;opacity:.5}
+.ss-card-studio .cls-dot{position:absolute;right:-4px;bottom:-5px;background:var(--ss-gold);color:#3a2a00;font-family:'Baloo 2',cursive;font-weight:800;font-size: 12px;border-radius:999px;padding:3px 9px;box-shadow:0 5px 12px rgba(232,169,29,.5);border:2px solid #fff}
+.ss-card-studio .sname .n1{font-family:'Baloo 2',cursive;font-size: 19px;font-weight:800;color:#17203a;line-height:1.05}
+.ss-card-studio .sname .n2{font-size: 12px;font-weight:800;color:var(--ss-cc);margin-top:1px;letter-spacing:.3px}
+.ss-card-studio .badge .rows{margin-top:9px;display:flex;flex-direction:column;gap:5px}
+.ss-card-studio .badge .rw{display:flex;align-items:center;gap:9px;background:#fff;border:1.5px solid #e8ecf6;border-radius:13px;padding:5px 11px;box-shadow:0 2px 6px rgba(23,32,58,.04)}
+.ss-card-studio .badge .rw .ic{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-size: 12px;flex:none}
+.ss-card-studio .badge .rw .k{font-size: 12px;font-weight:900;letter-spacing:.8px;color:#5d6784;text-transform:uppercase}
+.ss-card-studio .badge .rw .v{font-size: 12.5px;font-weight:800;color:#17203a;line-height:1.1}
+.ss-card-studio .badge .rw .grow{flex:1;min-width:0}
+.ss-card-studio .badge .rw>div,.ss-card-studio .carte .mrw>div{min-width:0}
+.ss-card-studio .badge .rw .v,.ss-card-studio .carte .mrw .v,
+.ss-card-studio .carte .cell .v,.ss-card-studio .badge .frw .v{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ss-card-studio .rw.contact,.ss-card-studio .mrw.contact{align-items:flex-start}
+.ss-card-studio .rw.contact .ic,.ss-card-studio .mrw.contact .ic{margin-top:2px}
+.ss-card-studio .rw.contact .v,.ss-card-studio .mrw.contact .v{white-space:normal;word-break:break-word;line-height:1.15}
+.ss-card-studio .badge .foot{flex:none;margin-top:auto;background:linear-gradient(90deg,var(--ss-navy),var(--ss-navy2));display:flex;align-items:center;gap:10px;padding:9px 14px;color:#fff}
+.ss-card-studio .badge .foot .t1{font-size: 12px;font-weight:900;letter-spacing:.4px}
+.ss-card-studio .badge .foot .t2{font-size: 12px;opacity:.8;font-weight:700}
+.ss-card-studio .qr-mini{margin-left:auto;width:34px;height:34px;background:#fff;border-radius:8px;padding:3px;overflow:hidden}
+
+/* badge VERSO */
+.ss-card-studio .badge.verso .bodyz{padding-top:12px;padding-bottom:8px;overflow:hidden}
+.ss-card-studio .badge.verso .rows{flex:0 1 auto;min-height:0;overflow:hidden}
+.ss-card-studio .badge.verso .qr-big{width:78px;height:78px;margin-bottom:5px}
+.ss-card-studio .badge.verso .qr-cap{margin-bottom:7px}
+.ss-card-studio .badge.verso .rw{padding:4px 10px}
+.ss-card-studio .badge.verso .rw .v{font-size: 12px}
+.ss-card-studio .badge.verso .rows{gap:4px;margin-top:7px}
+.ss-card-studio .badge.verso .rw.ecole{align-items:flex-start}
+.ss-card-studio .badge.verso .rw.ecole .ic{margin-top:1px}
+.ss-card-studio .badge.verso .rw.ecole .v{font-size: 12px;font-weight:700;line-height:1.35;white-space:normal;word-break:break-word;color:#3c4a57}
+.ss-card-studio .badge.verso .sec-note{font-size: 12px;padding:5px 9px;margin-top:5px;line-height:1.35}
+.ss-card-studio .badge.verso .sign-row{margin-top:7px}
+.ss-card-studio .badge.verso .sign-row .sg .line{width:88px;height:22px}
+.ss-card-studio .badge.verso .stamp{width:46px;height:46px;font-size: 12px;border-width:2px}
+.ss-card-studio .badge.verso .foot{padding:7px 14px}
+.ss-card-studio .vtitle{display:flex;align-items:center;gap:8px;margin:0 2px 10px}
+.ss-card-studio .vtitle .vi{width:26px;height:26px;border-radius:9px;background:var(--ss-cc);color:#fff;display:grid;place-items:center;font-size: 13px}
+.ss-card-studio .vtitle b{font-family:'Baloo 2',cursive;font-size: 14px;color:#17203a}
+.ss-card-studio .vtitle small{font-size: 12px;color:#5d6784;font-weight:800;display:block;letter-spacing:.6px;text-transform:uppercase}
+.ss-card-studio .qr-big{width:88px;height:88px;background:#fff;border-radius:14px;margin:0 auto 6px;padding:6px;outline:4px solid var(--ss-cc);outline-offset:3px;overflow:hidden}
+.ss-card-studio .qr-cap{text-align:center;font-size: 12px;font-weight:800;color:#5d6784;margin-bottom:10px}
+.ss-card-studio .qr-cap b{color:var(--ss-cc-dark)}
+.ss-card-studio .sec-note{background:linear-gradient(135deg,#fff8e8,#fdeecb);border:1.5px dashed var(--ss-gold);border-radius:14px;padding:6px 10px;font-size: 12px;font-weight:700;color:#6b5314;line-height:1.4;margin-top:6px}
+.ss-card-studio .sign-row{display:flex;align-items:flex-end;justify-content:space-between;margin-top:10px;padding:0 4px}
+.ss-card-studio .sign-row .sg .line{width:104px;height:34px;border-bottom:2px solid #5d6784}
+.ss-card-studio .sign-row .sg b{font-size: 12px;font-weight:900;color:#5d6784;letter-spacing:.7px;text-transform:uppercase}
+.ss-card-studio .stamp{width:64px;height:64px;border-radius:50%;border:2.5px dashed var(--ss-cc);display:grid;place-items:center;color:var(--ss-cc);font-size: 12px;font-weight:900;text-align:center;transform:rotate(-8deg);opacity:.75;line-height:1.3}
+
+/* CARTE PVC 560×353 */
+.ss-card-studio .carte{width:560px;height:353px;display:flex;flex-direction:column}
+.ss-card-studio .carte.verso .bodyz{overflow:hidden}
+.ss-card-studio .carte.verso .vleft{min-height:0;overflow:hidden}
+.ss-card-studio .carte .mrw.ecole{align-items:flex-start}
+.ss-card-studio .carte .mrw.ecole .ic{margin-top:1px}
+.ss-card-studio .carte .mrw.ecole .v{font-size: 12px;font-weight:700;line-height:1.35;white-space:normal;word-break:break-word;color:#3c4a57}
+.ss-card-studio .carte .head{position:relative;background:linear-gradient(120deg,var(--ss-navy) 5%,var(--ss-navy2) 52%,var(--ss-cc-dark));color:#fff;padding:12px 18px;display:flex;align-items:center;gap:12px;flex:none}
+.ss-card-studio .carte .head .arc{bottom:2px}
+.ss-card-studio .carte .flag{width:34px;height:21px}
+.ss-card-studio .carte .flag::after{font-size: 12px}
+.ss-card-studio .carte .titlebar{background:var(--ss-gold);color:#2d2103;font-family:'Baloo 2',cursive;font-weight:800;letter-spacing:2px;font-size: 12px;padding:5px 14px;flex:none;display:flex;align-items:center;justify-content:space-between;overflow:hidden}
+.ss-card-studio .carte .titlebar .tb-type{letter-spacing:2.2px;flex:none}
+.ss-card-studio .carte .titlebar .tb-cls{font-size: 13px;letter-spacing:.4px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%;text-align:right}
+.ss-card-studio .ss-cls-band{background:linear-gradient(90deg,var(--ss-cc-dark),var(--ss-cc));color:#fff;font-family:'Baloo 2',cursive;font-weight:800;font-size: 12px;letter-spacing:1.8px;text-align:center;padding:7px 14px;margin:0 -18px 0;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative;z-index:2}
+.ss-card-studio .carte .bodyz{flex:1;display:flex;gap:14px;padding:12px 16px;position:relative;background:radial-gradient(70% 90% at 100% 0%,var(--ss-cc-soft) 0%,transparent 55%),repeating-linear-gradient(-45deg,transparent 0 26px,rgba(0,0,0,.02) 26px 27px),#fdfefe}
+.ss-card-studio .carte .photo-col{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px}
+.ss-card-studio .carte .photo{width:108px;height:118px;border-radius:16px;overflow:hidden;position:relative;background:linear-gradient(160deg,#eef2fb,#dfe6f5);outline:4px solid var(--ss-cc);outline-offset:2.5px}
+.ss-card-studio .cls-pill{background:var(--ss-gold);color:#3a2a00;font-family:'Baloo 2',cursive;font-weight:800;font-size: 12px;border-radius:999px;padding:3.5px 14px;border:2px solid #fff}
+.ss-card-studio .carte .info{flex:1;min-width:0;display:flex;flex-direction:column}
+.ss-card-studio .carte .sname{margin-bottom:2px}
+.ss-card-studio .carte .sname .n1{font-family:'Baloo 2',cursive;font-size: 20px;font-weight:800;color:#17203a;line-height:1}
+.ss-card-studio .carte .sname .n2{font-size: 12px;font-weight:800;color:var(--ss-cc);margin-top:1px}
+.ss-card-studio .carte .grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:7px}
+.ss-card-studio .carte .cell .k{font-size: 12px;font-weight:900;letter-spacing:1px;color:#5d6784;text-transform:uppercase}
+.ss-card-studio .carte .cell .v{font-size: 12px;font-weight:800;color:#17203a;border-bottom:1.5px dotted #d4dbea;padding-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ss-card-studio .carte .qr-col{flex:none;width:96px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px}
+.ss-card-studio .carte .qr-box{width:92px;height:92px;background:#fff;border-radius:14px;padding:6px;outline:3.5px solid var(--ss-cc);outline-offset:2px;overflow:hidden}
+.ss-card-studio .carte .qr-col b{font-size: 12px;font-weight:900;color:#5d6784;letter-spacing:.8px;text-align:center}
+.ss-card-studio .carte .foot{flex:none;background:linear-gradient(90deg,var(--ss-navy),var(--ss-navy2));color:#fff;display:flex;align-items:center;gap:10px;padding:7px 16px}
+.ss-card-studio .carte .foot .t1{font-size: 12px;font-weight:900}
+.ss-card-studio .carte .foot .t2{font-size: 12px;opacity:.8;font-weight:700}
+.ss-card-studio .carte .foot .val{margin-left:auto;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:3px 12px;font-size: 12px;font-weight:900;letter-spacing:.8px}
+
+/* carte verso */
+.ss-card-studio .carte.verso .bodyz{flex-direction:row;align-items:stretch}
+.ss-card-studio .carte.verso .vleft{flex:1.25;display:flex;flex-direction:column;gap:6px}
+.ss-card-studio .carte .mini-rows{display:flex;flex-direction:column;gap:5px}
+.ss-card-studio .carte .mrw{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #e8ecf6;border-radius:11px;padding:5px 10px}
+.ss-card-studio .carte .mrw .ic{width:20px;height:20px;border-radius:7px;display:grid;place-items:center;font-size: 12px;flex:none}
+.ss-card-studio .carte .mrw .k{font-size: 12px;font-weight:900;letter-spacing:.7px;color:#5d6784;text-transform:uppercase}
+.ss-card-studio .carte .mrw .v{font-size: 12px;font-weight:800;color:#17203a}
+.ss-card-studio .carte.verso .sec-note{margin-top:auto;font-size: 12px;padding:7px 10px}
+.ss-card-studio .carte.verso .vright{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+
+/* FAMILLES A-J */
+.ss-card-studio[data-fam="B"]{--ss-navy:#075e63;--ss-navy2:#0d9488;--ss-gold:#ff8552;--ss-gold2:#ffc29e}
+.ss-card-studio[data-fam="B"] .arc{display:none}
+.ss-card-studio[data-fam="C"]{--ss-navy:#312e81;--ss-navy2:#4338ca;--ss-gold:#facc15;--ss-gold2:#fde047}
+.ss-card-studio[data-fam="C"] .arc{display:none}
+.ss-card-studio[data-fam="C"] .art{box-shadow:8px 8px 0 rgba(23,32,58,.85);border:2.5px solid #17203a;border-radius:18px}
+.ss-card-studio[data-fam="C"] .rolebar{border-radius:12px}
+.ss-card-studio[data-fam="C"] .badge .frw,.ss-card-studio[data-fam="C"] .badge .rw,.ss-card-studio[data-fam="C"] .carte .mrw{border:2px solid #17203a}
+.ss-card-studio[data-fam="C"] .badge .photo,.ss-card-studio[data-fam="C"] .carte .photo{outline-width:3px;border:2.5px solid #17203a}
+.ss-card-studio[data-fam="D"]{--ss-navy:#0a0f2e;--ss-navy2:#1a2352;--ss-gold:#c9a030;--ss-gold2:#e6c25e}
+.ss-card-studio[data-fam="D"] .arc{display:none}
+.ss-card-studio[data-fam="D"] .qr-big,.ss-card-studio[data-fam="D"] .carte .qr-box,.ss-card-studio[data-fam="D"] .badge .qr-side{outline-color:var(--ss-gold)}
+.ss-card-studio[data-fam="E"]{--ss-navy:#2563c4;--ss-navy2:#4f8ff7;--ss-gold:#fbbf24;--ss-gold2:#fde68a}
+.ss-card-studio[data-fam="E"] .arc{display:none}
+.ss-card-studio[data-fam="E"] .rolebar{color:#1c2e57}
+.ss-card-studio[data-fam="F"]{--ss-navy:#8a2f0c;--ss-navy2:#c2410c;--ss-gold:#f6a71d;--ss-gold2:#ffd166}
+.ss-card-studio[data-fam="F"] .arc{display:none}
+.ss-card-studio[data-fam="F"] .badge .bodyz,.ss-card-studio[data-fam="F"] .carte .bodyz{background:linear-gradient(90deg,transparent 0 24px,rgba(230,57,70,.38) 24px 25.5px,transparent 25.5px),repeating-linear-gradient(#fffdf4 0 21px,rgba(96,165,250,.45) 21px 22px),#fffdf4}
+.ss-card-studio[data-fam="G"]{--ss-navy:#0f3d24;--ss-navy2:#1b6b3a;--ss-gold:#f6a71d;--ss-gold2:#ffd166}
+.ss-card-studio[data-fam="G"] .arc{display:none}
+.ss-card-studio[data-fam="G"] .badge .bodyz,.ss-card-studio[data-fam="G"] .carte .bodyz{background:radial-gradient(ellipse 90px 34px at -4% 6%,rgba(34,197,94,.16) 60%,transparent 62%),radial-gradient(ellipse 70px 26px at 104% 28%,rgba(16,185,129,.13) 60%,transparent 62%),#f3faf1}
+.ss-card-studio[data-fam="H"]{--ss-navy:#141238;--ss-navy2:#312e81;--ss-gold:#f59e0b;--ss-gold2:#fcd34d}
+.ss-card-studio[data-fam="H"] .arc{display:none}
+.ss-card-studio[data-fam="H"] .badge .bodyz,.ss-card-studio[data-fam="H"] .carte .bodyz{background:linear-gradient(180deg,#eef0ff,#f8f9ff 45%)}
+.ss-card-studio[data-fam="I"]{--ss-navy:#8f1049;--ss-navy2:#db2777;--ss-gold:#fbbf24;--ss-gold2:#fde68a}
+.ss-card-studio[data-fam="I"] .arc{display:none}
+.ss-card-studio[data-fam="I"] .badge .bodyz,.ss-card-studio[data-fam="I"] .carte .bodyz{background:repeating-linear-gradient(45deg,#fff 0 20px,#fdf2f8 20px 40px)}
+.ss-card-studio[data-fam="J"]{--ss-navy:#1f3a2d;--ss-navy2:#2c5642;--ss-gold:#facc15;--ss-gold2:#fde047}
+.ss-card-studio[data-fam="J"] .arc{display:none}
+.ss-card-studio[data-fam="J"] .badge .bodyz,.ss-card-studio[data-fam="J"] .carte .bodyz{background:repeating-linear-gradient(35deg,transparent 0 30px,rgba(44,86,66,.05) 30px 31px),#faf8ee}
+.ss-card-studio[data-fam="J"] .badge .frw,.ss-card-studio[data-fam="J"] .badge .rw,.ss-card-studio[data-fam="J"] .carte .mrw{border-style:dashed;border-color:#c9d6cc}
+.ss-card-studio[data-fam="J"] .badge .photo,.ss-card-studio[data-fam="J"] .carte .photo{outline-style:dashed}
+
+/* famille button */
+.ss-fam-btn{border:none;cursor:pointer;border-radius:9px;padding:5px 9px;font-size: 12px;font-weight:700;transition:.15s;border:2px solid transparent;display:inline-flex;align-items:center;gap:4px;background:#f2f4fa;color:#4a5568;font-family:inherit}
+.ss-fam-btn.active{background:#fff;border-color:var(--primary,#243a6b);color:var(--primary,#243a6b);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+
+@media(max-width:600px){
+  .ss-card-studio .carte{transform:scale(.58);transform-origin:top left}
+  .ss-carte-wrap{width:calc(560px*.58);height:calc(353px*.58 + 2px);overflow:hidden}
+  .ss-card-studio .badge{transform:scale(.82);transform-origin:top left}
+  .ss-badge-wrap{width:calc(340px*.82);height:calc(540px*.82 + 2px);overflow:hidden}
+}
+
+/* Vignette carte */
+.ss-card-studio .carte .pat{margin-top:auto;overflow:hidden;max-height:56px;padding:2px 0}
+.ss-card-studio .carte .pat img{transform:rotate(-2deg);border-radius:10px}
+.ss-card-studio .carte .pat .nm2{max-width:120px;overflow:hidden;text-overflow:ellipsis}
+.ss-card-studio .carte .info{overflow:hidden}
+
+/* Bande holographique */
+.ss-card-studio .art::after{content:"";position:absolute;pointer-events:none;z-index:99;background:linear-gradient(var(--ss-holo-angle,180deg),rgba(255,0,0,.22),rgba(255,128,0,.22),rgba(255,255,0,.18),rgba(0,210,120,.2),rgba(0,100,255,.22),rgba(140,0,255,.2),rgba(255,0,180,.22),rgba(255,0,0,.22));background-size:100% 600%;animation:ss-holo-shift 3.5s linear infinite;mix-blend-mode:screen}
+.ss-card-studio .badge .art::after{right:0;top:0;width:16px;bottom:0;border-radius:0 22px 22px 0;--ss-holo-angle:180deg}
+.ss-card-studio .carte .art::after{left:0;right:0;bottom:0;height:12px;border-radius:0 0 22px 22px;--ss-holo-angle:90deg}
+@keyframes ss-holo-shift{0%{background-position:50% 0%}100%{background-position:50% 600%}}
+
+/* Tampon DUPLICATA */
+.ss-duplicata-stamp{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-28deg);z-index:100;border:4px solid rgba(196,22,22,.82);color:rgba(196,22,22,.82);font-family:'Baloo 2',cursive;font-size: 30px;font-weight:900;letter-spacing:4px;padding:7px 18px;border-radius:8px;pointer-events:none;background:rgba(255,255,255,.15);backdrop-filter:blur(1px);white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+/* === Cards Studio layout (V2 workspace) === */
+.cards-studio{position:fixed;inset:0;z-index:100;background:var(--ss-bg-canvas);display:flex;flex-direction:column;overflow:hidden}
+.cards-studio-header{flex:none;display:flex;align-items:center;gap:var(--ss-space-4);padding:var(--ss-space-4) var(--ss-space-5);background:var(--ss-bg-primary);border-bottom:1px solid var(--ss-border-default);box-shadow:var(--ss-shadow-sm)}
+.cards-studio-header button{white-space:nowrap}
+.cards-studio-header div{flex:1;min-width:0}
+.cards-studio-header div>span{display:block;font-size: var(--ss-text-xs);font-weight:var(--ss-font-extrabold);letter-spacing:1.2px;text-transform:uppercase;color:var(--ss-text-secondary)}
+.cards-studio-header h2{margin:var(--ss-space-1) 0 0;font-size: var(--ss-text-2xl);font-weight:var(--ss-font-bold);color:var(--ss-text-primary);line-height:1.2}
+.cards-studio-header p{margin:var(--ss-space-1) 0 0;font-size: var(--ss-text-sm);color:var(--ss-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cards-studio-layout{flex:1;display:flex;min-height:0;overflow:hidden}
+.cards-studio-panel{flex:none;width:320px;background:var(--ss-bg-primary);border-right:1px solid var(--ss-border-default);padding:var(--ss-space-5);display:flex;flex-direction:column;gap:var(--ss-space-3);overflow-y:auto}
+.cards-studio-panel label{font-size: var(--ss-text-xs);font-weight:var(--ss-font-extrabold);color:var(--ss-text-secondary);text-transform:uppercase;letter-spacing:.6px}
+.cards-studio-panel select{width:100%;min-height:44px;padding:var(--ss-space-2) var(--ss-space-3);border:1.5px solid var(--ss-border-strong);border-radius:var(--ss-radius);background:var(--ss-bg-primary);font-size: var(--ss-text-sm);font-family:inherit;color:var(--ss-text-primary);outline:none}
+.cards-studio-panel select:focus{border-color:var(--ss-blue-600);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.cards-studio-panel select:disabled{background:var(--ss-bg-secondary);color:var(--ss-text-muted)}
+.cards-preview-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:var(--ss-space-6);overflow:auto;background:linear-gradient(135deg,var(--ss-bg-secondary),var(--ss-bg-tertiary))}
+.cards-preview-wrap .ss-card-studio{transform-origin:center top}
+.cards-student-list{max-height:220px;overflow-y:auto;border:1.5px solid var(--ss-border-strong);border-radius:var(--ss-radius);padding:var(--ss-space-2);background:var(--ss-bg-primary)}
+.cards-student-list label{display:flex;align-items:center;min-height:44px;gap:var(--ss-space-2);padding:var(--ss-space-1) var(--ss-space-1);font-size: var(--ss-text-sm);font-weight:var(--ss-font-medium);color:var(--ss-text-primary);cursor:pointer;border-radius:var(--ss-radius-sm)}
+.cards-student-list label:hover{background:var(--ss-bg-secondary)}
+.cards-student-list input[type=checkbox]{flex:none;width:16px;height:16px}
+.cards-student-list .student-meta{margin-left:auto;font-size: var(--ss-text-xs);color:var(--ss-text-secondary);font-weight:var(--ss-font-regular)}
+.cards-select-all{display:flex;align-items:center;gap:var(--ss-space-2);font-size: var(--ss-text-xs);font-weight:var(--ss-font-bold);color:var(--ss-text-secondary);text-transform:none;letter-spacing:0}
+.cards-select-all input[type=checkbox]{width:16px;height:16px}
+.cards-actions{display:flex;flex-direction:column;gap:var(--ss-space-2);margin-top:auto;padding-top:var(--ss-space-2)}
+.cards-actions button{width:100%;justify-content:center;min-height:44px}
+.cards-status{font-size: var(--ss-text-sm);font-weight:var(--ss-font-bold);line-height:1.4;min-height:44px;padding:var(--ss-space-2) var(--ss-space-3);border-radius:var(--ss-radius);background:var(--ss-bg-secondary);color:var(--ss-text-secondary)}
+@media(max-width:1024px){
+  .cards-studio-layout{flex-direction:column}
+  .cards-studio-panel{width:100%;border-right:none;border-bottom:1px solid var(--ss-border-default);max-height:45vh}
+  .cards-preview-wrap{padding:var(--ss-space-4);align-items:flex-start}
+}

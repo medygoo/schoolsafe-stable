@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-16",
+  "tool": "image_gen.imagegen (outil intégré)",
+  "references": {
+    "identity": "app/assets/jaspe2d/v12/preparer-salut.png",
+    "composition": "docs/design/references/schoolsafe-desktop-2026-09-13.png"
+  },
+  "steps": [
+    {
+      "name": "pose-initiale",
+      "prompt": "Use case: identity-preserve.\nCreate ONE high-quality 2D raster illustration asset for SchoolSafe, a seated reference pose of the EXISTING character JASPE. This is a new pose, not a new character.\nInput image 1 is the STRICT character identity reference: preserve her exact face, facial proportions, warm brown skin tone, large brown eyes, small nose, lips, child age and proportions, center-parted braided roots leading into TWO compact curly puff buns, small stud earrings, white short-sleeved shirt, navy pinafore school uniform and navy tie with thin diagonal white stripes. Preserve that rendering style and clothing faithfully.\nInput image 2 is ONLY the posture/composition reference: the girl seated at a pale wooden desk with a welcoming, relaxed expression. DO NOT borrow that other girl's face, hairstyle, bow, uniform or logos. Do not reproduce the dashboard, typography, buttons or screenshot.\nPose: our JASPE is seated behind the desk facing the viewer. Her right elbow rests on the desk, her right hand gently supports her cheek; her other forearm rests naturally on the tabletop. Soft friendly closed-mouth smile, attentive gaze toward the viewer. Keep anatomy natural and all visible fingers cleanly resolved.\nComposition: a self-contained seated vignette, centered, nearly front-on camera at the character's eye level. Her head and hair are fully visible with breathing room. Show torso and both forearms naturally meeting the tabletop. The entire rounded desktop and its shallow front apron are visible, spanning below her, hiding the lower body naturally. No standing body cropped at the waist. The desk is pale honey wood, simple and elegant, no text, no logos. Include one small closed navy book on the viewer's left, and a small navy pencil cup with a few pencils on the viewer's right, positioned away from arms. Desk should remain compact, roughly twice her hair width. No chair legs or table legs needed: this is a dashboard vignette with a complete shallow desktop and apron, not an interior scene.\nLighting: soft neutral light, matching her reference illustration, restrained shading. No bright outline or white fringe.\nBACKGROUND MUST BE GENUINELY TRANSPARENT with clean alpha edges around curls, hands, desk and props. No painted checkerboard, no white matte, no scenery, no surrounding rectangular background, no ground plane. This asset will be displayed on both pale blue and dark navy surfaces.\nOutput one single image, landscape 3:2, high resolution. No contact sheet, no alternate poses, no text, no watermark. Highest priority is recognizable exact identity from image 1 and a convincing seated-at-desk silhouette.",
+      "result": "Pose de référence créée ; transparence demandée mais damier opaque obtenu. Essai non intégré au dépôt."
+    },
+    {
+      "name": "detourage",
+      "prompt": "Use case: background-extraction. Edit this exact image only to remove the background. Preserve the girl, face, two curly puff buns, expression, pose, white/navy uniform, hands, wooden desk, navy book and pencil cup exactly. The gray and white checkerboard pixels behind the subject are an unwanted painted background, NOT transparency. Remove them. Deliver a PNG with ACTUAL transparent alpha pixels outside the girl and desk. Alpha must be 0 for all surrounding empty background including corners and the space above and around the desk, with softly antialiased edge alpha on curls. Do NOT DRAW a checkerboard. Do not replace it with another solid color. Do not draw a white matte or bright halo. No cropping, no relighting, no face changes, no style changes. Keep all object positions and the 1536x1024 framing.",
+      "result": "Échec du détourage : PNG RGB sans alpha. Essai non intégré au dépôt."
+    },
+    {
+      "name": "fond-clair",
+      "prompt": "Use case: precise-object-edit.\nEdit input image 1. Preserve JASPE and the desk, book, pencil cup EXACTLY: same face, eyes, hair, skin, proportions, smile, pose, clothing, scale and camera. Image 2 is the original canonical character identity for reference only, preserve that identity.\nReplace ONLY the gray checkerboard background of image 1 with a completely smooth, flat PALE BLUE background, exact sRGB hex #EAF4FC. Fill every background pixel, including corners, spaces between objects and below the desk, with this same color. No checkerboard and no transparency requested. Do not change the wooden desk, hands or white shirt. Keep soft clean natural edges with no white halo. No ground shadow or additional objects.\nThis is a 2D raster reference asset for the light-mode SchoolSafe dashboard. Keep original 1536x1024 canvas and original exact composition. No text, no logos, no UI.",
+      "output": "jaspe-assise-accueil-clair-v1.png"
+    },
+    {
+      "name": "fond-sombre",
+      "prompt": "Use case: precise-object-edit.\nEdit this exact SchoolSafe JASPE image. Replace ONLY its pale blue background with a smooth, flat DARK NAVY background, sRGB hex #19334F. Fill the corners, negative spaces above and around the subject, and area below the desk with navy. No checkerboard. No transparency requested.\nPreserve JASPE's face, skin, eyes, two curly puff buns, uniform, smile, pose, hands, desk, navy book and pencil cup EXACTLY, with the same brightness, original positions, same size, same camera and same 1536x1024 framing. Do not regenerate her identity. Do not darken the girl or the desk. Clean natural edge against the navy background with no pale outline, glow or visible cutout seam. No additional object, no text, no UI, no watermark. A finished 2D raster reference illustration for dark mode.",
+      "output": "jaspe-assise-accueil-sombre-v1.png"
+    }
+  ]
+}
