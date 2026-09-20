@@ -37,7 +37,8 @@ Aucune nouvelle modification ni repetition des tests du service Control deploye.
 - Workspace : C:/tmp/schoolsafe-installation-20260920/repo.
 - Branche locale : codex/schoolsafe-installation-v2.
 - Commit d'implementation qualifie : ee57304883d2d370aaa17ea53bfecffa27f1a8d3.
-- PR : NON OUVERTE ; authentification GitHub operateur indisponible.
+- PR ouverte vers production : https://github.com/medygoo/schoolsafe-stable/pull/2 (non mergee).
+- Branche publiee depuis le poste operateur ; authentification GitHub valide.
 - SQL v1 et SHA historiques intacts, 6 remplacements explicites en v2.
 - Corrections : student_list/draft, setup atomique ecole/admin, admin scope school_id,
   reset atomique avec expiration et revocation sessions, signature finance,
@@ -106,7 +107,8 @@ CI preparee dans .github/workflows/ci.yml : npm ci, npm run ci, vrai PostgreSQL
 vers production ou manuel. Aucun secret production utilise en CI.
 Workflow deploy-manual.yml : workflow_dispatch uniquement, variable d'activation
 absente, environnement production et SHA explicite. Aucun deploiement automatique.
-Les checks GitHub ne sont PAS encore executes, faute de publication.
+La CI GitHub est declenchee sur la PR ; son resultat courant et ses journaux sont
+consultables dans la section Checks de https://github.com/medygoo/schoolsafe-stable/pull/2.
 Scripts VPS restreints et schoolsafe-deploy conserves ; approved-production-sha
 SchoolSafe reste absent. Aucune connexion production donnee a ERNEST.
 Aucun merge, aucune installation SQL dans la vraie base, aucun deploiement app.
@@ -123,13 +125,12 @@ Aucun merge, aucune installation SQL dans la vraie base, aucun deploiement app.
 - Redemarrage reel VPS et persistance : PASS anterieur, pas de nouveau reboot.
 - ERNEST/Contabo 185.207.250.178 non contacte ni modifie dans cette reprise.
 
-## Action humaine unique pour publier
+## Revue humaine requise
 
-Sur le poste Codex, executer gh auth login --hostname github.com --git-protocol
-https --web avec un compte autorise en ecriture sur medygoo/schoolsafe-stable.
-Ne pas transmettre de token dans la conversation. La Deploy Key VPS reste read-only.
-Apres authentification : pousser uniquement la branche Codex, ouvrir la PR vers
-production, observer la CI et s'arreter. Aucun merge/deploiement autorise.
+La PR #2 est ouverte : https://github.com/medygoo/schoolsafe-stable/pull/2.
+Valider la PR apres lecture du diff et des checks. Aucun merge ni deploiement
+SchoolSafe n'est effectue par cette mission. Les limites Control/R2/ERNEST
+consignees ci-dessus restent distinctes de la qualification SQL livree.
 
 | COMPOSANT | ETAT | PREUVE | BLOQUANT |
 |---|---|---|---|
@@ -137,11 +138,11 @@ production, observer la CI et s'arreter. Aucun merge/deploiement autorise.
 | Coolify / Easypanel | Absents | Audit anterieur | Non |
 | Control technique | PASS conserve | SHA, 9 tests, 5 tables, HTTPS | Non pour cette reprise SQL |
 | SchoolSafe SQL v2 | PASS local | 48 unites, rollback, 6 suites RLS, 44 scenarios | Revue/merge requis |
-| SchoolSafe tests / build | PASS | 363 tests, permissions, typecheck, Docker | CI GitHub a executer |
+| SchoolSafe tests / build | PASS | 363 tests, permissions, typecheck, Docker | Voir les checks de la PR #2 |
 | Isolation / roles | PASS sur cas qualifies | RLS, deux ecoles, no SUPERUSER/BYPASSRLS | Pas de qualification metier exhaustive |
 | HMAC HTTP | Format aligne | 3 vecteurs cross-repo | Durcissement Control restant |
 | Licence / livraison Device Hub | Incomplet cote Control | Audit source au SHA indique | Oui avant recette metier complete |
-| Branche / PR | Commit local, PR absente | SHA d'implementation ci-dessus | Authentification GitHub operateur |
+| Branche / PR | Publiee / PR #2 ouverte | https://github.com/medygoo/schoolsafe-stable/pull/2 | Revue humaine, aucun merge |
 | SchoolSafe production | NON DEPLOYEE | Aucune operation de deploiement effectuee | Ordre humain requis |
 | Backups | Restore PASS, copie hors VPS | Preuves anterieures | R2 automatique restant |
 | ERNEST | Inchange | Aucune intervention Contabo | Worker hors reprise actuelle |

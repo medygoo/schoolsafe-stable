@@ -1,6 +1,6 @@
 # Handoff courant SchoolSafe
 
-## 20 septembre 2026 ? installation v2 qualifiee, publication en attente
+## 20 septembre 2026 ? installation v2 qualifiee, PR #2 ouverte
 
 - Branche Codex : `codex/schoolsafe-installation-v2`, base production
   `7d5cc89924319eb9c46d8a5a9cd0f3f729743834` ; aucun merge/deploiement autorise.
@@ -13,8 +13,9 @@
   remplacees pour cette mission. Aucun push depuis le VPS, aucun changement ERNEST.
 - Control audite au SHA cb4257d7d70b6662f8106d9f6241751610e07258 : endpoint licence
   absent ; voir docs/INSTALLATION_V2.md pour les limites restantes.
-- CI et workflow manuel prepare (deploiement desactive). Authentification GitHub
-  operateur absente : branche locale prete, PR non ouverte a ce stade.
+- CI publiee ; workflow manuel desactive. Authentification GitHub operateur valide.
+- PR ouverte : https://github.com/medygoo/schoolsafe-stable/pull/2 ; checks GitHub a consulter.
+  Revue humaine requise, aucun merge ni deploiement.
 - Rapport non sensible : SCHOOLSAFE_DIRECT_VPS_REPORT.md ; copie operateur et VPS.
 
 ## Historique ? mandats precedents conserves, non applicables a cette mission

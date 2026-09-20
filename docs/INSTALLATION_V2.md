@@ -145,6 +145,7 @@ production environment and SCHOOLSAFE_DEPLOY_ENABLED=true. That variable is not
 configured here. The VPS deployer additionally requires an approved-production-sha.
 No merge, production installation or deployment is authorized by this PR.
 
-GitHub checks cannot be claimed green before publication. Operator gh and Git
-Credential Manager authentication are currently unavailable; read-only VPS key
-cannot publish. Remote branch/PR creation awaits operator GitHub authentication.
+The operator authenticated with GitHub CLI and published this branch from the
+Codex workspace. PR: https://github.com/medygoo/schoolsafe-stable/pull/2. CI runs automatically for
+this PR; its Checks tab is the authority for the current GitHub result. The VPS
+key remains read-only. Human review is required; no merge or deployment occurs.
