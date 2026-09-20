@@ -53,3 +53,12 @@ La suspension de publication ci-dessous appartient désormais à l'historique.
 - Le compte qui quitte le projet doit pousser son dernier lot et mettre à jour le handoff.
 - Le compte qui reprend doit récupérer GitHub avant de modifier le code, puis commencer par la section « Prochaine action » du handoff.
 - Pour un travail séquentiel, utiliser une seule branche active. Pour un travail réellement simultané, utiliser des branches distinctes et fusionner après revue afin d'éviter les écrasements.
+
+
+## Mission directe VPS ? 20 septembre 2026
+
+La mission utilisateur courante remplace les anciens mandats Coolify/Easypanel :
+Docker Compose + Caddy, deux bases/reseaux, source GitHub production. Corrections
+locales additives sur codex/schoolsafe-installation-v2, jamais dans le checkout
+VPS ; ni merge ni deploiement SchoolSafe autorise. Voir docs/INSTALLATION_V2.md
+et SCHOOLSAFE_DIRECT_VPS_REPORT.md. Les sections anterieures restent historiques.

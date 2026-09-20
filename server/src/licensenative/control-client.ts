@@ -1,6 +1,6 @@
 // SchoolSafe License — client Control signé HMAC (contrat Control existant :
 // METHOD\nPATH\nTIMESTAMP\nBODY, fenêtre 300s). Jamais de secret au frontend.
-import { createHmac } from "node:crypto";
+import {signRequest} from "../machine/hmac.js";
 import type { ControlLicenseClient } from "./service.js";
 
 export type ControlClientConfig = {
@@ -11,14 +11,13 @@ export type ControlClientConfig = {
 };
 
 export function createControlLicenseClient(config: ControlClientConfig): ControlLicenseClient {
+  if (new URL(config.url).protocol !== "https:") throw new Error("Control requires HTTPS");
   const timeoutMs = config.timeoutMs ?? 5000;
   return {
     async fetchLicenseState(schoolId: string): Promise<string | null> {
       const path = `/api/license/state?school_id=${encodeURIComponent(schoolId)}`;
-      const timestamp = Date.now().toString();
-      const signature = createHmac("sha256", config.hmacSecret)
-        .update(`GET\n${path}\n${timestamp}\n`)
-        .digest("hex");
+      const timestamp = Math.floor(Date.now()/1000);
+      const signature = signRequest({method: "GET", path, timestamp, body: "{}", secret: config.hmacSecret});
 
       try {
         const response = await fetch(config.url + path, {
@@ -26,9 +25,9 @@ export function createControlLicenseClient(config: ControlClientConfig): Control
           signal: AbortSignal.timeout(timeoutMs),
           headers: {
             Accept: "application/json",
-            "X-Control-Instance": config.instanceId,
-            "X-Control-Timestamp": timestamp,
-            "X-Control-Signature": signature,
+            "x-schoolsafe-instance": config.instanceId,
+            "x-schoolsafe-timestamp": String(timestamp),
+            "x-schoolsafe-signature": signature,
           },
         });
         if (!response.ok) return null;

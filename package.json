@@ -7,7 +7,7 @@
   "scripts": {
     "typecheck": "npm run typecheck --workspace server",
     "test": "npm run test --workspace server",
-    "ci": "node scripts/check-migration-versions.mjs && npm run check:permissions && npm run typecheck && npm test",
+    "ci": "node scripts/check-migration-versions.mjs --require-installable && npm run check:permissions && npm run test:installer && npm run typecheck && npm test",
     "check:permissions": "node --test scripts/permission-contract.test.mjs",
     "check:migration-versions": "node scripts/check-migration-versions.mjs",
     "build:auth-sdk": "esbuild frontend/vendor/supabase-entry.js --bundle --format=iife --global-name=SchoolSafeSupabaseSDK --outfile=app/vendor/supabase-sdk.js",
@@ -22,7 +22,10 @@
     "test:visual-system": "node app/qa-responsive-visual-system.cjs && node app/qa-no-guardian-screen.cjs",
     "supabase:start": "supabase start",
     "supabase:reset": "supabase db reset",
-    "test:rls": "node scripts/run-rls-tests.mjs"
+    "test:rls": "node scripts/run-rls-tests.mjs",
+    "test:installer": "node --test scripts/installer.test.mjs",
+    "test:installation": "node scripts/test-from-zero.mjs",
+    "test:contracts": "node scripts/check-control-contract.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

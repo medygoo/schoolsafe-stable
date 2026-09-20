@@ -1,0 +1,12 @@
+{
+  "schema": "schoolsafe-migrations-v2",
+  "name": "baseline",
+  "version": 2,
+  "units": [
+    {
+      "order": 1,
+      "file": "01_runtime_security.sql",
+      "sha256": "6fb0a95db48f0c7142603f88ef747565fa756dc4e7fdb68cf0f7b8f95ae96d18"
+    }
+  ]
+}

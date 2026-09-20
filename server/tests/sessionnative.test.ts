@@ -67,12 +67,7 @@ function fakeAuthService(valid: boolean): AuthNativeService {
     async listProfiles() {
       return [];
     },
-    async forgotPassword() {
-      return null;
-    },
-    async attachRecoveryToken() {
-      return false;
-    },
+    async forgotPassword() {},
     async resetPassword() {
       return false;
     },

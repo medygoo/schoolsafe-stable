@@ -1,0 +1,12 @@
+{
+  "schema": "schoolsafe-migrations-v2",
+  "name": "projections",
+  "version": 2,
+  "units": [
+    {
+      "order": 1,
+      "file": "01_student_list.sql",
+      "sha256": "be296b495d703929d7525364dc3fd6c021ed8f2ffa8353d567814d3f739012c0"
+    }
+  ]
+}

@@ -27,3 +27,10 @@ model/
 vitest.config.ts
 tsconfig.qa.json
 playwright.config.ts
+
+.env
+.env.*
+**/.env
+**/.env.*
+*.pem
+*.key

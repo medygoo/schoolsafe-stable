@@ -1,0 +1,12 @@
+{
+  "schema": "schoolsafe-migrations-v2",
+  "name": "auth",
+  "version": 2,
+  "units": [
+    {
+      "order": 1,
+      "file": "01_auth_reset.sql",
+      "sha256": "f6771b3be729b460b36fced4f8c0fd1018c6b106539db30c89873db5d24fb764"
+    }
+  ]
+}

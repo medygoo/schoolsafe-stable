@@ -251,3 +251,12 @@ Ce journal conserve les décisions durables. Il ne doit contenir ni secrets ni t
 
 - Technologie exacte de synthèse vocale Cloudflare lorsque le lot voix commencera.
 - Procédure finale de service VPS, de proxy inverse et de sauvegarde avant le déploiement de production.
+
+
+## Mission directe VPS ? 20 septembre 2026
+
+La mission utilisateur courante remplace les anciens mandats Coolify/Easypanel :
+Docker Compose + Caddy, deux bases/reseaux, source GitHub production. Corrections
+locales additives sur codex/schoolsafe-installation-v2, jamais dans le checkout
+VPS ; ni merge ni deploiement SchoolSafe autorise. Voir docs/INSTALLATION_V2.md
+et SCHOOLSAFE_DIRECT_VPS_REPORT.md. Les sections anterieures restent historiques.

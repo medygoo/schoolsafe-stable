@@ -1,4 +1,6 @@
-import { afterEach, describe, expect, it } from "vitest";
+// IAM tests isolate authorization from licensing; license enforcement has its own suite.
+vi.mock("../src/licensenative/service.js", () => ({createLicenseNativeService: () => ({readState: async () => ({state: "active", payload: null})})}));
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildNativeApp } from "../src/native-app.js";
 import { parseEnv } from "../src/config/env.js";
 import type { VerifiedPools } from "../src/db/startpools.js";
@@ -35,7 +37,7 @@ function fixture(options: { allowed?: boolean; invalidSession?: boolean; data?: 
     async end() {},
   };
   const businessPool = { async connect() { return client; }, async end() {} };
-  const app = buildNativeApp(parseEnv({ NODE_ENV: "test" }), { authPool, businessPool } as unknown as VerifiedPools);
+  const app = buildNativeApp(parseEnv({ NODE_ENV: "test", CONTROL_LICENSE_PUBLIC_KEY: "synthetic-key-for-mocked-license-service" }), { authPool, businessPool } as unknown as VerifiedPools);
   apps.push(app);
   return { app, log, isReleased: () => released };
 }

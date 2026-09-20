@@ -1,0 +1,36 @@
+name: Deploy manually after production approval
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Validated full production commit SHA
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: schoolsafe-production-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/production' && vars.SCHOOLSAFE_DEPLOY_ENABLED == 'true'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Invoke restricted VPS deployer
+        shell: bash
+        env:
+          COMMIT_SHA: ${{ inputs.sha }}
+          DEPLOY_KEY: ${{ secrets.SCHOOLSAFE_DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.SCHOOLSAFE_DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          [[ "$COMMIT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test -n "$DEPLOY_KEY"
+          test -n "$KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/schoolsafe-deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/schoolsafe-deploy ~/.ssh/known_hosts
+          ssh -i ~/.ssh/schoolsafe-deploy -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes schoolsafe-deploy@179.198.195.15 "sudo /usr/local/sbin/deploy-schoolsafe $COMMIT_SHA"

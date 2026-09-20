@@ -1,0 +1,12 @@
+{
+  "schema": "schoolsafe-migrations-v2",
+  "name": "setup",
+  "version": 2,
+  "units": [
+    {
+      "order": 1,
+      "file": "01_setup_native.sql",
+      "sha256": "f80ee95787fb9ce5abfc98ebf29f5acfeb4288311b3b553f9e87e5ca96d85d71"
+    }
+  ]
+}

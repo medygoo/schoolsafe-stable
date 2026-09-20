@@ -16,7 +16,7 @@ const DEFAULT_CACHE_TTL_MS = 60_000;
 
 export type LicenseGateDependencies = {
   authService: AuthNativeService;
-  licenseService: LicenseNativeService;
+  licenseService: LicenseNativeService | undefined;
   cacheTtlMs?: number;
 };
 
@@ -31,13 +31,14 @@ export function registerLicenseGate(
     const path = (request.raw.url ?? "").split("?")[0];
     if (!path.startsWith("/native/")) return;
     // Identité, licence et essai restent toujours joignables (CORE non licenciable).
-    if (OPEN_PREFIXES.some((prefix) => path.startsWith(prefix))) return;
+    if (OPEN_PREFIXES.some((prefix) => path === prefix || path.startsWith(prefix + "/"))) return;
 
     const token = readSessionCookie(request);
     if (!token) return; // la garde de session de la route répondra 401
     const session = await dependencies.authService.resolveSession(token);
     if (!session) return;
 
+    if (!dependencies.licenseService) throw new SchoolSafeError(403, "LICENSE_INACTIVE", "License verification unavailable", false);
     const now = Date.now();
     const cached = cache.get(session.schoolId);
     let state = cached?.state;

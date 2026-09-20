@@ -48,12 +48,7 @@ function fakeAuth(opts: { switchOk?: boolean } = {}): AuthNativeService & { swit
     async listProfiles() {
       return PROFILES;
     },
-    async forgotPassword() {
-      return null;
-    },
-    async attachRecoveryToken() {
-      return false;
-    },
+    async forgotPassword() {},
     async resetPassword() {
       return false;
     },

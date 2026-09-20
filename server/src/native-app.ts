@@ -1,3 +1,6 @@
+import {createBrevoEmailService} from "./email/service.js";
+import {createRecoveryDelivery} from "./authnative/recovery-delivery.js";
+import {createMachineContextResolver} from "./devicehub/machine-context.js";
 import { buildApp } from "./app.js";
 import type { AppEnv } from "./config/env.js";
 import type { VerifiedPools } from "./db/startpools.js";
@@ -23,7 +26,9 @@ import { createDeviceHubService } from "./devicehub/service.js";
 
 /** Assemble uniquement les services qui utilisent les sessions et pools du VPS. */
 export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
-  const authService = createAuthNativeService(createPgAuthDatabase(pools.authPool));
+  const recovery = env.BREVO_API_KEY && env.BREVO_SENDER_EMAIL && env.AUTH_RECOVERY_URL
+    ? createRecoveryDelivery(createBrevoEmailService({apiKey: env.BREVO_API_KEY, senderEmail: env.BREVO_SENDER_EMAIL}), env.AUTH_RECOVERY_URL) : undefined;
+  const authService = createAuthNativeService(createPgAuthDatabase(pools.authPool), recovery);
   const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.CONTROL_APP_HMAC_SECRET
     ? { url: env.CONTROL_APP_URL, instanceId: env.CONTROL_APP_INSTANCE_ID, hmacSecret: env.CONTROL_APP_HMAC_SECRET }
     : undefined;
@@ -93,16 +98,10 @@ export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
       hmacSecret: controlConfig.hmacSecret,
       expectedInstanceId: controlConfig.instanceId,
       // École résolue côté serveur uniquement — jamais depuis la requête.
-      machineSchoolId: async () => {
-        const r = await pools.businessPool.query("select id from app.schools order by created_at desc limit 1");
-        if (!r.rows.length) throw new Error("Aucune école configurée sur cette instance");
-        return r.rows[0].id as string;
-      },
+      resolveContext: createMachineContextResolver(pools.businessPool),
     } : undefined,
   });
-  if (licenseService) {
-    registerLicenseGate(app, { authService, licenseService });
-  }
+  registerLicenseGate(app, {authService, licenseService});
   app.addHook("onClose", async () => {
     await Promise.allSettled([pools.authPool.end(), pools.businessPool.end()]);
   });

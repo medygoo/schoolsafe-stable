@@ -1,3 +1,4 @@
+import {loadInstallationPlan} from "./installation-plan.mjs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { glob } from "node:fs/promises";
@@ -25,10 +26,13 @@ export async function loadPermissionCatalog(rootDir) {
 
 export async function scanAuthorizationLiterals(rootDir) {
   const uses = [];
+  const plan = loadInstallationPlan(rootDir);
+  const superseded = new Set(plan.superseded.map(u => u.file));
   const patterns = ["database/**/*.sql", "server/src/**/*.ts"];
   const matcher = /(?:require_access|can_access|requirePermission)\(\s*["']([^"']+)["']/g;
   for (const pattern of patterns) {
     for await (const relative of glob(pattern, { cwd: rootDir })) {
+      if (superseded.has(relative.replaceAll("\\", "/"))) continue;
       const source = await readFile(path.join(rootDir, relative), "utf8");
       for (const match of source.matchAll(matcher)) {
         uses.push({

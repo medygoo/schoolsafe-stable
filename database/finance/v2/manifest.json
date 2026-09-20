@@ -1,0 +1,12 @@
+{
+  "schema": "schoolsafe-migrations-v2",
+  "name": "finance",
+  "version": 2,
+  "units": [
+    {
+      "order": 1,
+      "file": "01_finance_full.sql",
+      "sha256": "868ebf90c455f5c340e2b8cf4d5b01917a927b73e0571be1c932e0fbec598136"
+    }
+  ]
+}

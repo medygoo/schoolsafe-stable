@@ -1,7 +1,7 @@
 // SchoolSafe — autorité machine SchoolSafe Control (callbacks signés HMAC).
 // Séparation stricte avec l'accès humain : jamais de profileId fabriqué,
 // jamais d'api.set_request_context. La signature est vérifiée AVANT tout SQL.
-import { createHmac, timingSafeEqual } from "node:crypto";
+import {verifyRequest} from "../machine/hmac.js";
 import type { PoolClient } from "pg";
 import type { BusinessPool } from "./pool.js";
 
@@ -16,14 +16,6 @@ export class ControlAuthorityError extends Error {
     super(message);
     this.name = "ControlAuthorityError";
   }
-}
-
-const TIMESTAMP_WINDOW_SECONDS = 300;
-
-function safeEqual(a: string, b: string): boolean {
-  const ba = Buffer.from(a, "utf8");
-  const bb = Buffer.from(b, "utf8");
-  return ba.length === bb.length && timingSafeEqual(ba, bb);
 }
 
 /**
@@ -44,16 +36,9 @@ export function verifyControlSignature(input: {
   const { instanceId, timestamp, signature } = input;
   if (!instanceId || !timestamp || !signature) return { ok: false };
 
-  const ts = Number(timestamp);
-  if (!Number.isFinite(ts)) return { ok: false };
-  const now = input.nowSeconds ?? Math.floor(Date.now() / 1000);
-  if (Math.abs(now - ts) > TIMESTAMP_WINDOW_SECONDS) return { ok: false };
-
-  const data = `${input.method.toUpperCase()}\n${input.path}\n${timestamp}\n${input.body}`;
-  const expected = createHmac("sha256", input.secret).update(data).digest("hex");
-  if (!safeEqual(expected, signature)) return { ok: false };
-
-  return { ok: true, instanceId };
+  if (!/^\d+$/.test(timestamp)) return {ok: false};
+  const valid = verifyRequest({method: input.method, path: input.path, body: input.body, secret: input.secret, timestamp: Number(timestamp), signature, now: input.nowSeconds});
+  return valid ? {ok: true, instanceId} : {ok: false};
 }
 
 /**

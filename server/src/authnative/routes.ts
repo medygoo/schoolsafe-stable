@@ -143,7 +143,7 @@ export function registerAuthNativeRoutes(
   // Le login (email) est accepté même si inconnu (pas d'énumération).
   app.post("/auth/native/forgot", async (request, reply) => {
     const { login } = z.object({ login: z.string().min(1).max(320) }).parse(request.body);
-    const identityId = await service.forgotPassword(login);
+    await service.forgotPassword(login);
     // Toujours un message générique (pas d'énumération)
     return reply.code(200).send({
       message: "Si ce compte existe, un lien de récupération a été envoyé.",
@@ -155,7 +155,7 @@ export function registerAuthNativeRoutes(
   // Le corps contient { token, password } — le hash est fait côté serveur.
   app.post("/auth/native/reset", async (request, reply) => {
     const body = z.object({
-      token: z.string().min(1),
+      token: z.string().min(32).max(256),
       password: z.string().min(8).max(512),
     }).parse(request.body);
     // Le hash argon2 du nouveau mot de passe est effectué ici (côté serveur)

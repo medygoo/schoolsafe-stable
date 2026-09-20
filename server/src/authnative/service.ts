@@ -61,7 +61,8 @@ type ProfileRow = {
 const SESSION_TTL_SECONDS = 43200; // 12 h, glissantes (touch à mi-vie)
 const REMEMBER_TTL_SECONDS = 604800; // 7 jours, si remember coché
 
-export function createAuthNativeService(db: AuthDatabase) {
+export type RecoveryDelivery = (message: {email: string; token: string}) => Promise<void>;
+export function createAuthNativeService(db: AuthDatabase, deliverRecovery?: RecoveryDelivery) {
   return {
     async loginWithPassword(
       login: string,
@@ -256,28 +257,21 @@ export function createAuthNativeService(db: AuthDatabase) {
       };
     },
 
-    async forgotPassword(login: string): Promise<string | null> {
-      // Crée une demande de récupération, retourne l'identity_id ou null
-      const result = await db.query<{ auth_create_recovery_request: string | null }>(
-        "select * from api.auth_create_recovery_request($1)",
-        [login],
-      );
-      return result.rows[0]?.auth_create_recovery_request ?? null;
+    async forgotPassword(login: string): Promise<void> {
+      // Without a configured delivery channel no recovery capability is issued.
+      if (!deliverRecovery) return;
+      const token = generateSessionToken();
+      const result = await db.query<{recovery_id: string; email: string}>(
+        "select * from api.auth_create_recovery_request($1,$2)", [login, hashSessionToken(token)]);
+      const row = result.rows[0];
+      if (row?.email) {
+        // The public response never reveals account existence or a provider failure.
+        try { await deliverRecovery({email: row.email, token}); } catch { /* no secret logging */ }
+      }
     },
-
-    async attachRecoveryToken(recoveryId: string, tokenHash: string): Promise<boolean> {
-      const result = await db.query<{ auth_attach_recovery_token: boolean }>(
-        "select * from api.auth_attach_recovery_token($1, $2)",
-        [recoveryId, tokenHash],
-      );
-      return result.rows[0]?.auth_attach_recovery_token === true;
-    },
-
-    async resetPassword(tokenHash: string, newPasswordHash: string): Promise<boolean> {
-      const result = await db.query<{ auth_reset_password: boolean }>(
-        "select * from api.auth_reset_password($1, $2)",
-        [tokenHash, newPasswordHash],
-      );
+    async resetPassword(token: string, newPasswordHash: string): Promise<boolean> {
+      const result = await db.query<{auth_reset_password: boolean}>(
+        "select * from api.auth_reset_password($1,$2)", [hashSessionToken(token), newPasswordHash]);
       return result.rows[0]?.auth_reset_password === true;
     },
 }

@@ -97,3 +97,12 @@ SchoolSafe est un écosystème scolaire centré sur la gestion des écoles, des 
 - Travailler par lots avec validation humaine entre les changements d'architecture.
 - Ne lancer que les tests utiles au risque du lot, sans prétendre qu'un test non exécuté a réussi.
 - Documenter précisément les limites, erreurs connues et prochaines actions dans `docs/CURRENT_HANDOFF.md`.
+
+
+## Mission directe VPS ? 20 septembre 2026
+
+La mission utilisateur courante remplace les anciens mandats Coolify/Easypanel :
+Docker Compose + Caddy, deux bases/reseaux, source GitHub production. Corrections
+locales additives sur codex/schoolsafe-installation-v2, jamais dans le checkout
+VPS ; ni merge ni deploiement SchoolSafe autorise. Voir docs/INSTALLATION_V2.md
+et SCHOOLSAFE_DIRECT_VPS_REPORT.md. Les sections anterieures restent historiques.

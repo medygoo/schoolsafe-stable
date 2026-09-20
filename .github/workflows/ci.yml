@@ -1,0 +1,57 @@
+name: CI
+on:
+  pull_request:
+    branches: [production]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run ci
+      - name: Check actual Control HMAC contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://github.com/medygoo/schoolsafe-control-.git "$RUNNER_TEMP/control-contract"
+          git -C "$RUNNER_TEMP/control-contract" checkout --detach cb4257d7d70b6662f8106d9f6241751610e07258
+          node scripts/check-control-contract.mjs "$RUNNER_TEMP/control-contract"
+      - name: Start disposable PostgreSQL 17.11
+        shell: bash
+        run: |
+          set -euo pipefail
+          for role in BOOTSTRAP API AUTH WORKER MIGRATOR; do
+            password=$(openssl rand -hex 40)
+            echo "::add-mask::$password"
+            printf 'SCHOOLSAFE_%s_PASSWORD=%s\n' "$role" "$password" >> "$GITHUB_ENV"
+          done
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Qualify installation, rollback and RLS
+        shell: bash
+        run: |
+          set -euo pipefail
+          export POSTGRES_PASSWORD="$SCHOOLSAFE_BOOTSTRAP_PASSWORD"
+          docker run -d --name schoolsafe-test -e POSTGRES_PASSWORD -e POSTGRES_USER=schoolsafe_bootstrap -e POSTGRES_DB=schoolsafe_test_ci -p 127.0.0.1:55439:5432 postgres:17.11-bookworm postgres -c shared_preload_libraries=pg_stat_statements -c compute_query_id=auto
+          for attempt in $(seq 1 40); do
+            if docker exec schoolsafe-test pg_isready -U schoolsafe_bootstrap -d schoolsafe_test_ci; then break; fi
+            sleep 1
+          done
+          export DATABASE_URL="postgresql://schoolsafe_bootstrap:$SCHOOLSAFE_BOOTSTRAP_PASSWORD@127.0.0.1:55439/schoolsafe_test_ci"
+          npm run test:installation
+      - run: docker build -t schoolsafe-ci .
+      - if: always()
+        run: docker rm -f schoolsafe-test || true
