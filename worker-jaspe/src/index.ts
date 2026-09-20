@@ -18,44 +18,57 @@ export interface Env {
   JASPE_SYSTEM_PROMPT?: string;
   CONTROL_INSTANCE_ID?: string;
   JASPE_ALLOWED_ORIGINS?: string;
+  JASPE_WORKER_HMAC_SECRET: string;
 }
 
 interface ChatRequest {
   message?: string;
+  session_key?: string;
+}
+
+const REPLAY_WINDOW_SECONDS = 300;
+
+function bytesToHex(bytes: ArrayBuffer): string {
+  return Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function hmac(secret: string, timestamp: string, body: string): Promise<string> {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return bytesToHex(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(timestamp + "\n" + body)));
+}
+
+function hexEqual(a: string, b: string): boolean {
+  if (!/^[0-9a-f]{64}$/i.test(a) || !/^[0-9a-f]{64}$/i.test(b)) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.toLowerCase().charCodeAt(i) ^ b.toLowerCase().charCodeAt(i);
+  return diff === 0;
 }
 
 const DEFAULT_MODEL = "@cf/zai-org/glm-4.7-flash";
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
-
 function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
-  });
+  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: CORS_HEADERS });
-    }
     if (request.method !== "POST") {
       return json({ code: "METHOD_NOT_ALLOWED", message: "POST requis" }, 405);
     }
 
+    const timestamp = request.headers.get("x-jaspe-timestamp");
+    const signature = request.headers.get("x-jaspe-signature");
+    if (!env.JASPE_WORKER_HMAC_SECRET || !timestamp || !signature || !/^\d+$/.test(timestamp)) return json({ code: "AUTH_INVALID", message: "Signature requise" }, 401);
+    const timestampSeconds = Number(timestamp);
+    if (!Number.isSafeInteger(timestampSeconds) || Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds) > REPLAY_WINDOW_SECONDS) return json({ code: "AUTH_REPLAY", message: "Requete expiree" }, 401);
+    const rawBody = await request.text();
     let body: ChatRequest;
-    try {
-      body = await request.json<ChatRequest>();
-    } catch {
-      return json({ code: "VALIDATION_INVALID", message: "Corps JSON invalide" }, 400);
-    }
+    try { body = JSON.parse(rawBody) as ChatRequest; } catch { return json({ code: "VALIDATION_INVALID", message: "Corps JSON invalide" }, 400); }
+    if (JSON.stringify(body) !== rawBody) return json({ code: "AUTH_INVALID", message: "Corps non canonique" }, 401);
+    const expected = await hmac(env.JASPE_WORKER_HMAC_SECRET, timestamp, rawBody);
+    if (!hexEqual(expected, signature)) return json({ code: "AUTH_INVALID", message: "Signature invalide" }, 401);
 
     const message = (body.message || "").trim();
-    if (!message) {
+    if (!message || typeof body.session_key !== "string" || !body.session_key.trim()) {
       return json({ code: "VALIDATION_INVALID", message: "message requis" }, 400);
     }
 

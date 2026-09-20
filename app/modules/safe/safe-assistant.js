@@ -825,6 +825,30 @@
     return true;
   }
 
+  function showLocalFallback(raw, offline) {
+    var text = String(raw || "").toLowerCase();
+    var best = null;
+    var bestScore = 0;
+    for (var i = 0; i < faq.length; i++) {
+      var item = faq[i];
+      var score = 0;
+      for (var j = 0; j < item.keywords.length; j++) {
+        if (text.indexOf(item.keywords[j]) >= 0) score++;
+      }
+      if (score > bestScore) { bestScore = score; best = item; }
+    }
+    if (best && bestScore >= 1 && !branchVisible(best.branch)) best = null;
+    if (best && bestScore >= 1) {
+      state.currentMessage = best.answer;
+      state.animation = best.animation;
+    } else {
+      state.currentMessage = offline ? "Jaspe a besoin d'une connexion pour cette question." : "Je ne suis pas sure de comprendre ta demande. Dis-moi ce que tu souhaites faire et sur quel ecran tu te trouves, ou choisis un sujet ci-dessous.";
+      state.animation = "Shrug";
+    }
+    state.suggestions = defaultSuggestions();
+    render();
+  }
+
   function handleUserInput(raw) {
     raw = String(raw || "").trim();
     var text = raw.toLowerCase();
@@ -1070,31 +1094,24 @@
       return;
     }
 
-    var best = null;
-    var bestScore = 0;
-    for (var i = 0; i < faq.length; i++) {
-      var item = faq[i];
-      var score = 0;
-      for (var j = 0; j < item.keywords.length; j++) {
-        if (text.indexOf(item.keywords[j]) >= 0) score++;
-      }
-      if (score > bestScore) { bestScore = score; best = item; }
+    if (navigator.onLine !== false && global.SchoolSafeJaspe2d && typeof global.SchoolSafeJaspe2d.chat === "function") {
+      state.currentMessage = "Jaspe reflechit...";
+      state.animation = "Thinking";
+      state.suggestions = [];
+      render();
+      global.SchoolSafeJaspe2d.chat(raw).then(function (reply) {
+        if (reply) {
+          state.currentMessage = reply;
+          state.animation = "TalkHandsOpen";
+          state.suggestions = defaultSuggestions();
+          render();
+        } else {
+          showLocalFallback(raw, true);
+        }
+      });
+      return;
     }
-
-    if (best && bestScore >= 1 && !branchVisible(best.branch)) {
-      // La réponse pointe vers une branche inaccessible : ne pas la proposer.
-      best = null;
-    }
-
-    if (best && bestScore >= 1) {
-      state.currentMessage = best.answer;
-      state.animation = best.animation;
-    } else {
-      state.currentMessage = "Je ne suis pas sûre de comprendre ta demande. Dis-moi ce que tu souhaites faire et sur quel écran tu te trouves, ou choisis un sujet ci-dessous.";
-      state.animation = "Shrug";
-    }
-    state.suggestions = defaultSuggestions();
-    render();
+    showLocalFallback(raw, navigator.onLine === false);
   }
 
   function listenToAppEvents() {

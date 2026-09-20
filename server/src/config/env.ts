@@ -42,6 +42,7 @@ const envSchema = z.object({
   // JASPE 2.5D — relais IA via le Worker Cloudflare. Jamais de clé ici :
   // le secret vit dans les secrets du Worker (wrangler secret), pas sur le VPS.
   JASPE_WORKER_URL: z.string().url().optional(),
+  JASPE_WORKER_HMAC_SECRET: z.string().min(32).optional(),
   JASPE_CHAT_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(12000),
   JASPE_RATE_PER_MINUTE: z.coerce.number().int().min(1).max(600).default(20),
 });

@@ -154,7 +154,7 @@
       return r.json();
     }).then(function (data) {
       setState(STATES.SPEAKING);
-      var reply = data && typeof data.reply === "string" ? data.reply : "";
+      var reply = data && data.data && typeof data.data.reply === "string" ? data.data.reply : "";
       setTimeout(function () { setState(STATES.IDLE); }, Math.min(6000, 1200 + reply.length * 30));
       return reply;
     }).catch(function (err) {
