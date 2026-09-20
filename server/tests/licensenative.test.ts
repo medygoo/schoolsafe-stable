@@ -271,12 +271,7 @@ describe("routes license", () => {
     async listProfiles() {
       return [];
     },
-    async forgotPassword() {
-      return null;
-    },
-    async attachRecoveryToken() {
-      return false;
-    },
+    async forgotPassword() {},
     async resetPassword() {
       return false;
     },

@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import {signRequest} from "../machine/hmac.js";
 
 export type ControlAppConfig = {
   url: string;
@@ -13,8 +13,7 @@ export function signControlAppRequest(payload: {
   timestamp: number;
   secret: string;
 }): string {
-  const data = `${payload.method.toUpperCase()}\n${payload.path}\n${payload.timestamp}\n${payload.body}`;
-  return createHmac("sha256", payload.secret).update(data).digest("hex");
+  return signRequest(payload);
 }
 
 export async function pushCardPrintRequest(

@@ -47,7 +47,7 @@ export function registerSetupRoutes(app: FastifyInstance, dependencies: SetupRou
       throw new SchoolSafeError(
         500,
         "SETUP_SCHOOL_FAILED",
-        error instanceof Error ? error.message : "Échec de la création de l'école",
+        "Échec de la création de l'école",
         false,
       );
     }
@@ -68,7 +68,7 @@ export function registerSetupRoutes(app: FastifyInstance, dependencies: SetupRou
       throw new SchoolSafeError(
         500,
         "SETUP_ADMIN_FAILED",
-        error instanceof Error ? error.message : "Échec de la création de l'administrateur",
+        "Échec de la création de l'administrateur",
         false,
       );
     }

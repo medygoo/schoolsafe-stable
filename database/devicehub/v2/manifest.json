@@ -1,0 +1,22 @@
+{
+  "schema": "schoolsafe-migrations-v2",
+  "name": "devicehub",
+  "version": 2,
+  "units": [
+    {
+      "order": 1,
+      "file": "01_devicehub_core.sql",
+      "sha256": "3c882a5216dbb2aae7a601bc05ca57e0c545bd17c69914ca209d016409b48673"
+    },
+    {
+      "order": 2,
+      "file": "02_devicehub_rpc.sql",
+      "sha256": "e47a359ff51a5779baf48c4a454606dd252c8891d510ddddec6a6ba6b1652727"
+    },
+    {
+      "order": 3,
+      "file": "03_machine_bindings.sql",
+      "sha256": "e2c3c8056cc65e17bcbfbeded4159dbb14156bc645badab31bb64b67dbd4cdab"
+    }
+  ]
+}

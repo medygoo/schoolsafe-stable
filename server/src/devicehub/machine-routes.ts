@@ -6,7 +6,7 @@
 // L'idempotence fournisseur (raw_provider_event_id unique en base) garantit
 // qu'un événement rejoué ne duplique rien.
 import type { FastifyInstance } from "fastify";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import {verifyRequest} from "../machine/hmac.js";
 import { newRequestId } from "../http/request-id.js";
 import { SchoolSafeError } from "../http/errors.js";
 import type { DeviceHubService } from "./service.js";
@@ -20,30 +20,8 @@ export type DeviceHubMachineRouteDependencies = {
   /** Identifiant d'instance attendu dans l'en-tête (env CONTROL_APP_INSTANCE_ID). */
   expectedInstanceId: string;
   /** École servie par cette instance SchoolSafe (résolue serveur). */
-  machineSchoolId: () => Promise<string> | string;
-  machineProfileId?: () => string;
+  resolveContext: (instanceId: string, deviceId: string, requestId: string) => Promise<RequestContext>;
 };
-
-function verifyHmac(input: {
-  method: string;
-  path: string;
-  body: string;
-  timestamp: number;
-  signature: string;
-  secret: string;
-  maxAgeSeconds?: number;
-}): boolean {
-  const maxAge = input.maxAgeSeconds ?? 300;
-  const now = Math.floor(Date.now() / 1000);
-  if (!Number.isFinite(input.timestamp) || Math.abs(now - input.timestamp) > maxAge) return false;
-  const expected = createHmac("sha256", input.secret)
-    .update(`${input.method.toUpperCase()}\n${input.path}\n${input.timestamp}\n${input.body}`)
-    .digest("hex");
-  const expectedBuf = Buffer.from(expected, "hex");
-  const actualBuf = Buffer.from(input.signature, "hex");
-  if (expectedBuf.length !== actualBuf.length) return false;
-  return timingSafeEqual(expectedBuf, actualBuf);
-}
 
 export function registerDeviceHubMachineRoutes(
   app: FastifyInstance,
@@ -62,9 +40,9 @@ export function registerDeviceHubMachineRoutes(
     // Le corps est resigné sous forme canonique (JSON compact du body parsé),
     // exactement comme le client Control existant signe ses requêtes.
     const canonicalBody = JSON.stringify(request.body ?? {});
-    const valid = verifyHmac({
+    const valid = verifyRequest({
       method: request.method,
-      path: request.url.split("?")[0],
+      path: request.url,
       body: canonicalBody,
       timestamp: Number(timestamp),
       signature: String(signature),
@@ -75,22 +53,16 @@ export function registerDeviceHubMachineRoutes(
     }
 
     const body = z.object({
-      device_id: z.string().uuid().optional(),
-      raw_provider_event_id: z.string().max(255).optional(),
+      device_id: z.string().uuid(),
+      raw_provider_event_id: z.string().min(1).max(255),
       external_person_id: z.string().max(64).optional(),
       credential_type: z.enum(["fingerprint", "pin", "card", "qr"]),
       event_type: z.enum(["check_in", "check_out", "authentication", "access", "unknown"]),
       occurred_at: z.string().datetime(),
       metadata: z.record(z.unknown()).optional(),
-    }).parse(request.body);
+    }).strict().parse(request.body);
 
-    // Contexte machine : école résolue serveur, profil machine fixé.
-    const context: RequestContext = {
-      userId: "machine:control",
-      profileId: dependencies.machineProfileId?.() ?? "00000000-0000-4000-8000-000000000000",
-      schoolId: await dependencies.machineSchoolId(),
-      requestId: newRequestId(),
-    };
+    const context = await dependencies.resolveContext(String(instanceId), body.device_id, newRequestId());
 
     const data = await dependencies.service.ingestEvent(context, {
       device_id: body.device_id,

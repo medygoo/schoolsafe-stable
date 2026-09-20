@@ -1,3 +1,4 @@
+import {loadInstallationPlan, transactionalSql} from "./installation-plan.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -58,8 +59,7 @@ console.log(`Migration manifests: PASS (${sets.length} sets, ${unitCount} units)
 const inventory = installationInventory(repoRoot);
 assert.deepEqual(JSON.parse(await readFile(path.join(repoRoot, 'database/installation/manifest.json'), 'utf8')), inventory,
   'Installation inventory stale: run node database/installation/generate-manifest.mjs');
-console.log('Installation inventory: PASS (46 units accounted for, 2 BLOCKED + 1 unqualified auth unit; not an executable installation)');
-if (process.argv.includes('--require-installable')) {
-  console.error('INSTALLATION_BLOCKED: 02_student_list.sql and 01_setup_native.sql require additive fixes; 03_auth_reset.sql requires separate qualification.');
-  process.exitCode = 1;
-}
+console.log('Historical installation inventory: PASS (preserved)');
+const plan=loadInstallationPlan(repoRoot);
+for(const unit of plan.units)transactionalSql(await readFile(path.join(repoRoot,unit.file)));
+console.log('Installation v2: PASS ('+plan.units.length+' checksummed executable units; '+plan.superseded.length+' historical replacements)');

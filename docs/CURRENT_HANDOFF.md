@@ -1,5 +1,25 @@
 # Handoff courant SchoolSafe
 
+## 20 septembre 2026 ? installation v2 qualifiee, PR #2 ouverte
+
+- Branche Codex : `codex/schoolsafe-installation-v2`, base production
+  `7d5cc89924319eb9c46d8a5a9cd0f3f729743834` ; aucun merge/deploiement autorise.
+- 48 unites installees atomiquement sur PostgreSQL 17.11 jetable, 6 suites RLS
+  et 44 scenarios PASS ; rollback tardif et rejeu identique PASS.
+- npm ci, manifests/--require-installable, permissions, typecheck, 363 tests,
+  tests installateur, contrat HMAC reel Control et Docker Linux PASS.
+- Historique SQL v1 et anciens manifests preserves ; corrections v2 seulement.
+- Compose + Caddy, DB et reseaux separes. Les anciennes consignes PaaS sont
+  remplacees pour cette mission. Aucun push depuis le VPS, aucun changement ERNEST.
+- Control audite au SHA cb4257d7d70b6662f8106d9f6241751610e07258 : endpoint licence
+  absent ; voir docs/INSTALLATION_V2.md pour les limites restantes.
+- CI publiee ; workflow manuel desactive. Authentification GitHub operateur valide.
+- PR ouverte : https://github.com/medygoo/schoolsafe-stable/pull/2 ; checks GitHub a consulter.
+  Revue humaine requise, aucun merge ni deploiement.
+- Rapport non sensible : SCHOOLSAFE_DIRECT_VPS_REPORT.md ; copie operateur et VPS.
+
+## Historique ? mandats precedents conserves, non applicables a cette mission
+
 ## 19 septembre 2026 — base de développement validée, publication autorisée
 
 - Propriétaire : préparation locale validée comme **base de développement**.

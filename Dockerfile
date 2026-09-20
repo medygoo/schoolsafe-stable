@@ -1,4 +1,4 @@
-# SchoolSafe Server — Dockerfile multi-stage (Coolify / VPS)
+# SchoolSafe Server — Dockerfile multi-stage (Docker Compose / VPS)
 # Build : npm run build (tsc)
 # Start : node dist/src/index.js
 
@@ -7,7 +7,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Dépendances (cache efficace) — --include=dev : le stage builder a besoin de
-# TypeScript (tsc) même si NODE_ENV=production est injecté au build par Coolify.
+# TypeScript (tsc) même si NODE_ENV=production est injecté au build par le moteur de build.
 COPY package.json package-lock.json ./
 COPY server/package.json ./server/package.json
 RUN npm ci --workspace server --include-workspace-root=false --include=dev

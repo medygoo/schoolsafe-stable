@@ -57,8 +57,7 @@ function fakeAuthService(): AuthNativeService {
     async touchSession() { return null; },
     async logout() { return true; },
     async listProfiles() { return []; },
-    async forgotPassword() { return null; },
-    async attachRecoveryToken() { return false; },
+    async forgotPassword() {},
     async resetPassword() { return false; },
     async switchProfile() { return { ok: false as const }; },
   };

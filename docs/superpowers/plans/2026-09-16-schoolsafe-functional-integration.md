@@ -600,3 +600,12 @@ sur la branche séquentielle ; utiliser la branche réellement concernée sinon.
 Si un push échoue, laisser un état explicite « local seulement » avec la cause.
 Le prochain agent reprend le premier identifiant incomplet, sans refaire A1 ni
 prendre un ancien rapport de tests comme une nouvelle exécution.
+
+
+## Mission directe VPS ? 20 septembre 2026
+
+La mission utilisateur courante remplace les anciens mandats Coolify/Easypanel :
+Docker Compose + Caddy, deux bases/reseaux, source GitHub production. Corrections
+locales additives sur codex/schoolsafe-installation-v2, jamais dans le checkout
+VPS ; ni merge ni deploiement SchoolSafe autorise. Voir docs/INSTALLATION_V2.md
+et SCHOOLSAFE_DIRECT_VPS_REPORT.md. Les sections anterieures restent historiques.
