@@ -45,6 +45,8 @@ const envSchema = z.object({
   JASPE_WORKER_HMAC_SECRET: z.string().min(32).optional(),
   JASPE_CHAT_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(12000),
   JASPE_RATE_PER_MINUTE: z.coerce.number().int().min(1).max(600).default(20),
+  JASPE_STT_RATE_PER_MINUTE: z.coerce.number().int().min(1).max(120).default(10),
+  JASPE_TTS_RATE_PER_MINUTE: z.coerce.number().int().min(1).max(120).default(10),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

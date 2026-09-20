@@ -21,6 +21,10 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Test Jaspe Worker
+        run: npm test --prefix worker-jaspe
+      - name: Build-check Jaspe Worker
+        run: npx wrangler deploy --dry-run --config worker-jaspe/wrangler.toml
       - run: npm run ci
       - name: Check actual Control HMAC contract
         shell: bash
