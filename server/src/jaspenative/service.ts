@@ -3,12 +3,14 @@
 // gravé (le mapping modèle vit côté Worker). Dégradation propre : RATE_LIMITED /
 // PROVIDER_ERROR / TIMEOUT / OFFLINE — le frontend affiche l'état correspondant.
 import { SchoolSafeError } from "../http/errors.js";
+import { canonicalJson, signJaspeRequest } from "./signing.js";
 
 export type JaspeChatInput = { message: string; sessionKey: string };
 export type JaspeChatResult = { reply: string };
 
 export type JaspeNativeServiceDeps = {
   workerUrl?: string;
+  workerHmacSecret?: string;
   timeoutMs: number;
   ratePerMinute: number;
   fetchImpl?: typeof fetch;
@@ -41,15 +43,22 @@ export function createJaspeNativeService(deps: JaspeNativeServiceDeps) {
         throw new SchoolSafeError(503, "JASPE_OFFLINE", "Jaspe n'est pas raccordée sur cette instance.", true);
       }
       const ctrl = new AbortController();
+      if (!deps.workerHmacSecret) {
+        throw new SchoolSafeError(503, "JASPE_OFFLINE", "Jaspe n'est pas configuree de facon sure sur cette instance.", true);
+      }
+      const timestamp = Math.floor(now() / 1000);
+      const body = canonicalJson({ message: input.message, session_key: input.sessionKey });
+
       const timer = setTimeout(() => ctrl.abort(), deps.timeoutMs);
       try {
         const res = await fetcher(deps.workerUrl, {
           method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            message: input.message,
-            session_key: input.sessionKey,
-          }),
+          headers: {
+            "content-type": "application/json",
+            "x-jaspe-timestamp": String(timestamp),
+            "x-jaspe-signature": signJaspeRequest(deps.workerHmacSecret, timestamp, body),
+          },
+          body,
           signal: ctrl.signal,
         });
         if (!res.ok) {

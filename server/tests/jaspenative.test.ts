@@ -42,6 +42,7 @@ function app(opts: { workerUrl?: string; fetchImpl?: typeof fetch; ratePerMinute
       }; } } as unknown as BusinessPool,
       service: createJaspeNativeService({
         workerUrl: opts.workerUrl,
+        workerHmacSecret: "test-secret-jaspe-hmac-32-bytes-minimum",
         timeoutMs: 1500,
         ratePerMinute: opts.ratePerMinute ?? 3,
         fetchImpl: opts.fetchImpl,
@@ -74,6 +75,17 @@ describe("jaspenative", () => {
     expect((await a.inject({ method: "POST", url: "/native/jaspe/chat", headers, payload: { ...payload, role: 'admin', schoolId: SESSION.schoolId } })).statusCode).toBe(400);
     await a.close();
   });
+  it("signe le corps canonique c?t? serveur", async () => {
+    let init: RequestInit | undefined;
+    const fakeFetch = (async (_url, requestInit) => { init = requestInit; return new Response(JSON.stringify({ reply: "Bonjour !" }), { status: 200 }); }) as typeof fetch;
+    const a = app({ workerUrl: "https://worker.example/chat", fetchImpl: fakeFetch });
+    const res = await a.inject({ method: "POST", url: "/native/jaspe/chat", headers, payload });
+    expect(res.statusCode).toBe(200);
+    expect(init?.headers).toMatchObject({ "x-jaspe-timestamp": expect.any(String), "x-jaspe-signature": expect.stringMatching(/^[0-9a-f]{64}$/) });
+    expect(init?.body).toBe(JSON.stringify({ message: "Bonjour Jaspe", session_key: "u:" + SESSION.userId + ":" + SESSION.schoolId + ":" + SESSION.profileId }));
+    await a.close();
+  });
+
   it("succès : relaie la réponse du worker", async () => {
     const fakeFetch = (async () => new Response(JSON.stringify({ reply: "Bonjour !" }), { status: 200 })) as typeof fetch;
     const a = app({ workerUrl: "https://worker.example/chat", fetchImpl: fakeFetch });
@@ -141,7 +153,7 @@ describe("jaspenative", () => {
     const srcRaw = readFileSync(new URL("../src/jaspenative/service.ts", import.meta.url), "utf8")
       + readFileSync(new URL("../src/jaspenative/routes.ts", import.meta.url), "utf8");
     const src = srcRaw.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, ""); // commentaires exclus
-    expect(src).not.toMatch(/api[_-]?key|Bearer|secret/i);
+    expect(src).not.toMatch(/api[_-]?key|Bearer/i);
     expect(src).not.toMatch(/\.query\(|SELECT |INSERT |PostgreSQL/i);
   });
 });
