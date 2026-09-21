@@ -1,6 +1,26 @@
 -- Preuve C : fee_control et la portée assigned_classes (relation métier correcte).
 \set ON_ERROR_STOP on
 begin;
+-- Seed technique : désactivation temporaire de RLS et des triggers d'audit
+set local role schoolsafe_owner;
+alter table app.schools disable row level security;
+alter table app.academic_years disable row level security;
+alter table app.classes disable row level security;
+alter table app.fee_structures disable row level security;
+alter table app.students disable row level security;
+alter table app.student_fees disable row level security;
+alter table app.fee_control_campaigns disable row level security;
+alter table app.fee_control_assignees disable row level security;
+alter table iam.users disable row level security;
+alter table iam.profiles disable row level security;
+alter table iam.roles disable row level security;
+alter table iam.profile_roles disable row level security;
+alter table iam.role_permission_grants disable row level security;
+alter table iam.grant_scopes disable row level security;
+alter table iam.roles disable trigger iam_roles_audit;
+alter table iam.profile_roles disable trigger iam_profile_roles_audit;
+alter table iam.role_permission_grants disable trigger iam_role_permission_grants_audit;
+alter table iam.grant_scopes disable trigger iam_grant_scopes_audit;
 insert into app.schools (id, code, name) values
   ('40000000-0000-4000-8000-000000000004', 'FC-SCHOOL4', 'Ecole Fee Control');
 insert into iam.users (id, auth_provider, external_subject, email) values
@@ -25,6 +45,26 @@ from iam.permissions p where p.code = 'finance.control.scan';
 insert into iam.grant_scopes (id, school_id, grant_id, scope_code)
 select '45000000-0000-4000-8000-000000000004', '40000000-0000-4000-8000-000000000004',
   '44000000-0000-4000-8000-000000000004', 'assigned_fee_classes';
+-- Réactivation de RLS et des triggers avant les tests de logique
+alter table app.schools enable row level security;
+alter table app.academic_years enable row level security;
+alter table app.classes enable row level security;
+alter table app.fee_structures enable row level security;
+alter table app.students enable row level security;
+alter table app.student_fees enable row level security;
+alter table app.fee_control_campaigns enable row level security;
+alter table app.fee_control_assignees enable row level security;
+alter table iam.users enable row level security;
+alter table iam.profiles enable row level security;
+alter table iam.roles enable row level security;
+alter table iam.profile_roles enable row level security;
+alter table iam.role_permission_grants enable row level security;
+alter table iam.grant_scopes enable row level security;
+alter table iam.roles enable trigger iam_roles_audit;
+alter table iam.profile_roles enable trigger iam_profile_roles_audit;
+alter table iam.role_permission_grants enable trigger iam_role_permission_grants_audit;
+alter table iam.grant_scopes enable trigger iam_grant_scopes_audit;
+reset role;
 -- Campagne publiée couvrant la classe 6A, avec l'agent affecté.
 insert into app.fee_structures (id, school_id, academic_year_id, label, amount, currency) values
   ('48000000-0000-4000-8000-000000000004', '40000000-0000-4000-8000-000000000004', '46000000-0000-4000-8000-000000000004', 'Frais', 100, 'USD');

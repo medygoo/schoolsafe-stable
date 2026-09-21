@@ -1,6 +1,7 @@
 \set ON_ERROR_STOP on
 -- Synthetic fixtures only. Session user must be schoolsafe_bootstrap in TEST.
 begin;
+-- Création des fonctions temporaires AVANT le changement de rôle pour éviter les blocages de privilèges TEMPORARY.
 create function pg_temp.assert_true(value boolean, label text) returns void language plpgsql as $$
 begin if value is distinct from true then raise exception 'ACCESS TEST: %', label; end if; end $$;
 create function pg_temp.expect_denied() returns void language plpgsql as $$
@@ -9,6 +10,27 @@ begin
   begin perform api.access_roles_list(); raise exception 'ACCESS TEST: roles exposed'; exception when insufficient_privilege then null; end;
   begin perform api.access_profile_read('a2000000-0000-4000-8000-000000000002'); raise exception 'ACCESS TEST: detail exposed'; exception when insufficient_privilege then null; end;
 end $$;
+grant execute on function pg_temp.expect_denied() to schoolsafe_api;
+grant execute on function pg_temp.assert_true(boolean, text) to schoolsafe_api;
+-- Seed technique : désactivation temporaire de RLS et des triggers d'audit
+set local role schoolsafe_owner;
+alter table app.schools disable row level security;
+alter table iam.users disable row level security;
+alter table iam.profiles disable row level security;
+alter table iam.roles disable row level security;
+alter table iam.profile_roles disable row level security;
+alter table iam.role_permission_grants disable row level security;
+alter table iam.grant_scopes disable row level security;
+alter table iam.permission_conditions disable row level security;
+alter table iam.profile_permission_exceptions disable row level security;
+alter table iam.exception_scopes disable row level security;
+alter table iam.roles disable trigger iam_roles_audit;
+alter table iam.profile_roles disable trigger iam_profile_roles_audit;
+alter table iam.role_permission_grants disable trigger iam_role_permission_grants_audit;
+alter table iam.grant_scopes disable trigger iam_grant_scopes_audit;
+alter table iam.permission_conditions disable trigger iam_permission_conditions_audit;
+alter table iam.profile_permission_exceptions disable trigger iam_profile_permission_exceptions_audit;
+alter table iam.exception_scopes disable trigger iam_exception_scopes_audit;
 
 insert into app.schools(id,code,name) values
  ('a0000000-0000-4000-8000-000000000001','ACCESS-A2-A','Synthetic school A'),
@@ -39,6 +61,25 @@ insert into iam.profile_permission_exceptions(id,school_id,profile_id,permission
  select 'a5000000-0000-4000-8000-000000000002','a0000000-0000-4000-8000-000000000001','a2000000-0000-4000-8000-000000000002',id,'deny','Synthetic restriction','a2000000-0000-4000-8000-000000000001' from iam.permissions where code='staff.read';
 insert into iam.exception_scopes(school_id,exception_id,scope_code)
  values ('a0000000-0000-4000-8000-000000000001','a5000000-0000-4000-8000-000000000002','school');
+-- Réactivation de RLS et des triggers avant les tests de logique
+alter table app.schools enable row level security;
+alter table iam.users enable row level security;
+alter table iam.profiles enable row level security;
+alter table iam.roles enable row level security;
+alter table iam.profile_roles enable row level security;
+alter table iam.role_permission_grants enable row level security;
+alter table iam.grant_scopes enable row level security;
+alter table iam.permission_conditions enable row level security;
+alter table iam.profile_permission_exceptions enable row level security;
+alter table iam.exception_scopes enable row level security;
+alter table iam.roles enable trigger iam_roles_audit;
+alter table iam.profile_roles enable trigger iam_profile_roles_audit;
+alter table iam.role_permission_grants enable trigger iam_role_permission_grants_audit;
+alter table iam.grant_scopes enable trigger iam_grant_scopes_audit;
+alter table iam.permission_conditions enable trigger iam_permission_conditions_audit;
+alter table iam.profile_permission_exceptions enable trigger iam_profile_permission_exceptions_audit;
+alter table iam.exception_scopes enable trigger iam_exception_scopes_audit;
+reset role;
 
 set local role schoolsafe_api;
 select pg_temp.expect_denied(); -- no context

@@ -15,6 +15,24 @@ begin
 end
 $schoolsafe$;
 
+-- Configuration initiale : seed technique multi-écoles.
+-- Désactivation temporaire de RLS et des triggers d'audit pour permettre l'insertion
+-- de données de référence sans contexte utilisateur valide.
+set local role schoolsafe_owner;
+alter table app.schools disable row level security;
+alter table iam.users disable row level security;
+alter table iam.profiles disable row level security;
+alter table iam.roles disable row level security;
+alter table iam.profile_roles disable row level security;
+alter table iam.role_permission_grants disable row level security;
+alter table iam.grant_scopes disable row level security;
+
+-- Désactivation des triggers d'audit qui exigent un contexte valide
+alter table iam.roles disable trigger iam_roles_audit;
+alter table iam.profile_roles disable trigger iam_profile_roles_audit;
+alter table iam.role_permission_grants disable trigger iam_role_permission_grants_audit;
+alter table iam.grant_scopes disable trigger iam_grant_scopes_audit;
+
 insert into app.schools (id, code, name)
 values
   ('10000000-0000-4000-8000-000000000001', 'TEST-A', 'School A'),
@@ -39,6 +57,8 @@ values
   ('40000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', 'access-b', 'School B test access'),
   ('40000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000003', 'access-c', 'School C test access'),
   ('40000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000001', 'deny-a', 'School A explicit deny');
+
+reset role;
 
 insert into iam.profile_roles (school_id, profile_id, role_id, is_active)
 values
@@ -180,6 +200,20 @@ select pg_catalog.set_config('schoolsafe.user_id', '', true);
 select pg_catalog.set_config('schoolsafe.profile_id', '', true);
 select pg_catalog.set_config('schoolsafe.school_id', '', true);
 select pg_catalog.set_config('schoolsafe.request_id', '', true);
+
+-- Réactivation de RLS et des triggers d'audit après le seed technique.
+-- Ces mesures de sécurité doivent être actives pour valider l'isolation des données.
+alter table app.schools enable row level security;
+alter table iam.users enable row level security;
+alter table iam.profiles enable row level security;
+alter table iam.roles enable row level security;
+alter table iam.profile_roles enable row level security;
+alter table iam.role_permission_grants enable row level security;
+alter table iam.grant_scopes enable row level security;
+alter table iam.roles enable trigger iam_roles_audit;
+alter table iam.profile_roles enable trigger iam_profile_roles_audit;
+alter table iam.role_permission_grants enable trigger iam_role_permission_grants_audit;
+alter table iam.grant_scopes enable trigger iam_grant_scopes_audit;
 
 -- Physical tenant isolation is independent from Access_Law and RLS. These
 -- writes run with baseline setup authority and must still fail at the FK layer.

@@ -1,5 +1,18 @@
 \set ON_ERROR_STOP on
 begin;
+-- Seed technique : désactivation temporaire de RLS et des triggers d'audit
+set local role schoolsafe_owner;
+alter table app.schools disable row level security;
+alter table iam.users disable row level security;
+alter table iam.profiles disable row level security;
+alter table iam.roles disable row level security;
+alter table iam.profile_roles disable row level security;
+alter table iam.role_permission_grants disable row level security;
+alter table iam.grant_scopes disable row level security;
+alter table iam.roles disable trigger iam_roles_audit;
+alter table iam.profile_roles disable trigger iam_profile_roles_audit;
+alter table iam.role_permission_grants disable trigger iam_role_permission_grants_audit;
+alter table iam.grant_scopes disable trigger iam_grant_scopes_audit;
 -- Synthetic identities only. Reused by the real browser/concurrency proof.
 insert into app.schools(id,code,name) values
  ('b0000000-0000-4000-8000-000000000001','ACCESS-A3-A','Access assignment test A'),
@@ -28,8 +41,22 @@ insert into iam.role_permission_grants(school_id,role_id,permission_id,effect)
 insert into iam.grant_scopes(school_id,grant_id,scope_code)
  select g.school_id,g.id,case when p.default_scope_code in ('own','none') then p.default_scope_code else 'school' end
  from iam.role_permission_grants g join iam.permissions p on p.id=g.permission_id where g.school_id='b0000000-0000-4000-8000-000000000001';
+-- Dernière fixture : insérée pendant que les triggers sont désactivés
 insert into iam.profile_roles(school_id,profile_id,role_id) values
  ('b0000000-0000-4000-8000-000000000001','b2000000-0000-4000-8000-000000000001','b3000000-0000-4000-8000-000000000001');
+-- Réactivation de RLS et des triggers avant les tests de logique
+alter table app.schools enable row level security;
+alter table iam.users enable row level security;
+alter table iam.profiles enable row level security;
+alter table iam.roles enable row level security;
+alter table iam.profile_roles enable row level security;
+alter table iam.role_permission_grants enable row level security;
+alter table iam.grant_scopes enable row level security;
+alter table iam.roles enable trigger iam_roles_audit;
+alter table iam.profile_roles enable trigger iam_profile_roles_audit;
+alter table iam.role_permission_grants enable trigger iam_role_permission_grants_audit;
+alter table iam.grant_scopes enable trigger iam_grant_scopes_audit;
+reset role;
 -- END FIXTURES
 
 create function pg_temp.ok(value boolean, label text) returns void language plpgsql as $$
