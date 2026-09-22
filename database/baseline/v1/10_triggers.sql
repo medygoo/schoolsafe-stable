@@ -360,7 +360,7 @@ declare
   v_entity_id uuid := nullif(v_row ->> 'id', '')::uuid;
 begin
   if not iam.context_is_valid() then
-    if session_user in ('schoolsafe_bootstrap', 'schoolsafe_migrator', 'schoolsafe_owner') then
+    if session_user in ('schoolsafe_bootstrap', 'schoolsafe_migrator') then
       if tg_op = 'DELETE' then
         return old;
       end if;
