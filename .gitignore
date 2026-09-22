@@ -16,3 +16,6 @@ secrets.json
 .claude/
 app/login-kid-*.jpg
 database/baseline/v1/review/SECRETS_APPLICATION.md
+
+# Build artifacts
+server/dist/

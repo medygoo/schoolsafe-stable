@@ -2,6 +2,19 @@
 \set ON_ERROR_STOP on
 \set QUIET off
 begin;
+-- Seed technique : désactivation temporaire de RLS et des triggers d'audit
+set local role schoolsafe_owner;
+alter table app.schools disable row level security;
+alter table iam.users disable row level security;
+alter table iam.profiles disable row level security;
+alter table iam.roles disable row level security;
+alter table iam.profile_roles disable row level security;
+alter table iam.role_permission_grants disable row level security;
+alter table iam.grant_scopes disable row level security;
+alter table iam.roles disable trigger iam_roles_audit;
+alter table iam.profile_roles disable trigger iam_profile_roles_audit;
+alter table iam.role_permission_grants disable trigger iam_role_permission_grants_audit;
+alter table iam.grant_scopes disable trigger iam_grant_scopes_audit;
 insert into app.schools (id, code, name) values
   ('a0000000-0000-4000-8000-00000000000a', 'AUTH-A', 'Ecole Autorite A');
 insert into iam.users (id, auth_provider, external_subject, email) values
@@ -20,6 +33,19 @@ from iam.permissions p where p.code = 'roles.manage';
 insert into iam.grant_scopes (id, school_id, grant_id, scope_code)
 select 'a5000000-0000-4000-8000-00000000000a', 'a0000000-0000-4000-8000-00000000000a',
   'a4000000-0000-4000-8000-00000000000a', 'school';
+-- Réactivation de RLS et des triggers avant les tests de logique
+alter table app.schools enable row level security;
+alter table iam.users enable row level security;
+alter table iam.profiles enable row level security;
+alter table iam.roles enable row level security;
+alter table iam.profile_roles enable row level security;
+alter table iam.role_permission_grants enable row level security;
+alter table iam.grant_scopes enable row level security;
+alter table iam.roles enable trigger iam_roles_audit;
+alter table iam.profile_roles enable trigger iam_profile_roles_audit;
+alter table iam.role_permission_grants enable trigger iam_role_permission_grants_audit;
+alter table iam.grant_scopes enable trigger iam_grant_scopes_audit;
+reset role;
 
 select api.set_request_context(
   'a1000000-0000-4000-8000-00000000000a',
