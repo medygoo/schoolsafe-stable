@@ -28,7 +28,7 @@ import { createDeviceHubService } from "./devicehub/service.js";
 export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
   const recovery = env.BREVO_API_KEY && env.BREVO_SENDER_EMAIL && env.AUTH_RECOVERY_URL
     ? createRecoveryDelivery(createBrevoEmailService({apiKey: env.BREVO_API_KEY, senderEmail: env.BREVO_SENDER_EMAIL}), env.AUTH_RECOVERY_URL) : undefined;
-  const authService = createAuthNativeService(createPgAuthDatabase(pools.authPool), recovery);
+  const authService = createAuthNativeService({ db: createPgAuthDatabase(pools.authPool), emailDelivery: recovery });
   const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.CONTROL_APP_HMAC_SECRET
     ? { url: env.CONTROL_APP_URL, instanceId: env.CONTROL_APP_INSTANCE_ID, hmacSecret: env.CONTROL_APP_HMAC_SECRET }
     : undefined;

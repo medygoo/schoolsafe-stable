@@ -28,9 +28,9 @@ describe("native installation v2",()=>{
   expect(query.mock.calls[0][1][0]).toBe(createHash("sha256").update(token).digest("hex"));
   expect(JSON.stringify(query.mock.calls)).not.toContain(token);expect(query.mock.calls[1][0]).toContain("setup_complete_school");expect(business.query).not.toHaveBeenCalled();
  });
- it("issues no recovery when delivery is unavailable",async()=>{const query=vi.fn();await createAuthNativeService({query}).forgotPassword("test@example.test");expect(query).not.toHaveBeenCalled();});
+ it("issues no recovery when delivery is unavailable",async()=>{const query=vi.fn();await createAuthNativeService({db:{query}}).forgotPassword("test@example.test");expect(query).not.toHaveBeenCalled();});
  it("delivers a random recovery token and stores only its hash; reset hashes the token",async()=>{
-  const query=vi.fn().mockResolvedValue({rows:[{recovery_id:randomUUID(),email:"test@example.test",auth_reset_password:true}]});const delivery=vi.fn();const auth=createAuthNativeService({query},delivery);
+  const query=vi.fn().mockResolvedValue({rows:[{recovery_id:randomUUID(),email:"test@example.test",auth_reset_password:true}]});const delivery=vi.fn();const auth=createAuthNativeService({db:{query},emailDelivery:delivery});
   await auth.forgotPassword("test@example.test");const token=delivery.mock.calls[0][0].token;expect(token.length).toBeGreaterThanOrEqual(43);
   const digest=createHash("sha256").update(token).digest("hex");expect(query.mock.calls[0][1][1]).toBe(digest);
   await auth.resetPassword(token,"synthetic-password-hash");expect(query.mock.calls[1][1][0]).toBe(digest);

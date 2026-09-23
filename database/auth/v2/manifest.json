@@ -7,6 +7,21 @@
       "order": 1,
       "file": "01_auth_reset.sql",
       "sha256": "f6771b3be729b460b36fced4f8c0fd1018c6b106539db30c89873db5d24fb764"
+    },
+    {
+      "order": 2,
+      "file": "02_identity_verification.sql",
+      "sha256": "92fb6aa05df05ff8cd1070212f0b73523bfe328822c653a8a817c48b2a9576ea"
+    },
+    {
+      "order": 3,
+      "file": "03_webauthn_credentials.sql",
+      "sha256": "3c97dbf7f9ce082c8abdb1a97533516785d6bc6294f5bd8820b1f4b2527586fe"
+    },
+    {
+      "order": 4,
+      "file": "04_admin_recovery.sql",
+      "sha256": "3f249d97e876f9ceed430f57ed9db9b9f351eda3a2d81afbf8b46a7c8f6f3ccd"
     }
   ]
 }

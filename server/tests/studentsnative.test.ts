@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildApp } from "../src/app.js";
 import type { BusinessPool } from "../src/db/pool.js";
+import { lot4AuthStubs } from "./helpers/lot4-auth-stubs.js";
 import { createStudentsNativeService } from "../src/studentsnative/service.js";
 import type { AuthNativeService, AuthSessionInfo } from "../src/authnative/service.js";
 
@@ -67,6 +68,7 @@ function fakeAuthService(): AuthNativeService {
     async switchProfile() {
       return { ok: false as const };
     },
+    ...lot4AuthStubs,
   };
 }
 

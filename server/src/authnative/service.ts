@@ -1,10 +1,12 @@
-﻿// SchoolSafe Auth v1 — service d'authentification.
-// La base de données est injectée via une interface minimale (testable sans serveur),
-// en attendant le pool pg réel du lot DB-LAYER (3.1).
+// SchoolSafe Auth v2 — service d'authentification complet.
+// Intègre : login, sessions, recovery email/SMS/WebAuthn/admin, vérification identité.
+// La base de données est injectée via une interface minimale (testable sans serveur).
 // Règles : la session porte le profil EXACT choisi (jamais de LIMIT 1 ambigu),
 // le login est normalisé par la base, l'expiration est glissante réelle.
 import { verifyPassword, DUMMY_ARGON2ID_HASH_PROMISE } from "./passwords.js";
 import { generateSessionToken, hashSessionToken } from "./tokens.js";
+import type { SmsDelivery } from "./sms-delivery.js";
+import type { AdminRecoveryService } from "./admin-recovery.js";
 
 export interface AuthDatabase {
   query<T>(sql: string, params: unknown[]): Promise<{ rows: T[] }>;
@@ -62,7 +64,47 @@ const SESSION_TTL_SECONDS = 43200; // 12 h, glissantes (touch à mi-vie)
 const REMEMBER_TTL_SECONDS = 604800; // 7 jours, si remember coché
 
 export type RecoveryDelivery = (message: {email: string; token: string}) => Promise<void>;
-export function createAuthNativeService(db: AuthDatabase, deliverRecovery?: RecoveryDelivery) {
+
+export interface VerificationDelivery {
+  sendEmailVerification(email: string, token: string): Promise<boolean>;
+  sendPhoneVerification(phone: string, code: string): Promise<boolean>;
+}
+
+export interface WebAuthnStore {
+  getCredential(credentialId: Uint8Array): Promise<{ identityId: string; publicKey: Uint8Array; signCount: number } | null>;
+  saveCredential(identityId: string, credentialId: Uint8Array, publicKey: Uint8Array, signCount: number, transports: string[], friendlyName?: string): Promise<void>;
+  updateSignCount(credentialId: Uint8Array, signCount: number): Promise<boolean>;
+  listCredentials(identityId: string): Promise<Array<{ credentialId: Uint8Array; friendlyName?: string; createdAt: Date }>>;
+  revokeCredential(identityId: string, credentialId: Uint8Array): Promise<boolean>;
+  hasActiveCredential(identityId: string): Promise<boolean>;
+}
+
+export interface ChallengeStore {
+  set(key: string, challenge: string, ttlMs: number): Promise<void>;
+  get(key: string): Promise<string | null>;
+  delete(key: string): Promise<void>;
+}
+
+export interface AdminRecoveryStore {
+  generateCode(targetIdentityId: string, schoolId: string, adminProfileId: string, codeHash: string, ttlMs: number): Promise<string | null>;
+  redeemCode(login: string, codeHash: string, maxAttempts: number): Promise<{ identityId: string; schoolId: string } | null>;
+  canAdminRecover(adminProfileId: string, targetIdentityId: string): Promise<boolean>;
+}
+
+export interface AuthNativeDependencies {
+  db: AuthDatabase;
+  emailDelivery?: RecoveryDelivery;
+  smsDelivery?: SmsDelivery;
+  verificationDelivery?: VerificationDelivery;
+  webauthnStore?: WebAuthnStore;
+  challengeStore?: ChallengeStore;
+  adminRecoveryStore?: AdminRecoveryStore;
+  adminRecoveryService?: AdminRecoveryService;
+  webauthnConfig?: { rpName: string; rpId: string; origin: string | string[] };
+}
+
+export function createAuthNativeService(deps: AuthNativeDependencies) {
+  const { db } = deps;
   return {
     async loginWithPassword(
       login: string,
@@ -259,21 +301,128 @@ export function createAuthNativeService(db: AuthDatabase, deliverRecovery?: Reco
 
     async forgotPassword(login: string): Promise<void> {
       // Without a configured delivery channel no recovery capability is issued.
-      if (!deliverRecovery) return;
+      if (!deps.emailDelivery) return;
       const token = generateSessionToken();
       const result = await db.query<{recovery_id: string; email: string}>(
         "select * from api.auth_create_recovery_request($1,$2)", [login, hashSessionToken(token)]);
       const row = result.rows[0];
       if (row?.email) {
         // The public response never reveals account existence or a provider failure.
-        try { await deliverRecovery({email: row.email, token}); } catch { /* no secret logging */ }
+        try { await deps.emailDelivery({email: row.email, token}); } catch { /* no secret logging */ }
       }
     },
+
     async resetPassword(token: string, newPasswordHash: string): Promise<boolean> {
       const result = await db.query<{auth_reset_password: boolean}>(
         "select * from api.auth_reset_password($1,$2)", [hashSessionToken(token), newPasswordHash]);
       return result.rows[0]?.auth_reset_password === true;
     },
-}
+
+    // ─── LOT 4 : Recovery Methods ───────────────────────────────────────
+    // Retourne les méthodes de récupération disponibles pour un identifiant,
+    // sans révéler l'existence du compte si aucune méthode n'est disponible.
+    async getRecoveryMethods(login: string): Promise<string[]> {
+      const normalized = login.trim();
+      if (!normalized) return [];
+      const resolved = await db.query<{identity_id: string; email: string | null; phone: string | null; email_verified_at: string | null; phone_verified_at: string | null}>(
+        "select i.id as identity_id, i.email, i.phone, i.email_verified_at, i.phone_verified_at from auth.identities i where i.email::text = $1 or i.phone = $1 limit 1",
+        [normalized],
+      );
+      const row = resolved.rows[0];
+      if (!row) return [];
+      const methods: string[] = [];
+      if (row.email && row.email_verified_at) methods.push("email");
+      if (row.phone && row.phone_verified_at && deps.smsDelivery) methods.push("sms");
+      if (deps.webauthnStore && await deps.webauthnStore.hasActiveCredential(row.identity_id)) methods.push("webauthn");
+      // Admin recovery checked separately via canAdminRecover (requires admin session)
+      return methods;
+    },
+
+    // ─── LOT 4 : Email Verification ─────────────────────────────────────
+    async requestEmailVerification(identityId: string): Promise<boolean> {
+      if (!deps.verificationDelivery) return false;
+      const token = generateSessionToken();
+      const result = await db.query<{identity_id: string; email: string}>(
+        "select * from api.auth_create_email_verification($1,$2)", [identityId, hashSessionToken(token)]);
+      const row = result.rows[0];
+      if (!row?.email) return false;
+      try { return await deps.verificationDelivery.sendEmailVerification(row.email, token); } catch { return false; }
+    },
+
+    async verifyEmail(token: string): Promise<boolean> {
+      const result = await db.query<{auth_verify_email: boolean}>(
+        "select * from api.auth_verify_email($1)", [hashSessionToken(token)]);
+      return result.rows[0]?.auth_verify_email === true;
+    },
+
+    // ─── LOT 4 : Phone Verification ─────────────────────────────────────
+    async requestPhoneVerification(identityId: string): Promise<boolean> {
+      if (!deps.verificationDelivery || !deps.smsDelivery) return false;
+      const token = generateSessionToken();
+      const result = await db.query<{identity_id: string; phone: string}>(
+        "select * from api.auth_create_phone_verification($1,$2)", [identityId, hashSessionToken(token)]);
+      const row = result.rows[0];
+      if (!row?.phone) return false;
+      // Use first 6 chars of token as OTP code for SMS
+      const code = token.substring(0, 6);
+      try { return await deps.verificationDelivery.sendPhoneVerification(row.phone, code); } catch { return false; }
+    },
+
+    async verifyPhone(token: string): Promise<boolean> {
+      const result = await db.query<{auth_verify_phone: boolean}>(
+        "select * from api.auth_verify_phone($1)", [hashSessionToken(token)]);
+      return result.rows[0]?.auth_verify_phone === true;
+    },
+
+    // ─── LOT 4 : SMS Recovery ───────────────────────────────────────────
+    async requestSmsRecovery(login: string): Promise<boolean> {
+      if (!deps.smsDelivery) return false;
+      const normalized = login.trim();
+      if (!normalized) return false;
+      const resolved = await db.query<{identity_id: string; phone: string | null; phone_verified_at: string | null}>(
+        "select i.id as identity_id, i.phone, i.phone_verified_at from auth.identities i where (i.email::text = $1 or i.phone = $1) and i.status = 'active' limit 1",
+        [normalized],
+      );
+      const row = resolved.rows[0];
+      if (!row?.phone || !row.phone_verified_at) return false;
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      // Store hashed code in recovery_requests with phone marker
+      const token = generateSessionToken();
+      await db.query("select * from api.auth_create_recovery_request($1,$2)", [normalized, hashSessionToken(code)]);
+      try { return await deps.smsDelivery.sendRecoveryCode(row.phone, code); } catch { return false; }
+    },
+
+    // ─── LOT 4 : Admin Recovery ─────────────────────────────────────────
+    async adminGenerateRecoveryCode(adminProfileId: string, targetIdentityId: string): Promise<string | null> {
+      if (!deps.adminRecoveryStore || !deps.adminRecoveryService) return null;
+      // Check authorization first
+      const canRecover = await deps.adminRecoveryStore.canAdminRecover(adminProfileId, targetIdentityId);
+      if (!canRecover) return null;
+      // Get target school_id
+      const targetInfo = await db.query<{school_id: string}>(
+        "select p.school_id from auth.identities i join iam.profiles p on p.user_id = i.user_id and p.is_active = true where i.id = $1 limit 1",
+        [targetIdentityId],
+      );
+      const schoolId = targetInfo.rows[0]?.school_id;
+      if (!schoolId) return null;
+      const code = deps.adminRecoveryService.generateCode();
+      const codeHash = deps.adminRecoveryService.hashCode(code);
+      const stored = await deps.adminRecoveryStore.generateCode(targetIdentityId, schoolId, adminProfileId, codeHash, deps.adminRecoveryService.config.codeTtlMs);
+      return stored ? code : null;
+    },
+
+    async redeemAdminRecoveryCode(login: string, code: string): Promise<{identityId: string} | null> {
+      if (!deps.adminRecoveryStore || !deps.adminRecoveryService) return null;
+      const codeHash = deps.adminRecoveryService.hashCode(code);
+      const result = await deps.adminRecoveryStore.redeemCode(login, codeHash, deps.adminRecoveryService.config.maxAttempts);
+      return result ? {identityId: result.identityId} : null;
+    },
+
+    // ─── LOT 4 : WebAuthn Recovery ──────────────────────────────────────
+    async hasWebAuthnCredential(identityId: string): Promise<boolean> {
+      if (!deps.webauthnStore) return false;
+      return deps.webauthnStore.hasActiveCredential(identityId);
+    },
   };
+};
 export type AuthNativeService = ReturnType<typeof createAuthNativeService>;
