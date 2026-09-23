@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   "use strict";
 
   var screens = {
@@ -3497,7 +3497,6 @@
     pendingPhone = null;
     showScreen("auth");
   });
-  bindIfExists("previewWorkspace", "click", function () { showScreen("workspace"); });
   bindIfExists("closePedagogyModule", "click", closePedagogyModule);
   bindIfExists("closePalmaresModule", "click", closePalmaresModule);
   document.querySelectorAll("#pedagogyTabs [data-pedagogy-tab]").forEach(function (button) {
@@ -3679,53 +3678,96 @@
       (mode === "email" ? emailInput : phoneInput).focus();
     });
   });
-  document.getElementById("forgotPassword").addEventListener("click", function () {
+  document.getElementById("forgotPassword").addEventListener("click", async function () {
     var overlay = document.createElement("div");
     overlay.className = "ss-overlay";
-    overlay.innerHTML = '<div class="ss-modal"><div class="ss-modal-head"><h2>Récupération de mot de passe</h2></div><div class="ss-modal-body"><p style="margin-bottom:var(--ss-spacing-md)">Saisissez l\'adresse e-mail associée à votre compte. Un lien de réinitialisation vous sera envoyé.</p><div class="ss-field"><label class="ss-label" for="recoveryEmailInput">Adresse e-mail</label><input class="ss-input" id="recoveryEmailInput" type="email" inputmode="email" autocomplete="email" placeholder="exemple@ecole.cd"></div><div id="recoveryFeedback" class="ss-field-note"></div></div><div class="ss-modal-actions"><button class="ss-button ss-button--ghost" id="recoveryCancel" type="button">Annuler</button><button class="ss-button ss-button--primary" id="recoverySend" type="button">Envoyer le lien</button></div></div>';
+    overlay.innerHTML = '<div class="ss-modal ss-modal--lg"><div class="ss-modal-head"><h2>Récupérer mon compte</h2><p>Saisissez votre identifiant pour découvrir les méthodes disponibles.</p></div><div class="ss-modal-body"><div class="ss-field"><label class="ss-label" for="recoveryIdentifier">E-mail ou téléphone</label><input class="ss-input" id="recoveryIdentifier" type="text" autocomplete="username" placeholder="nom@ecole.cd ou +243..."></div><div id="recoveryMethodsList" class="recovery-methods-list" hidden></div><div id="recoveryFeedback" class="ss-field-note"></div></div><div class="ss-modal-actions"><button class="ss-button ss-button--ghost" id="recoveryCancel" type="button">Annuler</button><button class="ss-button ss-button--primary" id="recoveryDiscover" type="button">Découvrir les méthodes</button></div></div>';
     document.body.appendChild(overlay);
-    var emailInput = document.getElementById("recoveryEmailInput");
+    var identifierInput = document.getElementById("recoveryIdentifier");
+    var methodsList = document.getElementById("recoveryMethodsList");
     var feedback = document.getElementById("recoveryFeedback");
-    var sendBtn = document.getElementById("recoverySend");
+    var discoverBtn = document.getElementById("recoveryDiscover");
     var cancelBtn = document.getElementById("recoveryCancel");
-    emailInput.focus();
+    identifierInput.focus();
 
-    function closeRecovery() {
-      overlay.remove();
-    }
+    function closeRecovery() { overlay.remove(); }
     cancelBtn.addEventListener("click", closeRecovery);
-    overlay.addEventListener("click", function (e) {
-      if (e.target === overlay) closeRecovery();
-    });
-    emailInput.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") sendBtn.click();
-      if (e.key === "Escape") closeRecovery();
-    });
-    sendBtn.addEventListener("click", async function () {
-      var email = emailInput.value.trim();
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        feedback.textContent = "Veuillez saisir une adresse e-mail valide.";
-        feedback.className = "ss-field-note ss-field-note--error";
-        emailInput.focus();
-        return;
-      }
-      sendBtn.disabled = true;
-      sendBtn.textContent = "Envoi en cours…";
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) closeRecovery(); });
+    identifierInput.addEventListener("keydown", function (e) { if (e.key === "Enter") discoverBtn.click(); if (e.key === "Escape") closeRecovery(); });
+
+    discoverBtn.addEventListener("click", async function () {
+      var login = identifierInput.value.trim();
+      if (!login) { feedback.textContent = "Veuillez saisir un identifiant."; feedback.className = "ss-field-note ss-field-note--error"; return; }
+      discoverBtn.disabled = true;
+      discoverBtn.textContent = "Recherche en cours…";
       feedback.className = "ss-field-note";
       feedback.textContent = "";
       try {
-        if (!window.SchoolSafeAuthNative) throw new Error("Service de récupération indisponible.");
-        await window.SchoolSafeAuthNative.forgot(email);
-        feedback.textContent = "Si un compte existe avec cette adresse, un lien de récupération a été envoyé.";
-        feedback.className = "ss-field-note ss-field-note--success";
-        sendBtn.textContent = "Fermer";
-        sendBtn.disabled = false;
-        sendBtn.addEventListener("click", closeRecovery, { once: true });
+        if (!window.SchoolSafeAuthNative) throw new Error("Service indisponible.");
+        var data = await window.SchoolSafeAuthNative.getRecoveryMethods(login);
+        var methods = data && data.methods ? data.methods : [];
+        methodsList.innerHTML = "";
+        if (!methods.length) {
+          methodsList.innerHTML = "<p>Aucune méthode de récupération disponible pour cet identifiant.</p>";
+        } else {
+          methods.forEach(function (method) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "ss-button ss-button--secondary recovery-method-btn";
+            btn.setAttribute("data-method", method);
+            if (method === "email") { btn.innerHTML = '<i data-lucide="mail"></i> Recevoir par e-mail'; }
+            else if (method === "sms") { btn.innerHTML = '<i data-lucide="message-square"></i> Recevoir par SMS'; }
+            else if (method === "webauthn") { btn.innerHTML = '<i data-lucide="smartphone"></i> Utiliser cet appareil'; }
+            else if (method === "admin") { btn.innerHTML = '<i data-lucide="shield-check"></i> Assistance administrateur'; }
+            methodsList.appendChild(btn);
+          });
+          if (window.lucide) window.lucide.createIcons();
+        }
+        methodsList.hidden = false;
+        discoverBtn.textContent = "Actualiser";
+        discoverBtn.disabled = false;
       } catch (err) {
-        feedback.textContent = "Erreur : " + (err.message || "échec de la récupération");
+        feedback.textContent = "Erreur : " + (err.message || "échec de la découverte");
         feedback.className = "ss-field-note ss-field-note--error";
-        sendBtn.disabled = false;
-        sendBtn.textContent = "Envoyer le lien";
+        discoverBtn.disabled = false;
+        discoverBtn.textContent = "Découvrir les méthodes";
+      }
+    });
+
+    methodsList.addEventListener("click", async function (e) {
+      var btn = e.target.closest(".recovery-method-btn");
+      if (!btn) return;
+      var method = btn.getAttribute("data-method");
+      var login = identifierInput.value.trim();
+      
+      if (method === "email") {
+        try {
+          await window.SchoolSafeAuthNative.forgot(login);
+          feedback.textContent = "Si un compte existe, un lien a été envoyé.";
+          feedback.className = "ss-field-note ss-field-note--success";
+        } catch (err) { feedback.textContent = "Erreur envoi e-mail."; feedback.className = "ss-field-note ss-field-note--error"; }
+      } else if (method === "sms") {
+        try {
+          await window.SchoolSafeAuthNative.requestSmsRecovery(login);
+          feedback.textContent = "Si un compte existe, un code SMS a été envoyé.";
+          feedback.className = "ss-field-note ss-field-note--success";
+          // TODO: Afficher champ saisie OTP
+        } catch (err) { feedback.textContent = "Erreur envoi SMS."; feedback.className = "ss-field-note ss-field-note--error"; }
+      } else if (method === "webauthn") {
+        try {
+          var options = await window.SchoolSafeAuthNative.getWebAuthnRecoveryOptions(login);
+          var assertion = await navigator.credentials.get({ publicKey: options });
+          var result = await window.SchoolSafeAuthNative.assertWebAuthnRecovery(assertion);
+          if (result && result.authorization) {
+            feedback.textContent = "Appareil validé. Veuillez créer un nouveau mot de passe.";
+            feedback.className = "ss-field-note ss-field-note--success";
+            // TODO: Afficher formulaire nouveau mot de passe
+          }
+        } catch (err) { feedback.textContent = "Échec WebAuthn."; feedback.className = "ss-field-note ss-field-note--error"; }
+      } else if (method === "admin") {
+        feedback.textContent = "Contactez l'administrateur principal de votre école pour obtenir un code de récupération.";
+        feedback.className = "ss-field-note";
+        // TODO: Afficher champ saisie code admin
       }
     });
   });
