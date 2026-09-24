@@ -1,11 +1,11 @@
-/* One existing V12 renderer, cropped at the hips in the dashboard or full body.
+/* Existing V12 renderer, mounted in full body only while the panel is open.
  * Conversation and authorization remain owned by SafeAssistant / Access Law. */
 (function (global) {
   "use strict";
   var initialized = false;
   var showcase = null;
   var voiceUtterance = null;
-  var dialog, character, launcher, fullStage, input, log, mic, status;
+  var dialog, character, fullStage, input, log, mic, status;
   var audioMode = false;
   var recognition = null;
   var returnFocus = null;
@@ -55,9 +55,6 @@
   function setStatus(message) {
     status.textContent = message || "";
     status.hidden = !message;
-    var heroStatus = document.getElementById("jaspeHeroAudioStatus");
-    heroStatus.textContent = message || "";
-    heroStatus.hidden = !message || dialog.open;
   }
 
   function stopListening() {
@@ -70,9 +67,6 @@
     }
     mic.setAttribute("aria-pressed", "false");
     mic.setAttribute("aria-label", "Démarrer l’écoute");
-    var heroMic = document.getElementById("jaspeHeroMic");
-    heroMic.setAttribute("aria-pressed", "false");
-    heroMic.setAttribute("aria-label", "Parler à Jaspe dans le tableau de bord");
     if (previous) intent("idle");
   }
 
@@ -154,8 +148,6 @@
     };
     mic.setAttribute("aria-pressed", "true");
     mic.setAttribute("aria-label", "Arrêter l’écoute");
-    document.getElementById("jaspeHeroMic").setAttribute("aria-pressed", "true");
-    document.getElementById("jaspeHeroMic").setAttribute("aria-label", "Arrêter l’écoute");
     setStatus("Ouverture du micro…");
     intent("listen", { duration: 0 });
     try { recognition.start(); } catch (e) {
@@ -203,7 +195,6 @@
     document.querySelectorAll("[data-jaspe-open], [data-jaspe-audio], [data-jaspe-chat-input], [data-jaspe-chat-send], [data-bottom-nav='jaspe']").forEach(function (element) {
       element.disabled = !canUse;
     });
-    document.getElementById("jaspeAccessMessage").hidden = canUse;
     if (!canUse) {
       close();
       setMode(false);
@@ -214,7 +205,6 @@
       document.querySelectorAll("[data-jaspe-chat-log]").forEach(function (element) { element.replaceChildren(); });
       document.querySelectorAll("[data-jaspe-chat-input]").forEach(function (element) { element.value = ""; });
       input.value = "";
-      if (showcase) showcase.stop();
     }
     syncVoiceControls();
   }
@@ -276,10 +266,10 @@
       continuousSpeech: true,
       surface: "workspace-bust", // Existing registered dashboard surface; framing is injected below.
       label: "Jaspe, votre assistante SchoolSafe",
-      isBust: function () { return !dialog.open; },
+      isBust: function () { return false; },
       isVisible: function () {
-        if (!allowed() || !character.getClientRects().length) return false;
-        var rect = (dialog.open ? fullStage : launcher).getBoundingClientRect();
+        if (!allowed() || !dialog.open || !character || character.parentNode !== fullStage || !character.getClientRects().length) return false;
+        var rect = fullStage.getBoundingClientRect();
         return rect.bottom > 0 && rect.top < global.innerHeight && rect.right > 0 && rect.left < global.innerWidth;
       },
       variants: [
@@ -296,9 +286,15 @@
   function open(trigger, audio) {
     init();
     if (!allowed() || dialog.open) return;
-    mount();
     returnFocus = trigger || document.activeElement;
+    if (!character) {
+      character = document.createElement("div");
+      character.id = "jaspeDashboardCharacter";
+      character.className = "jaspe-character-host";
+      character.setAttribute("aria-hidden", "true");
+    }
     fullStage.prepend(character);
+    mount();
     document.body.classList.add("jaspe-is-out");
     dialog.show();
     setMode(audio === true);
@@ -310,8 +306,12 @@
 
   function returned() {
     setMode(false);
-    if (showcase) showcase.stop();
-    launcher.prepend(character);
+    if (showcase) {
+      // stop() ends an intent; destroy() removes the renderer and its lifecycle hooks.
+      showcase.destroy();
+      showcase = null;
+    }
+    if (character) character.remove();
     document.body.classList.remove("jaspe-is-out");
     input.value = "";
     intent("idle");
@@ -329,7 +329,6 @@
     if (!dialog) return;
     initialized = true;
     character = document.getElementById("jaspeDashboardCharacter");
-    launcher = document.getElementById("jaspeHeroLauncher");
     fullStage = document.getElementById("jaspeFullStage");
     input = document.getElementById("jaspePanelInput");
     log = document.getElementById("jaspePanelBody");
@@ -374,12 +373,6 @@
         if (field.value.trim() && allowed()) prepareSubmission();
       }, true);
     });
-    document.getElementById("jaspeHeroMic").addEventListener("click", function () {
-      if (!allowed()) return;
-      if (recognition) { stopListening(); setStatus("Écoute arrêtée."); return; }
-      setMode(true);
-      startListening();
-    });
     document.querySelectorAll("[data-jaspe-open]").forEach(function (button) {
       button.addEventListener("click", function () { open(button, button.hasAttribute("data-jaspe-audio")); });
     });
@@ -414,11 +407,9 @@
   global.SchoolSafeJaspeDashboard = {
     open: open,
     syncAccess: syncAccess,
-    refresh: function (firstName) {
+    refresh: function () {
       init();
-      document.getElementById("jaspeHeroName").textContent = firstName || "";
       syncAccess();
-      mount();
     }
   };
 })(window);

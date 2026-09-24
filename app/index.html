@@ -62,7 +62,7 @@
   <link rel="stylesheet" href="./styles/modules/deep-operations-harmony.css">
 <link rel="stylesheet" href="./styles/modules/deep-governance-harmony.css">
 <link rel="stylesheet" href="./styles/dashboard-liquid-glass.css">
-  <link rel="stylesheet" href="./styles/modules/jaspe-dashboard.css">
+  <link rel="stylesheet" href="./styles/modules/jaspe-dashboard.css?v=jaspe-desktop-r1">
   <link rel="stylesheet" href="./styles/modules/jaspe-seated.css">
 <script src="./lucide.min.js" defer></script>
   <script src="./jspdf.umd.min.js" defer></script>
@@ -123,7 +123,7 @@
   <script src="./modules/jaspe2d/jaspe2d.js?v=jaspe-dashboard-01" defer></script>
   <script src="./modules/safe/safe-assistant.js" defer></script>
   <script src="./modules/jaspe2d/seated-companion.js" defer></script>
-  <script src="./modules/jaspe2d/dashboard-companion.js" defer></script>
+  <script src="./modules/jaspe2d/dashboard-companion.js?v=jaspe-desktop-r1" defer></script>
   <script src="./app.js?v=jaspe-dashboard-01" defer></script>
 </head>
 <body>
@@ -364,6 +364,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
             <div class="topbar-tool-wrap" id="topbarMessagesWrap">
               <button class="topbar-icon" id="topbarMessages" type="button" aria-label="Messages" aria-haspopup="true" aria-expanded="false"><i data-lucide="mail"></i><span class="badge" id="topbarMessagesBadge">2</span></button>
             </div>
+            <button class="topbar-jaspe" id="desktopJaspeLauncher" type="button" data-jaspe-open aria-haspopup="dialog" aria-controls="jaspePanelOverlay" aria-label="Ouvrir JASPE"><i data-lucide="sparkles"></i><span>JASPE</span></button>
             <button class="topbar-campus" id="topbarCampus" type="button">
               <i data-lucide="school"></i>
               <span id="workspaceSchoolName">Campus Central</span>
