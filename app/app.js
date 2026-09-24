@@ -3680,99 +3680,91 @@
       (mode === "email" ? emailInput : phoneInput).focus();
     });
   });
-  document.getElementById("forgotPassword").addEventListener("click", async function () {
+  document.getElementById("forgotPassword").addEventListener("click", function () {
     var overlay = document.createElement("div");
     overlay.className = "ss-overlay";
-    overlay.innerHTML = '<div class="ss-modal ss-modal--lg"><div class="ss-modal-head"><h2>Récupérer mon compte</h2><p>Saisissez votre identifiant pour découvrir les méthodes disponibles.</p></div><div class="ss-modal-body"><div class="ss-field"><label class="ss-label" for="recoveryIdentifier">E-mail ou téléphone</label><input class="ss-input" id="recoveryIdentifier" type="text" autocomplete="username" placeholder="nom@ecole.cd ou +243..."></div><div id="recoveryMethodsList" class="recovery-methods-list" hidden></div><div id="recoveryFeedback" class="ss-field-note"></div></div><div class="ss-modal-actions"><button class="ss-button ss-button--ghost" id="recoveryCancel" type="button">Annuler</button><button class="ss-button ss-button--primary" id="recoveryDiscover" type="button">Découvrir les méthodes</button></div></div>';
+    overlay.innerHTML = '<div class="ss-modal ss-modal--lg" role="dialog" aria-modal="true" aria-label="Récupérer mon compte"><div class="ss-modal-head"><h2>Récupérer mon compte</h2></div><div class="ss-modal-body"><div id="recoveryMethodSelector"><button class="ss-button recovery-choice-btn" data-choice="autonomous">Vérifier mes informations</button><button class="ss-button recovery-choice-btn" data-choice="admin">J\'ai un code de récupération de mon école</button></div><form id="recoveryFormContainer" hidden></form><p id="recoveryFeedback" role="status"></p></div><div class="ss-modal-actions"><button id="recoveryCancel" type="button" class="ss-button">Fermer</button><button id="recoveryActionBtn" type="submit" form="recoveryFormContainer" class="ss-button" hidden>Vérifier</button></div></div>';
     document.body.appendChild(overlay);
-    var identifierInput = document.getElementById("recoveryIdentifier");
-    var methodsList = document.getElementById("recoveryMethodsList");
-    var feedback = document.getElementById("recoveryFeedback");
-    var discoverBtn = document.getElementById("recoveryDiscover");
-    var cancelBtn = document.getElementById("recoveryCancel");
-    identifierInput.focus();
-
-    function closeRecovery() { overlay.remove(); }
-    cancelBtn.addEventListener("click", closeRecovery);
-    overlay.addEventListener("click", function (e) { if (e.target === overlay) closeRecovery(); });
-    identifierInput.addEventListener("keydown", function (e) { if (e.key === "Enter") discoverBtn.click(); if (e.key === "Escape") closeRecovery(); });
-
-    discoverBtn.addEventListener("click", async function () {
-      var login = identifierInput.value.trim();
-      if (!login) { feedback.textContent = "Veuillez saisir un identifiant."; feedback.className = "ss-field-note ss-field-note--error"; return; }
-      discoverBtn.disabled = true;
-      discoverBtn.textContent = "Recherche en cours…";
-      feedback.className = "ss-field-note";
-      feedback.textContent = "";
-      try {
-        if (!window.SchoolSafeAuthNative) throw new Error("Service indisponible.");
-        var data = await window.SchoolSafeAuthNative.getRecoveryMethods(login);
-        var methods = data && data.methods ? data.methods : [];
-        methodsList.innerHTML = "";
-        if (!methods.length) {
-          methodsList.innerHTML = "<p>Aucune méthode de récupération disponible pour cet identifiant.</p>";
-        } else {
-          methods.forEach(function (method) {
-            var btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "ss-button ss-button--secondary recovery-method-btn";
-            btn.setAttribute("data-method", method);
-            if (method === "email") { btn.innerHTML = '<i data-lucide="mail"></i> Recevoir par e-mail'; }
-            else if (method === "sms") { btn.innerHTML = '<i data-lucide="message-square"></i> Recevoir par SMS'; }
-            else if (method === "webauthn") { btn.innerHTML = '<i data-lucide="smartphone"></i> Utiliser cet appareil'; }
-            else if (method === "admin") { btn.innerHTML = '<i data-lucide="shield-check"></i> Assistance administrateur'; }
-            methodsList.appendChild(btn);
-          });
-          if (window.lucide) window.lucide.createIcons();
+    var form = overlay.querySelector("#recoveryFormContainer");
+    var feedback = overlay.querySelector("#recoveryFeedback");
+    var action = overlay.querySelector("#recoveryActionBtn");
+    var selector = overlay.querySelector("#recoveryMethodSelector");
+    function closeRecovery() { form.reset(); overlay.remove(); }
+    overlay.querySelector("#recoveryCancel").onclick = closeRecovery;
+    overlay.addEventListener("keydown", function (event) { if (event.key === "Escape") closeRecovery(); });
+    function field(name, label, type) {
+      return '<label class="ss-field">' + label + '<input class="ss-input" name="' + name + '" type="' + (type || 'text') + '" required autocomplete="off" maxlength="200"></label>';
+    }
+    selector.addEventListener("click", function (event) {
+      var button = event.target.closest("[data-choice]");
+      if (!button) return;
+      var autonomous = button.dataset.choice === "autonomous";
+      selector.hidden = true; form.hidden = false; action.hidden = false;
+      if (autonomous) {
+        form.innerHTML = '<label class="ss-field">Mon profil<select name="category"><option value="parent">Parent / responsable légal</option><option value="profile">Autre profil (administration, enseignement, personnel…)</option></select></label>' +
+          field("fullName", "Nom complet enregistré") + field("phoneNumber", "Téléphone enregistré", "tel") + '<div data-proof-fields></div>';
+        function proofFields() {
+          form.querySelector("[data-proof-fields]").innerHTML = form.elements.category.value === "parent"
+            ? field("childFullName", "Nom complet d’un enfant rattaché") + field("className", "Classe actuelle")
+            : field("schoolName", "Nom de l’école du profil") + field("roleName", "Fonction / rôle enregistré");
         }
-        methodsList.hidden = false;
-        discoverBtn.textContent = "Actualiser";
-        discoverBtn.disabled = false;
-      } catch (err) {
-        feedback.textContent = "Erreur : " + (err.message || "échec de la découverte");
-        feedback.className = "ss-field-note ss-field-note--error";
-        discoverBtn.disabled = false;
-        discoverBtn.textContent = "Découvrir les méthodes";
+        form.elements.category.onchange = proofFields;
+        proofFields();
+      } else {
+        form.innerHTML = field("login", "Téléphone ou identifiant enregistré") +
+          '<label class="ss-field">Code de récupération (10 chiffres)<input class="ss-input" name="code" inputmode="numeric" pattern="[0-9]{10}" minlength="10" maxlength="10" required autocomplete="off"></label>';
       }
-    });
-
-    methodsList.addEventListener("click", async function (e) {
-      var btn = e.target.closest(".recovery-method-btn");
-      if (!btn) return;
-      var method = btn.getAttribute("data-method");
-      var login = identifierInput.value.trim();
-      
-      if (method === "email") {
+      form.onsubmit = async function (event) {
+        event.preventDefault();
+        if (action.disabled || !form.reportValidity()) return;
+        action.disabled = true; feedback.textContent = "Vérification en cours…";
         try {
-          await window.SchoolSafeAuthNative.forgot(login);
-          feedback.textContent = "Si un compte existe, un lien a été envoyé.";
-          feedback.className = "ss-field-note ss-field-note--success";
-        } catch (err) { feedback.textContent = "Erreur envoi e-mail."; feedback.className = "ss-field-note ss-field-note--error"; }
-      } else if (method === "sms") {
-        try {
-          await window.SchoolSafeAuthNative.requestSmsRecovery(login);
-          feedback.textContent = "Si un compte existe, un code SMS a été envoyé.";
-          feedback.className = "ss-field-note ss-field-note--success";
-          // TODO: Afficher champ saisie OTP
-        } catch (err) { feedback.textContent = "Erreur envoi SMS."; feedback.className = "ss-field-note ss-field-note--error"; }
-      } else if (method === "webauthn") {
-        try {
-          var options = await window.SchoolSafeAuthNative.getWebAuthnRecoveryOptions(login);
-          var assertion = await navigator.credentials.get({ publicKey: options });
-          var result = await window.SchoolSafeAuthNative.assertWebAuthnRecovery(assertion);
-          if (result && result.authorization) {
-            feedback.textContent = "Appareil validé. Veuillez créer un nouveau mot de passe.";
-            feedback.className = "ss-field-note ss-field-note--success";
-            // TODO: Afficher formulaire nouveau mot de passe
+          var f = form.elements;
+          var response;
+          if (!autonomous) {
+            response = await window.SchoolSafeAuthNative.redeemAdminRecoveryCode(f.login.value.trim(), f.code.value);
+          } else if (f.category.value === "parent") {
+            response = await window.SchoolSafeAuthNative.recoverParent(f.fullName.value.trim(), f.phoneNumber.value.trim(), f.childFullName.value.trim(), f.className.value.trim());
+          } else {
+            response = await window.SchoolSafeAuthNative.recoverProfile(f.fullName.value.trim(), f.phoneNumber.value.trim(), f.schoolName.value.trim(), f.roleName.value.trim());
           }
-        } catch (err) { feedback.textContent = "Échec WebAuthn."; feedback.className = "ss-field-note ss-field-note--error"; }
-      } else if (method === "admin") {
-        feedback.textContent = "Contactez l'administrateur principal de votre école pour obtenir un code de récupération.";
-        feedback.className = "ss-field-note";
-        // TODO: Afficher champ saisie code admin
-      }
+          if (!overlay.isConnected) return;
+          if (!response || !response.reset_token) throw new Error("Recovery refused");
+          form.reset();
+          showResetPasswordForm(response.reset_token, overlay);
+        } catch (error) {
+          feedback.textContent = "Les informations saisies ne permettent pas de confirmer votre identité.";
+        } finally { action.disabled = false; }
+      };
+      form.querySelector("input,select").focus();
     });
   });
+  function showResetPasswordForm(token, overlay) {
+    var modal = overlay.querySelector(".ss-modal");
+    modal.innerHTML = '<div class="ss-modal-head"><h2>Nouveau mot de passe</h2></div><form id="recoveryResetForm"><div class="ss-modal-body"><label class="ss-field">Nouveau mot de passe<input class="ss-input" name="password" type="password" minlength="8" maxlength="512" autocomplete="new-password" required></label><label class="ss-field">Confirmer le mot de passe<input class="ss-input" name="confirmation" type="password" minlength="8" maxlength="512" autocomplete="new-password" required></label><p data-feedback role="status"></p></div><div class="ss-modal-actions"><button class="ss-button" type="submit">Enregistrer</button><button class="ss-button" type="button" data-close>Fermer</button></div></form>';
+    var form = modal.querySelector("form"), feedback = modal.querySelector("[data-feedback]");
+    function close() { token = ""; form.reset(); overlay.remove(); }
+    modal.querySelector("[data-close]").onclick = close;
+    overlay.addEventListener("keydown", function (event) { if (event.key === "Escape") close(); });
+    form.onsubmit = async function (event) {
+      event.preventDefault();
+      var button = form.querySelector('[type="submit"]');
+      if (button.disabled || !form.reportValidity()) return;
+      if (form.elements.password.value !== form.elements.confirmation.value) {
+        feedback.textContent = "Les mots de passe ne correspondent pas."; return;
+      }
+      button.disabled = true;
+      try {
+        await window.SchoolSafeAuthNative.reset(token, form.elements.password.value);
+        close();
+        notify("Mot de passe réinitialisé avec succès. Veuillez vous connecter.");
+        showScreen("auth");
+      } catch (error) {
+        feedback.textContent = "Réinitialisation refusée. Vérifiez le mot de passe choisi ou recommencez la récupération.";
+      } finally { button.disabled = false; }
+    };
+    form.elements.password.focus();
+  }
   document.getElementById("togglePassword").addEventListener("click", function () {
     var input = document.getElementById("password");
     var isPassword = input.type === "password";

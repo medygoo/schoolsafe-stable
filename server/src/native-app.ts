@@ -29,7 +29,7 @@ export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
   const recovery = env.BREVO_API_KEY && env.BREVO_SENDER_EMAIL && env.AUTH_RECOVERY_URL
     ? createRecoveryDelivery(createBrevoEmailService({apiKey: env.BREVO_API_KEY, senderEmail: env.BREVO_SENDER_EMAIL}), env.AUTH_RECOVERY_URL) : undefined;
   const authService = createAuthNativeService({ db: createPgAuthDatabase(pools.authPool), emailDelivery: recovery });
-  const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.CONTROL_APP_HMAC_SECRET
+const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.CONTROL_APP_HMAC_SECRET
     ? { url: env.CONTROL_APP_URL, instanceId: env.CONTROL_APP_INSTANCE_ID, hmacSecret: env.CONTROL_APP_HMAC_SECRET }
     : undefined;
   const licenseService = env.CONTROL_LICENSE_PUBLIC_KEY
@@ -49,27 +49,27 @@ export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
       }
     },
     authNative: { service: authService, cookieSecure: env.NODE_ENV === "production" },
-    studentsNative: { authService, service: createStudentsNativeService(pools.businessPool) },
-    trialNative: { authService, service: createTrialNativeService(pools.businessPool) },
-    sessionNative: { authService, service: createSessionNativeService(pools.businessPool) },
-    accessNative: { authService, service: createAccessNativeService(pools.businessPool) },
-    jaspeNative: { authService, businessPool: pools.businessPool, service: createJaspeNativeService({
+    studentsNative: { authService: authService, service: createStudentsNativeService(pools.businessPool) },
+    trialNative: { authService: authService, service: createTrialNativeService(pools.businessPool) },
+    sessionNative: { authService: authService, service: createSessionNativeService(pools.businessPool) },
+    accessNative: { authService: authService, service: createAccessNativeService(pools.businessPool) },
+    jaspeNative: { authService: authService, businessPool: pools.businessPool, service: createJaspeNativeService({
       workerUrl: env.JASPE_WORKER_URL,
       timeoutMs: env.JASPE_CHAT_TIMEOUT_MS,
       ratePerMinute: env.JASPE_RATE_PER_MINUTE,
     }) },
-    licenseNative: licenseService ? { authService, service: licenseService } : undefined,
+    licenseNative: licenseService ? { authService: authService, service: licenseService } : undefined,
     setup: { service: createSetupNativeService(pools.authPool, pools.businessPool, env.SETUP_TOKEN) },
-    financeNative: { authService, service: createFinanceNativeService(pools.businessPool) },
-    pedagogyNative: { authService, service: createPedagogyNativeService(pools.businessPool) },
+    financeNative: { authService: authService, service: createFinanceNativeService(pools.businessPool) },
+    pedagogyNative: { authService: authService, service: createPedagogyNativeService(pools.businessPool) },
     controlPrintNative: {
-      authService,
+      authService: authService,
       businessPool: pools.businessPool,
       controlConfig,
       service: createControlPrintNativeService(pools.businessPool, controlConfig),
     },
     cardsNative: {
-      authService,
+      authService: authService,
       service: createCardsNativeService(pools.businessPool, env.R2_ENDPOINT ? {
         endpoint: env.R2_ENDPOINT,
         accessKeyId: env.R2_ACCESS_KEY_ID!,
@@ -85,12 +85,12 @@ export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
       autoBatchEnabled: env.CARDS_AUTO_BATCH === true,
     },
     familyNative: {
-      authService,
+      authService: authService,
       service: createFamilyNativeService(pools.businessPool),
       importService: createFamilyImportService(pools.businessPool),
     },
     deviceHub: {
-      authService,
+      authService: authService,
       service: createDeviceHubService(pools.businessPool, controlConfig),
     },
     deviceHubMachine: controlConfig ? {
@@ -101,7 +101,7 @@ export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
       resolveContext: createMachineContextResolver(pools.businessPool),
     } : undefined,
   });
-  registerLicenseGate(app, {authService, licenseService});
+  registerLicenseGate(app, {authService: authService, licenseService});
   app.addHook("onClose", async () => {
     await Promise.allSettled([pools.authPool.end(), pools.businessPool.end()]);
   });

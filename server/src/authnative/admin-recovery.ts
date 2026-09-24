@@ -4,10 +4,10 @@
 // L'admin ne voit jamais l'ancien ni le nouveau mot de passe.
 // Auto-reset interdit : un admin ne peut pas utiliser ce mécanisme sur lui-même.
 
-import { randomBytes, createHash } from "node:crypto";
+import { randomInt, createHash } from "node:crypto";
 
 export interface AdminRecoveryConfig {
-  codeTtlMs: number;       // 15 minutes par défaut
+  codeTtlMs: number;       // 60 minutes par défaut
   maxAttempts: number;     // 5 par défaut
 }
 
@@ -35,18 +35,16 @@ export interface AdminRecoveryStore {
 }
 
 const DEFAULT_CONFIG: AdminRecoveryConfig = {
-  codeTtlMs: 15 * 60 * 1000,
+  codeTtlMs: 60 * 60 * 1000,
   maxAttempts: 5,
 };
 
 /**
  * Génère un code de récupération administrateur cryptographiquement aléatoire.
- * Format : 8 chiffres décimaux (facile à dicter/transcrire).
+ * Format : 10 chiffres décimaux, zéros initiaux conservés.
  */
 export function generateAdminRecoveryCode(): string {
-  const bytes = randomBytes(4);
-  const num = bytes.readUInt32BE(0) % 100_000_000;
-  return num.toString().padStart(8, "0");
+  return randomInt(0, 10_000_000_000).toString().padStart(10, "0");
 }
 
 /**

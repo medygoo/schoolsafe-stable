@@ -8,6 +8,11 @@ const ARGON2ID_OPTIONS = {
   parallelism: 1,
 };
 
+export function isAcceptableRecoveryPassword(plain: string): boolean {
+  return plain.length >= 8 && plain.length <= 512 && !/^(.)\1+$/.test(plain)
+    && !['12345678', '123456789', '1234567890', 'password', 'password123', 'azertyui', 'azertyuiop', 'qwertyui', 'qwertyuiop'].includes(plain.toLowerCase());
+}
+
 export async function hashPassword(plain: string): Promise<string> {
   if (plain.length < 8) {
     throw new Error("Password must be at least 8 characters");

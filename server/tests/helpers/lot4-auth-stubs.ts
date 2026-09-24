@@ -10,7 +10,10 @@ export const lot4AuthStubs = {
   requestPhoneVerification: async (): Promise<boolean> => false,
   verifyPhone: async (): Promise<boolean> => false,
   requestSmsRecovery: async (): Promise<boolean> => false,
-  adminGenerateRecoveryCode: async (): Promise<string | null> => null,
-  redeemAdminRecoveryCode: async (): Promise<{ identityId: string } | null> => null,
+  adminGenerateRecoveryCode: async (): Promise<boolean> => false,
+  redeemAdminRecoveryCode: async (): Promise<boolean> => false,
+  resolveAdminRecoveryTarget: async (): Promise<string | null> => null,
+  recoverParentAccount: async (): Promise<boolean> => false,
+  recoverProfileAccount: async (): Promise<boolean> => false,
   hasWebAuthnCredential: async (): Promise<boolean> => false,
 } as const;
