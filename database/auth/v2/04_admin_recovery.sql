@@ -22,8 +22,8 @@ create table if not exists auth.admin_recovery_codes (
 );
 
 create index if not exists admin_recovery_codes_identity_idx
-  on auth.admin_recovery_codes (identity_id)
-  where used_at is null and expires_at > pg_catalog.clock_timestamp();
+  on auth.admin_recovery_codes (identity_id, expires_at)
+  where used_at is null;
 
 alter table auth.admin_recovery_codes enable row level security;
 alter table auth.admin_recovery_codes force row level security;
