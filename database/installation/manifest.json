@@ -353,7 +353,7 @@
       "file": "database/documents/v1/01_document_sequences.sql",
       "manifest": "database/documents/v1/manifest.json",
       "orderInSet": 1,
-      "sha256": "d8e259711591de814bbbc30b534cf323b7c4bca091728686d6e79570e09396e9",
+      "sha256": "47a896773e355cc7fe6e6d94042e751a2d2fd437f700261f47076325c66c8a7b",
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
@@ -361,7 +361,7 @@
       "file": "database/documents/v1/02_documents.sql",
       "manifest": "database/documents/v1/manifest.json",
       "orderInSet": 2,
-      "sha256": "bbc84aac4cbb5a96ca93819043da861110b6010328939832d3ef501e0cd4c9a8",
+      "sha256": "839479f01b99c105c5f6ed44fefcc2d62c29bc675cdb540750c17cc528b850dc",
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {

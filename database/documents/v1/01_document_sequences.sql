@@ -1,4 +1,7 @@
-BEGIN;
+\set ON_ERROR_STOP on
+
+begin;
+set local role schoolsafe_owner;
 
 -- SchoolSafe LOT 5-R1: Document Sequences (Canonical)
 -- Supports atomic numbering for official school documents.
@@ -30,4 +33,4 @@ CREATE TRIGGER trg_update_document_sequences_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION app.update_document_sequences_updated_at();
 
-COMMIT;
+commit;
