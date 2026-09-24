@@ -4,9 +4,13 @@ set local role schoolsafe_owner;
 
 -- Table and static partial index are owned by v2/04; do not redefine them.
 create or replace function auth.recovery_admin_school(p_admin uuid,p_identity uuid) returns uuid
-language sql security definer set search_path=pg_catalog
-set schoolsafe.recovery_preauth='on' as $schoolsafe$
-  select p.school_id from iam.profiles p
+language plpgsql security definer set search_path=pg_catalog
+as $schoolsafe$
+declare school uuid;
+  previous_preauth text:=coalesce(current_setting('schoolsafe.recovery_preauth',true),'');
+begin
+  perform set_config('schoolsafe.recovery_preauth','on',true);
+  select p.school_id into school from iam.profiles p
   where p.id=p_admin and p.is_active and p.account_status='active'
     and exists(select 1 from iam.profile_roles pr join iam.roles r on r.id=pr.role_id
       and r.school_id=p.school_id and r.is_active and r.code='admin'
@@ -14,19 +18,25 @@ set schoolsafe.recovery_preauth='on' as $schoolsafe$
         and pr.starts_at<=clock_timestamp() and (pr.ends_at is null or pr.ends_at>clock_timestamp()))
     and exists(select 1 from auth.identities i join iam.profiles t on t.user_id=i.user_id
       and t.school_id=p.school_id and t.is_active and t.account_status='active'
-      where i.id=p_identity and i.status='active' and i.user_id<>p.user_id)
+      where i.id=p_identity and i.status='active' and i.user_id<>p.user_id);
+  perform set_config('schoolsafe.recovery_preauth',previous_preauth,true);
+  return school;
+end
 $schoolsafe$;
 revoke all on function auth.recovery_admin_school(uuid,uuid) from public,schoolsafe_api,schoolsafe_auth,schoolsafe_worker;
 
 create or replace function api.auth_resolve_admin_recovery_target(p_admin_profile_id uuid,p_target_profile_id uuid)
 returns uuid language plpgsql security definer set search_path=pg_catalog
-set schoolsafe.recovery_preauth='on' as $schoolsafe$
+as $schoolsafe$
 declare matches uuid[];
+  previous_preauth text:=coalesce(current_setting('schoolsafe.recovery_preauth',true),'');
 begin
+  perform set_config('schoolsafe.recovery_preauth','on',true);
   select array_agg(distinct i.id) into matches from iam.profiles p
     join auth.identities i on i.user_id=p.user_id and i.status='active'
     where p.id=p_target_profile_id and p.is_active and p.account_status='active'
       and p.school_id=auth.recovery_admin_school(p_admin_profile_id,i.id);
+  perform set_config('schoolsafe.recovery_preauth',previous_preauth,true);
   if coalesce(cardinality(matches),0)<>1 then return null; end if;
   return matches[1];
 end
@@ -59,8 +69,10 @@ $schoolsafe$;
 -- Owner-only consumption helper. The runtime must use the atomic three-argument API.
 create or replace function api.auth_redeem_admin_recovery_code(p_login text,p_code_hash text)
 returns uuid language plpgsql security definer set search_path=pg_catalog
-set schoolsafe.recovery_preauth='on' as $schoolsafe$
+as $schoolsafe$
 declare matches uuid[]; identity uuid; item auth.admin_recovery_codes%rowtype;
+  profile_active boolean;
+  previous_preauth text:=coalesce(current_setting('schoolsafe.recovery_preauth',true),'');
 begin
   if p_code_hash is null or p_code_hash !~ '^[0-9a-f]{64}$' then return null; end if;
   select array_agg(distinct i.id) into matches from auth.identities i
@@ -76,8 +88,11 @@ begin
     update auth.admin_recovery_codes set attempt_count=attempt_count+1 where id=item.id;
     return null;
   end if;
-  if not exists(select 1 from iam.profiles p join auth.identities i on i.user_id=p.user_id
-      where i.id=identity and p.school_id=item.school_id and p.is_active and p.account_status='active') then return null; end if;
+  perform set_config('schoolsafe.recovery_preauth','on',true);
+  select exists(select 1 from iam.profiles p join auth.identities i on i.user_id=p.user_id
+      where i.id=identity and p.school_id=item.school_id and p.is_active and p.account_status='active') into profile_active;
+  perform set_config('schoolsafe.recovery_preauth',previous_preauth,true);
+  if not profile_active then return null; end if;
   update auth.admin_recovery_codes set used_at=clock_timestamp() where id=item.id;
   return identity;
 end
@@ -102,19 +117,24 @@ $schoolsafe$;
 -- Only phone-shaped candidate passwords are provided to this wrapper.
 create or replace function api.auth_reset_password(p_token_hash text,p_new_password_hash text,p_phone_candidate text)
 returns boolean language plpgsql security definer set search_path=pg_catalog
-set schoolsafe.recovery_preauth='on' as $schoolsafe$
+as $schoolsafe$
 declare identity uuid;
+  phone_matches boolean;
+  previous_preauth text:=coalesce(current_setting('schoolsafe.recovery_preauth',true),'');
 begin
   select r.identity_id into identity from auth.recovery_requests r where r.token_hash=p_token_hash;
   if not found then return false; end if;
   perform 1 from auth.identities where id=identity and status='active' for update;
   if not found then return false; end if;
-  if p_phone_candidate is not null and exists(
+  perform set_config('schoolsafe.recovery_preauth','on',true);
+  select p_phone_candidate is not null and exists(
     select 1 from auth.identities i left join iam.profiles p on p.user_id=i.user_id
     where i.id=identity and
       ((coalesce(p.phone,'')<>'' and auth.normalize_login(p.phone)=auth.normalize_login(p_phone_candidate))
       or (coalesce(i.phone,'')<>'' and auth.normalize_login(i.phone)=auth.normalize_login(p_phone_candidate)))
-  ) then return false; end if;
+  ) into phone_matches;
+  perform set_config('schoolsafe.recovery_preauth',previous_preauth,true);
+  if phone_matches then return false; end if;
   return api.auth_reset_password(p_token_hash,p_new_password_hash);
 end
 $schoolsafe$;
