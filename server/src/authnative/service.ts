@@ -423,6 +423,33 @@ export function createAuthNativeService(deps: AuthNativeDependencies) {
       if (!deps.webauthnStore) return false;
       return deps.webauthnStore.hasActiveCredential(identityId);
     },
+
+    // ─── HOTFIX RECOVERY V1 : Parent Recovery ─────────────────────────
+    async recoverParentAccount(
+      parentFullName: string,
+      phoneNumber: string,
+      childFullName: string,
+      className: string,
+    ): Promise<string | null> {
+      const result = await db.query<{ auth_recover_parent_account: string | null }>(
+        "select * from api.auth_recover_parent_account($1, $2, $3, $4)",
+        [parentFullName, phoneNumber, childFullName, className],
+      );
+      return result.rows[0]?.auth_recover_parent_account ?? null;
+    },
+
+    // ─── HOTFIX RECOVERY V1 : School Code Recovery ────────────────────
+    async recoverBySchoolCode(
+      schoolCode: string,
+      recoveryCode: string,
+      login: string,
+    ): Promise<string | null> {
+      const result = await db.query<{ auth_recover_by_school_code: string | null }>(
+        "select * from api.auth_recover_by_school_code($1, $2, $3)",
+        [schoolCode, recoveryCode, login],
+      );
+      return result.rows[0]?.auth_recover_by_school_code ?? null;
+    },
   };
 };
 export type AuthNativeService = ReturnType<typeof createAuthNativeService>;

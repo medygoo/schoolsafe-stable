@@ -62,6 +62,8 @@ function fakeAuthService(): AuthNativeService {
     async resetPassword() { return false; },
     async switchProfile() { return { ok: false as const }; },
  ...lot4AuthStubs,
+ async recoverParentAccount() { return null; },
+ async recoverBySchoolCode() { return null; },
   };
 }
 

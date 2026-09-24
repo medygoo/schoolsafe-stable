@@ -1,4 +1,4 @@
-﻿// SchoolSafe Auth v1 — routes HTTP de session.
+// SchoolSafe Auth v1 — routes HTTP de session.
 // Session opaque côté navigateur (cookie HttpOnly) ; haché seul côté serveur/DB.
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -168,6 +168,65 @@ export function registerAuthNativeRoutes(
       message: "Mot de passe réinitialisé avec succès.",
       request_id: newRequestId(),
     });
+  });
+
+  // HOTFIX RECOVERY V1 — Méthode 1 : Récupération parentale
+  // Vérifie : Nom Parent + Téléphone + Nom Enfant + Classe
+  app.post("/auth/recover/parent", async (request, reply) => {
+    const body = z.object({
+      parentFullName: z.string().min(2).max(100),
+      phoneNumber: z.string().min(5).max(20),
+      childFullName: z.string().min(2).max(100),
+      className: z.string().min(2).max(50),
+    }).parse(request.body);
+    try {
+      const token = await service.recoverParentAccount(
+        body.parentFullName,
+        body.phoneNumber,
+        body.childFullName,
+        body.className
+      );
+      if (!token) {
+        // Message générique pour éviter l'énumération
+        throw new SchoolSafeError(400, "VALIDATION_INVALID", "Les informations saisies ne permettent pas de confirmer votre identité.", false);
+      }
+      return reply.code(200).send({
+        reset_token: token,
+        message: "Identité confirmée. Veuillez choisir un nouveau mot de passe.",
+        request_id: newRequestId(),
+      });
+    } catch (e) {
+      if (e instanceof SchoolSafeError) throw e;
+      throw new SchoolSafeError(500, "INTERNAL_ERROR", "Erreur lors de la vérification.", true);
+    }
+  });
+
+  // HOTFIX RECOVERY V1 — Méthode 2 : Code école
+  // Vérifie : Code École + Code Récupération + Identifiant
+  app.post("/auth/recover/school-code", async (request, reply) => {
+    const body = z.object({
+      schoolCode: z.string().min(2).max(20),
+      recoveryCode: z.string().min(5).max(50),
+      login: z.string().min(1).max(320),
+    }).parse(request.body);
+    try {
+      const token = await service.recoverBySchoolCode(
+        body.schoolCode,
+        body.recoveryCode,
+        body.login
+      );
+      if (!token) {
+        throw new SchoolSafeError(400, "VALIDATION_INVALID", "Les informations saisies ne permettent pas de confirmer votre identité.", false);
+      }
+      return reply.code(200).send({
+        reset_token: token,
+        message: "Code valide. Veuillez choisir un nouveau mot de passe.",
+        request_id: newRequestId(),
+      });
+    } catch (e) {
+      if (e instanceof SchoolSafeError) throw e;
+      throw new SchoolSafeError(500, "INTERNAL_ERROR", "Erreur lors de la vérification.", true);
+    }
   });
 }
 

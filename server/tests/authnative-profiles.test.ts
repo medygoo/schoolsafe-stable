@@ -64,6 +64,8 @@ function fakeAuth(opts: { switchOk?: boolean } = {}): AuthNativeService & { swit
       };
     },
     ...lot4AuthStubs,
+    async recoverParentAccount() { return null; },
+    async recoverBySchoolCode() { return null; },
   };
 }
 

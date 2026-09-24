@@ -271,6 +271,16 @@
       "order": 54,
       "file": "database/documents/v1/03_document_access.sql",
       "sha256": "ef7f7b290f507fa00290298a1cb5dff5af3f55ffbc9a21fb094a70539557fb94"
+    },
+    {
+      "order": 55,
+      "file": "database/auth/v2/05_parent_recovery.sql",
+      "sha256": "e1d2a5a4f595acdcf88c3ce42eb615fbea90bd8770f4ed2ef9444327d678f33f"
+    },
+    {
+      "order": 56,
+      "file": "database/auth/v2/06_school_code_recovery.sql",
+      "sha256": "d45df7aa17d0ed72683b56660f93dd339b0e3d23e18fb6302eb53d99b71bcc49"
     }
   ],
   "superseded": [

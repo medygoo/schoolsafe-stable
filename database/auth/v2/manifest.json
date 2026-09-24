@@ -22,6 +22,16 @@
       "order": 4,
       "file": "04_admin_recovery.sql",
       "sha256": "fe114d0502ffe7445bf7c9f2597b38f49cfe6046db145594774006e5321df789"
+    },
+    {
+      "order": 5,
+      "file": "05_parent_recovery.sql",
+      "sha256": "e1d2a5a4f595acdcf88c3ce42eb615fbea90bd8770f4ed2ef9444327d678f33f"
+    },
+    {
+      "order": 6,
+      "file": "06_school_code_recovery.sql",
+      "sha256": "d45df7aa17d0ed72683b56660f93dd339b0e3d23e18fb6302eb53d99b71bcc49"
     }
   ]
 }
