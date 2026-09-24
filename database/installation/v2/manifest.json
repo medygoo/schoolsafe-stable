@@ -280,7 +280,7 @@
     {
       "order": 56,
       "file": "database/auth/v2/06_admin_assisted_recovery.sql",
-      "sha256": "faba8533e8db685779f440ff6dae9d7c37aa6d4de5b75b9cced3606c848308e0"
+      "sha256": "53100c27af25e10627bded8c8db46bbb145527831153e20a2b87e019dc71c202"
     }
   ],
   "superseded": [
