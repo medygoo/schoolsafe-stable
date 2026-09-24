@@ -103,6 +103,7 @@
   <script src="./modules/pedagogy/teacher-pedagogy-demo.js" defer></script>
   <script src="./modules/security/guard-security-demo.js" defer></script>
   <script src="./modules/core/access.js" defer></script>
+  <script src="./modules/core/school-context.js" defer></script>
   <script src="./modules/safe/jaspe-governance.js" defer></script>
   <script src="./modules/safe/jaspe-capability-router.js" defer></script>
   <script src="./modules/administration/administration-demo.js" defer></script>
@@ -244,12 +245,11 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
             </select>
           </div>
           <details class="auth-other-access">
-            <summary>Configurer l’école et autres accès</summary>
+            <summary>Autres accès</summary>
           <div class="first-install">
             <span>Nouvelle instance SchoolSafe</span>
-            <button class="ss-button ss-button--secondary" id="startSetup" type="button">Configurer l'école</button>
+            <button class="ss-button ss-button--secondary" id="startSetup" type="button">Activer une école</button>
           </div>
-          <button class="ss-button ss-button--secondary preview-profile-button" id="previewWorkspace" type="button"><i data-lucide="layout-dashboard"></i> Aperçu du profil Administrateur</button>
           </details>
         </form>
       </div>
@@ -397,30 +397,6 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
               <li id="workspaceBreadcrumbModule" aria-current="page"></li>
             </ol>
           </nav>
-
-          <section id="jaspeDashboardWelcome" class="dashboard-hero jaspe-hero" aria-label="Votre assistante Jaspe">
-            <div class="jaspe-hero__scene">
-            <button type="button" class="jaspe-hero__character" id="jaspeHeroLauncher" data-jaspe-open aria-label="Ouvrir Jaspe en entier et discuter" aria-haspopup="dialog" aria-controls="jaspePanelOverlay">
-              <span class="jaspe-character-host" id="jaspeDashboardCharacter">
-                <img class="jaspe-character-fallback" src="./assets/jaspe2d/attente-v13/adossee-detouree.png" alt="" decoding="async">
-              </span>
-              <span class="jaspe-hero__open-hint"><i data-lucide="expand"></i><span>Ouvrir JASPE</span></span>
-            </button>
-            <div class="jaspe-hero__speech">
-              <div class="jaspe-hero__identity"><span>Votre assistante SchoolSafe</span><h1>JASPE <i data-lucide="sparkles" aria-hidden="true"></i></h1></div>
-              <div class="jaspe-hero__bubble"><strong>Bonjour <span id="jaspeHeroName"></span> !</strong><p>Je vous aide à vous concentrer sur l’essentiel.</p></div>
-              <div class="jaspe-hero__badges"><span><i data-lucide="sprout"></i> Plus simple</span><span><i data-lucide="shield-check"></i> Plus sûr</span><span><i data-lucide="heart"></i> Plus serein</span></div>
-            </div>
-            <aside class="jaspe-hero__about"><i data-lucide="sparkles" aria-hidden="true"></i><h2>À vos côtés,<br>chaque jour.</h2><p>Un quotidien scolaire plus simple et plus sûr.</p><ul><li><i data-lucide="circle-check"></i> Vous informe</li><li><i data-lucide="circle-check"></i> Vous accompagne</li><li><i data-lucide="circle-check"></i> Vous aide à agir</li></ul><small>L’intelligence au service<br>de chaque enfant.</small></aside>
-            </div>
-            <div class="jaspe-hero__chat" data-jaspe-chat>
-              <div class="safe-chat-log" data-jaspe-chat-log role="status" aria-live="polite" aria-label="Réponse de Jaspe"></div>
-              <div class="safe-chat-input-row"><input type="text" data-jaspe-chat-input aria-label="Votre question à Jaspe" autocomplete="off" placeholder="Posez votre question à Jaspe…"><button type="button" data-jaspe-chat-send aria-label="Envoyer à Jaspe"><i data-lucide="arrow-up"></i></button><button type="button" id="jaspeHeroMic" data-jaspe-audio aria-label="Parler à Jaspe dans le tableau de bord" aria-pressed="false"><i data-lucide="mic"></i><span>Audio</span></button></div>
-              <p id="jaspeHeroAudioStatus" class="jaspe-audio-status" role="status" hidden></p>
-              <div class="jaspe-voice-controls"><button type="button" id="jaspeHeroVoice" data-jaspe-voice disabled>Écouter la réponse</button></div>
-              <p class="jaspe-access-message" id="jaspeAccessMessage" role="status" hidden>Jaspe n’est pas activée pour ce compte.</p>
-            </div>
-          </section>
 
           <!-- ===== DASHBOARD CONTAINER ===== -->
           <div class="workspace-grid" id="dashboardContainer">

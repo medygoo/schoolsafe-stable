@@ -84,163 +84,193 @@
     },
     {
       "order": 17,
+      "file": "database/auth/v2/02_identity_verification.sql",
+      "sha256": "92fb6aa05df05ff8cd1070212f0b73523bfe328822c653a8a817c48b2a9576ea"
+    },
+    {
+      "order": 18,
+      "file": "database/auth/v2/03_webauthn_credentials.sql",
+      "sha256": "3c97dbf7f9ce082c8abdb1a97533516785d6bc6294f5bd8820b1f4b2527586fe"
+    },
+    {
+      "order": 19,
+      "file": "database/auth/v2/04_admin_recovery.sql",
+      "sha256": "fe114d0502ffe7445bf7c9f2597b38f49cfe6046db145594774006e5321df789"
+    },
+    {
+      "order": 20,
       "file": "database/access/v1/01_role_templates.sql",
       "sha256": "ced0935d0ee562c1cd636dc6d8856d13d54338b9a976488fc71b428648e2e9c8"
     },
     {
-      "order": 18,
+      "order": 21,
       "file": "database/access/v1/02_provision_bridge.sql",
       "sha256": "00c330fbc921d8fa4608b822b9308cecfb377c053f4c6bed720e166727a6a87e"
     },
     {
-      "order": 19,
+      "order": 22,
       "file": "database/access/v1/03_control_context.sql",
       "sha256": "9dfa8fb501d7d289d6abfea18901627da49721b8d6e1d3c0364f3d0018e0e1f5"
     },
     {
-      "order": 20,
+      "order": 23,
       "file": "database/access/v1/04_role_assignments.sql",
       "sha256": "620f15afe2acd333ec2a93a24b6dbcc8378df4e20002872d1354d844f1d58c98"
     },
     {
-      "order": 21,
+      "order": 24,
       "file": "database/access/v1/05_custom_roles.sql",
       "sha256": "8afe995795f077424f696b3bc1bf409c865cf6bdc6a5b065f74003e959f8407c"
     },
     {
-      "order": 22,
+      "order": 25,
       "file": "database/setup/v2/01_setup_native.sql",
       "sha256": "f80ee95787fb9ce5abfc98ebf29f5acfeb4288311b3b553f9e87e5ca96d85d71"
     },
     {
-      "order": 23,
+      "order": 26,
       "file": "database/finance/v1/01_finance_native.sql",
       "sha256": "20818f9e0b8bbbfa4654a0ae100dcdff139f0e644b509bd8d38f4e2dde3faaa6"
     },
     {
-      "order": 24,
+      "order": 27,
       "file": "database/finance/v2/01_finance_full.sql",
       "sha256": "868ebf90c455f5c340e2b8cf4d5b01917a927b73e0571be1c932e0fbec598136"
     },
     {
-      "order": 25,
+      "order": 28,
       "file": "database/pedagogy/v1/01_pedagogy_native.sql",
       "sha256": "0f776de51eab1b8b43fd2eeb85610662f12f97a2dfcd8fb89f548268c79284ff"
     },
     {
-      "order": 26,
+      "order": 29,
       "file": "database/cards/v1/01_cards_native.sql",
       "sha256": "60cdf6b2281a233cd87a98163c412222eba3cfa619cc0e6a3fe5a22dadaf83e9"
     },
     {
-      "order": 27,
+      "order": 30,
       "file": "database/cards/v1/02_cards_classes.sql",
       "sha256": "bf05067d5689239bf39132e27497797db4436ddfd342c263de191e399a6395c0"
     },
     {
-      "order": 28,
+      "order": 31,
       "file": "database/cards/v1/03_cards_lifecycle.sql",
       "sha256": "402b98723c4242bf8b04af9b27f720792303c72b0d5701914fb2351a4af7f8c4"
     },
     {
-      "order": 29,
+      "order": 32,
       "file": "database/family/v1/01_pickup_authorizations.sql",
       "sha256": "bfb0f539c5c1a3d141727560cd2bad9ca11a4f3394a1cf5484ca3660083946ac"
     },
     {
-      "order": 30,
+      "order": 33,
       "file": "database/family/v1/02_primary_transfer.sql",
       "sha256": "07d7b912afb5eaa531bb75a5971e33baf35e0e0e1b17c7cbce3962e7d25ab28f"
     },
     {
-      "order": 31,
+      "order": 34,
       "file": "database/family/v1/03_pickup_confirmation.sql",
       "sha256": "e10139ea6ff02bb0ad81a31f20567ff2976637831ea40a906a572960a50c1d93"
     },
     {
-      "order": 32,
+      "order": 35,
       "file": "database/family/v1/04_student_import.sql",
       "sha256": "94a361704366d293536b40a89767654aa5b6e62e69caec89c453e19ef2a1fd9a"
     },
     {
-      "order": 33,
+      "order": 36,
       "file": "database/devicehub/v2/01_devicehub_core.sql",
       "sha256": "3c882a5216dbb2aae7a601bc05ca57e0c545bd17c69914ca209d016409b48673"
     },
     {
-      "order": 34,
+      "order": 37,
       "file": "database/devicehub/v2/02_devicehub_rpc.sql",
       "sha256": "e47a359ff51a5779baf48c4a454606dd252c8891d510ddddec6a6ba6b1652727"
     },
     {
-      "order": 35,
+      "order": 38,
       "file": "database/devicehub/v1/03_attendance.sql",
       "sha256": "ac9ab222d31dc49be9585e5f231f859b73baa9582e38029963c3fe07195d1524"
     },
     {
-      "order": 36,
+      "order": 39,
       "file": "database/devicehub/v2/03_machine_bindings.sql",
       "sha256": "e2c3c8056cc65e17bcbfbeded4159dbb14156bc645badab31bb64b67dbd4cdab"
     },
     {
-      "order": 37,
+      "order": 40,
       "file": "database/dashboard/v1/01_dashboard.sql",
       "sha256": "b8d9e72b66fe404e44e7b6ea9d3acee75f6118e647e2c71be8d3077a154d5e18"
     },
     {
-      "order": 38,
+      "order": 41,
       "file": "database/license/v1/01_license.sql",
       "sha256": "b21e4ad7d5c2550419014890d23c305913aad433ca60e48fadf0d6b4004d8ee1"
     },
     {
-      "order": 39,
+      "order": 42,
       "file": "database/trial/v1/01_trial.sql",
       "sha256": "d87c8017900e2dbbc53dc444d01678b4e459f22b96ba77c462aef63ebd073ba4"
     },
     {
-      "order": 40,
+      "order": 43,
       "file": "database/projections/v1/01_student_read.sql",
       "sha256": "56af4a67429b647470bf29897308dd04890454509fccf652cee288451dec5237"
     },
     {
-      "order": 41,
+      "order": 44,
       "file": "database/projections/v1/02_session_bootstrap.sql",
       "sha256": "d59d9684276b662273f443d36831ababf547437ec89ca853ca64ba88427b94c7"
     },
     {
-      "order": 42,
+      "order": 45,
       "file": "database/projections/v1/03_access_read.sql",
       "sha256": "f10a7d3c6d5a15e96393c654ebd72eabb6ee7019d1345830737742c73edd4b54"
     },
     {
-      "order": 43,
+      "order": 46,
       "file": "database/projections/v1/04_access_assignment_views.sql",
       "sha256": "4ce603d95511cbf16b19a7833487ba6b94114087626571986bfcbc83e812c55e"
     },
     {
-      "order": 44,
+      "order": 47,
       "file": "database/projections/v1/05_session_validity.sql",
       "sha256": "132062f3bcdb6dafe306bf88db078152b7ac0e2e293804abab3439b17cd00d8b"
     },
     {
-      "order": 45,
+      "order": 48,
       "file": "database/projections/v1/07_targeted_denies.sql",
       "sha256": "80a0702410b542f55bd25fd49536b706a7c1c94e88e30c1af067deeb674e446b"
     },
     {
-      "order": 46,
+      "order": 49,
       "file": "database/projections/v1/08_session_denial_contract.sql",
       "sha256": "a523c7e0d012511e5130a8238bcde4db4a6c8fb48878d40b7f9c161ee03841e5"
     },
     {
-      "order": 47,
+      "order": 50,
       "file": "database/projections/v2/01_student_list.sql",
       "sha256": "be296b495d703929d7525364dc3fd6c021ed8f2ffa8353d567814d3f739012c0"
     },
     {
-      "order": 48,
+      "order": 51,
       "file": "database/baseline/v2/01_runtime_security.sql",
       "sha256": "6fb0a95db48f0c7142603f88ef747565fa756dc4e7fdb68cf0f7b8f95ae96d18"
+    },
+    {
+      "order": 52,
+      "file": "database/documents/v1/01_document_sequences.sql",
+      "sha256": "47a896773e355cc7fe6e6d94042e751a2d2fd437f700261f47076325c66c8a7b"
+    },
+    {
+      "order": 53,
+      "file": "database/documents/v1/02_documents.sql",
+      "sha256": "839479f01b99c105c5f6ed44fefcc2d62c29bc675cdb540750c17cc528b850dc"
+    },
+    {
+      "order": 54,
+      "file": "database/documents/v1/03_document_access.sql",
+      "sha256": "ef7f7b290f507fa00290298a1cb5dff5af3f55ffbc9a21fb094a70539557fb94"
     }
   ],
   "superseded": [

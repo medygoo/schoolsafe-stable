@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createHmac } from "node:crypto";
 import { buildApp } from "../src/app.js";
+import { lot4AuthStubs } from "./helpers/lot4-auth-stubs.js";
 import { createControlPrintNativeService } from "../src/controlprintnative/service.js";
 import type { BusinessPool } from "../src/db/pool.js";
 import type { AuthNativeService, AuthSessionInfo } from "../src/authnative/service.js";
@@ -60,6 +61,7 @@ function fakeAuthService(): AuthNativeService {
     async forgotPassword() {},
     async resetPassword() { return false; },
     async switchProfile() { return { ok: false as const }; },
+ ...lot4AuthStubs,
   };
 }
 

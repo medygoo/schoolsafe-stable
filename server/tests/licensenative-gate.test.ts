@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { generateKeyPairSync, createPrivateKey, sign as cryptoSign } from "node:crypto";
 import { buildApp } from "../src/app.js";
+import { lot4AuthStubs } from "./helpers/lot4-auth-stubs.js";
 import { registerLicenseGate } from "../src/licensenative/gate.js";
 import type { BusinessPool } from "../src/db/pool.js";
 import {
@@ -113,6 +114,7 @@ function fakeAuthForGate(schoolId: string = SCHOOL_A): AuthNativeService {
     async forgotPassword() {},
     async resetPassword() { return false; },
     async switchProfile() { return { ok: false as const }; },
+ ...lot4AuthStubs,
   };
 }
 

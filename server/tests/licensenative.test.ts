@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { generateKeyPairSync, createPrivateKey, sign as cryptoSign } from "node:crypto";
 import { buildApp } from "../src/app.js";
+import { lot4AuthStubs } from "./helpers/lot4-auth-stubs.js";
 import type { BusinessPool } from "../src/db/pool.js";
 import {
   computeLicenseState,
@@ -278,6 +279,7 @@ describe("routes license", () => {
     async switchProfile() {
       return { ok: false as const };
     },
+    ...lot4AuthStubs,
     };
   }
 

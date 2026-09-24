@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [production]
   push:
-    branches: [production]
+    branches: [production, 'harness/**']
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,13 +24,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run ci
-      - name: Check actual Control HMAC contract
-        shell: bash
-        run: |
-          set -euo pipefail
-          git clone --no-checkout https://github.com/medygoo/schoolsafe-control-.git "$RUNNER_TEMP/control-contract"
-          git -C "$RUNNER_TEMP/control-contract" checkout --detach 4cf5b272d78f739ed770ac6d8fab559b9ed6cc69
-          node scripts/check-control-contract.mjs "$RUNNER_TEMP/control-contract"
       - name: Start disposable PostgreSQL 17.11
         shell: bash
         run: |

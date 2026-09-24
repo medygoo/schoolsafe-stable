@@ -56,7 +56,7 @@ describe("loginWithPassword", () => {
       auth_list_profiles: () => [{ profile_id: "pA", school_id: "schoolA", display_name: "Joyce" }],
       auth_create_session: () => [{ session_id: "s1", expires_at: "2026-09-05T00:00:00Z" }],
     });
-    const service = createAuthNativeService(db);
+    const service = createAuthNativeService({ db });
     const result = await service.loginWithPassword("joyce@ecole.cd", "Joie2026!!");
 
     expect(result.ok).toBe(true);
@@ -78,7 +78,7 @@ describe("loginWithPassword", () => {
         { profile_id: "pB", school_id: "schoolB", display_name: "Joyce (École B)" },
       ],
     });
-    const service = createAuthNativeService(db);
+    const service = createAuthNativeService({ db });
     const result = await service.loginWithPassword("joyce@ecole.cd", "Joie2026!!");
 
     expect(result.ok).toBe(false);
@@ -108,7 +108,7 @@ describe("loginWithPassword", () => {
           ? [{ session_id: "s1", identity_id: "i1", user_id: "u1", profile_id: "pB", school_id: "schoolB", must_change: false }]
           : [],
     });
-    const service = createAuthNativeService(db);
+    const service = createAuthNativeService({ db });
 
     const login = await service.loginWithPassword("joyce@ecole.cd", "Joie2026!!", "pB");
     expect(login.ok).toBe(true);
@@ -130,7 +130,7 @@ describe("loginWithPassword", () => {
       ],
       auth_record_attempt: () => [{ auth_record_attempt: true }],
     });
-    const service = createAuthNativeService(db);
+    const service = createAuthNativeService({ db });
     const result = await service.loginWithPassword("joyce@ecole.cd", "mauvais");
     expect(result).toEqual({ ok: false, reason: "invalid_credentials" });
     const attempt = calls.find((c) => c.sql.includes("auth_record_attempt"));
@@ -142,7 +142,7 @@ describe("loginWithPassword", () => {
       auth_is_locked: () => [{ auth_is_locked: false }],
       auth_record_attempt: () => [{ auth_record_attempt: true }],
     });
-    const service = createAuthNativeService(db);
+    const service = createAuthNativeService({ db });
     const result = await service.loginWithPassword("inconnu@ecole.cd", "nimporte");
     expect(result).toEqual({ ok: false, reason: "invalid_credentials" });
     expect(calls.some((c) => c.sql.includes("auth_create_session"))).toBe(false);
@@ -155,7 +155,7 @@ describe("loginWithPassword", () => {
     const { db, calls } = fakeDb({
       auth_is_locked: () => [{ auth_is_locked: true }],
     });
-    const service = createAuthNativeService(db);
+    const service = createAuthNativeService({ db });
     const result = await service.loginWithPassword("joyce@ecole.cd", "Joie2026!!");
     expect(result).toEqual({ ok: false, reason: "locked" });
     expect(calls.some((c) => c.sql.includes("auth_resolve_identity"))).toBe(false);
@@ -170,7 +170,7 @@ describe("loginWithPassword", () => {
       ],
       auth_record_attempt: () => [{ auth_record_attempt: true }],
     });
-    const service = createAuthNativeService(db);
+    const service = createAuthNativeService({ db });
     const result = await service.loginWithPassword("joyce@ecole.cd", "Joie2026!!");
     expect(result).toEqual({ ok: false, reason: "disabled" });
   });
@@ -187,7 +187,7 @@ describe("sessions", () => {
           : [],
       auth_revoke_session: (params) => [{ auth_revoke_session: params[0] === tokenHash }],
     });
-    const service = createAuthNativeService(db);
+    const service = createAuthNativeService({ db });
 
     const session = await service.resolveSession(token);
     expect(session?.userId).toBe("u1");
@@ -205,7 +205,7 @@ describe("sessions", () => {
     const { db, calls } = fakeDb({
       auth_touch_session: () => [{ auth_touch_session: "2026-09-05T12:00:00Z" }],
     });
-    const service = createAuthNativeService(db);
+    const service = createAuthNativeService({ db });
     const newExpiry = await service.touchSession(token);
     expect(newExpiry).toBe("2026-09-05T12:00:00Z");
     const touchCall = calls.find((c) => c.sql.includes("auth_touch_session"));

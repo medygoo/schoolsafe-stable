@@ -1,4 +1,4 @@
-// SchoolSafe Auth Native — client frontend (lot 2.4).
+// SchoolSafe Auth Native v2 — client frontend (LOT 4).
 // La session vit dans un cookie HttpOnly : ce module NE LIT JAMAIS de token.
 // Toutes les requêtes passent credentials: 'include' (le cookie voyage seul).
 // Le VPS est l’unique autorité d’authentification.
@@ -28,6 +28,7 @@
     if (!res.ok) {
       var err = new Error((data && data.message) || "Erreur " + res.status);
       err.status = res.status;
+      err.code = data && data.code ? data.code : null;
       throw err;
     }
     return data;
@@ -71,14 +72,63 @@
     return request("/auth/native/switch-profile", { method: "POST", body: { profileId: profileId } });
   }
 
-  // Récupération du mot de passe (LOT-02).
+  // Récupération du mot de passe classique (email).
   async function forgot(login) {
     return request("/auth/native/forgot", { method: "POST", body: { login: login } });
   }
 
-  // Réinitialisation du mot de passe avec le token reçu par email (LOT-02).
+  // Réinitialisation du mot de passe avec le token reçu par email.
   async function reset(token, password) {
     return request("/auth/native/reset", { method: "POST", body: { token: token, password: password } });
+  }
+
+  // --- LOT 4 : Recovery Methods Discovery ---
+  async function getRecoveryMethods(login) {
+    return request("/auth/recovery-methods?login=" + encodeURIComponent(login), {});
+  }
+
+  // --- LOT 4 : Verification ---
+  async function verifyEmail(token) {
+    return request("/auth/verify-email", { method: "POST", body: { token: token } });
+  }
+
+  async function verifyPhone(code) {
+    return request("/auth/verify-phone", { method: "POST", body: { code: code } });
+  }
+
+  // --- LOT 4 : SMS Recovery ---
+  async function requestSmsRecovery(login) {
+    return request("/auth/sms-recovery/request", { method: "POST", body: { login: login } });
+  }
+
+  async function redeemSmsCode(login, code) {
+    return request("/auth/sms-recovery/redeem", { method: "POST", body: { login: login, code: code } });
+  }
+
+  // --- LOT 4 : WebAuthn / Passkey ---
+  async function getWebAuthnRegistrationOptions() {
+    return request("/auth/webauthn/register/options", {});
+  }
+
+  async function registerWebAuthnCredential(response) {
+    return request("/auth/webauthn/register", { method: "POST", body: { response: response } });
+  }
+
+  async function getWebAuthnRecoveryOptions(login) {
+    return request("/auth/webauthn/recovery/options", { method: "POST", body: { login: login } });
+  }
+
+  async function assertWebAuthnRecovery(response) {
+    return request("/auth/webauthn/recovery/assert", { method: "POST", body: { response: response } });
+  }
+
+  // --- LOT 4 : Admin Recovery ---
+  async function requestAdminRecovery(login) {
+    return request("/auth/admin-recovery/request", { method: "POST", body: { login: login } });
+  }
+
+  async function redeemAdminCode(login, code) {
+    return request("/auth/admin-recovery/redeem", { method: "POST", body: { login: login, code: code } });
   }
 
   window.SchoolSafeAuthNative = {
@@ -91,5 +141,17 @@
     switchProfile: switchProfile,
     forgot: forgot,
     reset: reset,
+    // LOT 4 additions
+    getRecoveryMethods: getRecoveryMethods,
+    verifyEmail: verifyEmail,
+    verifyPhone: verifyPhone,
+    requestSmsRecovery: requestSmsRecovery,
+    redeemSmsCode: redeemSmsCode,
+    getWebAuthnRegistrationOptions: getWebAuthnRegistrationOptions,
+    registerWebAuthnCredential: registerWebAuthnCredential,
+    getWebAuthnRecoveryOptions: getWebAuthnRecoveryOptions,
+    assertWebAuthnRecovery: assertWebAuthnRecovery,
+    requestAdminRecovery: requestAdminRecovery,
+    redeemAdminCode: redeemAdminCode,
   };
 })();

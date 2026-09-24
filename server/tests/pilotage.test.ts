@@ -40,7 +40,7 @@ function makeApp() {
       resolveProfileAndSchool: mockResolve,
       access: mockAccess,
     },
-    dashboard: {
+    pilotageDashboard: {
       service: mockDashboardService,
       resolveProfileAndSchool: mockResolve,
       access: mockAccess,

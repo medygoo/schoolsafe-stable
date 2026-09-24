@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildApp } from "../src/app.js";
 import type { AuthNativeService, AuthSessionInfo, ProfileChoice } from "../src/authnative/service.js";
+import { lot4AuthStubs } from "./helpers/lot4-auth-stubs.js";
 
 const PROFILES: ProfileChoice[] = [
   {
@@ -62,6 +63,7 @@ function fakeAuth(opts: { switchOk?: boolean } = {}): AuthNativeService & { swit
         session: { ...record, profileId, schoolId: PROFILES[1].schoolId },
       };
     },
+    ...lot4AuthStubs,
   };
 }
 
