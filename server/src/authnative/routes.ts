@@ -7,6 +7,8 @@ import { newRequestId } from "../http/request-id.js";
 import { clearSessionCookie, readSessionCookie, setSessionCookie } from "./cookie.js";
 import { generateSessionToken, hashSessionToken } from "./tokens.js";
 import type { AuthNativeService } from "./service.js";
+import { generateAdminRecoveryCode } from './admin-recovery.js';
+import { isAcceptableRecoveryPassword } from './passwords.js';
 
 const loginSchema = z.object({
   login: z.string().min(1).max(320),
@@ -159,9 +161,11 @@ export function registerAuthNativeRoutes(
       token: z.string().min(32).max(256),
       password: z.string().min(8).max(512),
     }).parse(request.body);
-    // Le hash argon2 du nouveau mot de passe est effectué ici (côté serveur)
+    if (!isAcceptableRecoveryPassword(body.password)) {
+      throw new SchoolSafeError(400, 'VALIDATION_INVALID', 'Choisissez un mot de passe non trivial de huit caractères minimum.', false);
+    }
     const hashResult = await import("./passwords.js").then(m => m.hashPassword(body.password));
-    const succeeded = await service.resetPassword(body.token, hashResult);
+    const succeeded = await service.resetPassword(body.token, hashResult, body.password);
     if (!succeeded) {
       throw new SchoolSafeError(400, "VALIDATION_INVALID", "Lien de récupération invalide ou expiré.", false);
     }
@@ -174,12 +178,14 @@ export function registerAuthNativeRoutes(
   // HOTFIX RECOVERY V1-R1 — Méthode 1 : Récupération parentale
   // Vérifie : Nom Parent + Téléphone + Nom Enfant + Classe
   app.post("/auth/recover/parent", async (request, reply) => {
-    const body = z.object({
-      parentFullName: z.string().min(2).max(100),
-      phoneNumber: z.string().min(5).max(20),
-      childFullName: z.string().min(2).max(100),
-      className: z.string().min(2).max(50),
-    }).parse(request.body);
+    const parsed = z.object({
+      parentFullName: z.string().trim().min(2).max(100),
+      phoneNumber: z.string().trim().min(5).max(20),
+      childFullName: z.string().trim().min(2).max(100),
+      className: z.string().trim().min(2).max(50),
+    }).strict().safeParse(request.body);
+    if (!parsed.success) throw new SchoolSafeError(400, 'VALIDATION_INVALID', 'Les informations saisies ne permettent pas de confirmer votre identité.', false);
+    const body = parsed.data;
     try {
       // Générer un token opaque côté Node
       const rawToken = generateSessionToken();
@@ -209,6 +215,22 @@ export function registerAuthNativeRoutes(
   });
 
   // HOTFIX RECOVERY V1-R1 — Méthode 2 : Assistance Administrateur
+  app.post('/auth/recover/profile', async (request, reply) => {
+    const body = z.object({
+      fullName: z.string().trim().min(2).max(100),
+      phoneNumber: z.string().trim().min(5).max(20),
+      schoolName: z.string().trim().min(2).max(200),
+      roleName: z.string().trim().min(2).max(100),
+    }).strict().safeParse(request.body);
+    const refusal = 'Les informations saisies ne permettent pas de confirmer votre identité.';
+    if (!body.success) throw new SchoolSafeError(400, 'VALIDATION_INVALID', refusal, false);
+    const rawToken = generateSessionToken();
+    const data = body.data;
+    const success = await service.recoverProfileAccount(data.fullName, data.phoneNumber, data.schoolName, data.roleName, hashSessionToken(rawToken));
+    if (!success) throw new SchoolSafeError(400, 'VALIDATION_INVALID', refusal, false);
+    return reply.send({reset_token: rawToken, request_id: newRequestId()});
+  });
+
   // Génère un code temporaire pour un utilisateur cible (Admin authentifié requis)
   app.post("/auth/recovery/admin/generate", async (request, reply) => {
     // Cette route devrait être protégée par une session admin active
@@ -223,22 +245,16 @@ export function registerAuthNativeRoutes(
     
     const body = z.object({
       targetProfileId: z.string().uuid(),
-    }).parse(request.body);
+    }).strict().parse(request.body);
 
     try {
-      // Trouver l'identity_id de la cible
-      const targetInfo = await service.db.query<{id: string}>(
-        "select i.id from auth.identities i join iam.profiles p on p.user_id = i.user_id where p.id = $1 limit 1",
-        [body.targetProfileId]
-      );
-      const targetIdentityId = targetInfo.rows[0]?.id;
+      const targetIdentityId = await service.resolveAdminRecoveryTarget(session.profileId, body.targetProfileId);
       if (!targetIdentityId) {
-        throw new SchoolSafeError(404, "NOT_FOUND", "Utilisateur cible introuvable", false);
+        throw new SchoolSafeError(403, "AUTH_REQUIRED", "Génération de code refusée", false);
       }
 
       // Générer le code 10 chiffres
-      const { randomInt } = await import("node:crypto");
-      const code = randomInt(0, 10_000_000_000).toString().padStart(10, "0");
+      const code = generateAdminRecoveryCode();
       const codeHash = hashSessionToken(code);
 
       const success = await service.adminGenerateRecoveryCode(
@@ -267,21 +283,16 @@ export function registerAuthNativeRoutes(
   app.post("/auth/recovery/admin/redeem", async (request, reply) => {
     const body = z.object({
       login: z.string().min(1).max(320),
-      code: z.string().length(10),
-    }).parse(request.body);
+      code: z.string().regex(/^\d{10}$/),
+    }).strict().parse(request.body);
 
     try {
       const codeHash = hashSessionToken(body.code);
-      const identityId = await service.redeemAdminRecoveryCode(body.login, codeHash);
+      const rawToken = generateSessionToken();
+      const success = await service.redeemAdminRecoveryCode(body.login, codeHash, hashSessionToken(rawToken));
       
-      if (!identityId) {
+      if (!success) {
         throw new SchoolSafeError(400, "VALIDATION_INVALID", "Le code de récupération est invalide ou expiré.", false);
-      }
-
-      // Générer un token de reset final et l'enregistrer via le service
-      const rawToken = await service.createRecoveryRequest(identityId);
-      if (!rawToken) {
-        throw new SchoolSafeError(500, "INTERNAL_ERROR", "Échec de la création du token de récupération.", true);
       }
 
       return reply.code(200).send({

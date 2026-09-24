@@ -26,12 +26,12 @@
     {
       "order": 5,
       "file": "05_parent_recovery.sql",
-      "sha256": "67a07f911918a0d37351e76669c96f9a7915371db8e9506d1ce35683bd815d64"
+      "sha256": "54fb44d12ae1f0c1b1badf17bcd5d8731b0b82de5ae32805f11bca436e8d9872"
     },
     {
       "order": 6,
       "file": "06_admin_assisted_recovery.sql",
-      "sha256": "4960d12865de5b0968778af0fd9904c40cc62c78b3e8aa66e20eafee802bfe34"
+      "sha256": "6cb993d64414f6a83ec9401b27d1f1c87969221e6de97ab3430c45b4ac262d58"
     }
   ]
 }

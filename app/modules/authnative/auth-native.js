@@ -131,6 +131,10 @@
   }
 
   // --- HOTFIX RECOVERY V1-R1 : Admin Assisted Recovery ---
+  async function recoverProfile(fullName, phoneNumber, schoolName, roleName) {
+    return request('/auth/recover/profile', {method: 'POST', body: {fullName: fullName, phoneNumber: phoneNumber, schoolName: schoolName, roleName: roleName}});
+  }
+
   async function generateAdminRecoveryCode(targetProfileId) {
     return request("/auth/recovery/admin/generate", { 
       method: "POST", 
@@ -165,10 +169,9 @@
     registerWebAuthnCredential: registerWebAuthnCredential,
     getWebAuthnRecoveryOptions: getWebAuthnRecoveryOptions,
     assertWebAuthnRecovery: assertWebAuthnRecovery,
-    requestAdminRecovery: requestAdminRecovery,
-    redeemAdminCode: redeemAdminCode,
     // HOTFIX V1-R1 additions
     recoverParent: recoverParent,
+    recoverProfile: recoverProfile,
     generateAdminRecoveryCode: generateAdminRecoveryCode,
     redeemAdminRecoveryCode: redeemAdminRecoveryCode,
   };

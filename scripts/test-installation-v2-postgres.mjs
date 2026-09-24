@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import pg from 'pg';
-import {hash as argonHash} from '@node-rs/argon2';
+import {hash as argonHash,verify as argonVerify} from '@node-rs/argon2';
 import {pathToFileURL} from 'node:url';
 import path from 'node:path';
 import {validateTarget} from './install-school-db.mjs';
@@ -151,11 +151,165 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
    const rows=(await admin.query("select rolsuper,rolbypassrls from pg_roles where rolname in ('schoolsafe_api','schoolsafe_auth','schoolsafe_worker','schoolsafe_migrator')")).rows;
    assert.equal(rows.length,4);assert.ok(rows.every(r=>!r.rolsuper&&!r.rolbypassrls));
   });
+  await qualifyRecovery({admin,auth,connect,check,denied,a,b,hash});
   log(`POSTGRES_QUALIFICATION PASS (${passed} scenarios)`);return {passed,schools};
  }catch(error){
   throw new Error(`POSTGRES_QUALIFICATION FAIL: ${phase}; ${error.code??'assertion'}`,{cause:error});
  }finally{await Promise.allSettled(clients.map(c=>c.end()));}
 }
+async function qualifyRecovery({admin,auth,connect,check,denied,a,b,hash}) {
+ const phone='+243812345678';
+ let previousPassword='Synthetic previous '+randomBytes(16).toString('hex');
+ const previousHash=await argonHash(previousPassword);
+ async function person(school,name,role,profilePhone=phone) {
+  const user=randomUUID(),profile=randomUUID(),identity=randomUUID(),email=`recovery-${randomUUID()}@example.test`;
+  await admin.query('insert into iam.users(id,email) values($1,$2)',[user,email]);
+  await admin.query('insert into iam.profiles(id,user_id,school_id,display_name,phone) values($1,$2,$3,$4,$5)',[profile,user,school.school_id,name,profilePhone]);
+  await admin.query('insert into auth.identities(id,user_id,email) values($1,$2,$3)',[identity,user,email]);
+  await admin.query('insert into auth.credentials(identity_id,password_hash) values($1,$2)',[identity,previousHash]);
+  let roleId=(await admin.query('select id from iam.roles where school_id=$1 and code=$2',[school.school_id,role])).rows[0]?.id;
+  if(!roleId) {roleId=randomUUID();await admin.query('insert into iam.roles(id,school_id,code,label) values($1,$2,$3,$3)',[roleId,school.school_id,role]);}
+  await admin.query('insert into iam.profile_roles(school_id,profile_id,role_id) values($1,$2,$3)',[school.school_id,profile,roleId]);
+  return {user,profile,identity,email,roleId};
+ }
+ const parent=await person(a,'Synthetic Parent','parent');
+ await admin.query("update app.students set lifecycle_status='active' where id=$1",[a.student_id]);
+ await admin.query("update app.student_enrollments set status='active',starts_on=current_date-1,ends_on=null where student_id=$1",[a.student_id]);
+ const guardian=randomUUID();
+ await admin.query("insert into app.student_guardians(id,school_id,student_id,profile_id,guardian_type,full_name,phone) values($1,$2,$3,$4,'pere','Deliberately different guardian name','unrelated')",[guardian,a.school_id,a.student_id,parent.profile]);
+ const key=digest('recovery-parent-v1\n'+phone);
+ const valid=['Synthetic Parent',phone,'Synthetic Student','Synthetic class'];
+ async function proof(fields=valid,token=digest(randomBytes(32)),bucket=key) {
+  return (await auth.query('select api.auth_recover_parent_account($1,$2,$3,$4,$5,$6) ok',[...fields,token,bucket])).rows[0].ok;
+ }
+ async function clearFailures(){await admin.query('delete from auth.recovery_failure_buckets');}
+ await check('Recovery auth has no table privileges even with forged GUC',async()=>{
+  await auth.query("set schoolsafe.recovery_preauth='on'");
+  for(const t of ['iam.profiles','iam.roles','iam.profile_roles','app.students','app.student_guardians','app.student_enrollments','app.classes','auth.recovery_requests','auth.recovery_failure_buckets']) {
+   await denied(auth.query('select * from '+t));
+   const r=(await admin.query('select relrowsecurity,relforcerowsecurity from pg_class where oid=$1::regclass',[t])).rows[0];
+   assert.equal(r.relrowsecurity,true);assert.equal(r.relforcerowsecurity,true);
+  }
+  await auth.query('reset schoolsafe.recovery_preauth');
+  await denied(auth.query('select auth.recovery_issue($1,$2)',[parent.identity,digest(randomBytes(32))]));
+ });
+ await check('Recovery Parent canonical profile phone and complete normalized name',async()=>{
+  assert.equal(await proof(['  SYNTHETIC   parent  ','243812345678',' synthetic  STUDENT ',' SYNTHETIC class ']),true);
+  assert.notEqual((await auth.query("select current_setting('schoolsafe.recovery_preauth',true) v")).rows[0].v,'on');
+ });
+ for(const index of [0,1,2,3]) await check('Recovery Parent rejects wrong fact '+index,async()=>{
+  await clearFailures();const fields=[...valid];fields[index]=index===1?'+243899999999':'Wrong';
+  const token=digest(randomBytes(32));assert.equal(await proof(fields,token),false);
+  assert.equal((await admin.query('select count(*)::int n from auth.recovery_requests where token_hash=$1',[token])).rows[0].n,0);
+ });
+ const mutations=[
+  ['guardian inactive','update app.student_guardians set is_active=false where id=$1','update app.student_guardians set is_active=true where id=$1',guardian],
+  ['child archived',"update app.students set lifecycle_status='archived' where id=$1","update app.students set lifecycle_status='active' where id=$1",a.student_id],
+  ['enrollment inactive',"update app.student_enrollments set status='completed' where student_id=$1","update app.student_enrollments set status='active' where student_id=$1",a.student_id],
+  ['enrollment future','update app.student_enrollments set starts_on=current_date+1 where student_id=$1','update app.student_enrollments set starts_on=current_date-1 where student_id=$1',a.student_id],
+  ['enrollment expired','update app.student_enrollments set ends_on=current_date-1 where student_id=$1','update app.student_enrollments set ends_on=null where student_id=$1',a.student_id],
+  ['class inactive','update app.classes set is_active=false where id=$1','update app.classes set is_active=true where id=$1',a.class_id],
+  ['parent role inactive','update iam.profile_roles set is_active=false where profile_id=$1','update iam.profile_roles set is_active=true where profile_id=$1',parent.profile],
+  ['not a parent role',"update iam.roles set code='recovery_not_parent' where id=$1","update iam.roles set code='parent' where id=$1",parent.roleId],
+  ['role disabled','update iam.roles set is_active=false where id=$1','update iam.roles set is_active=true where id=$1',parent.roleId],
+  ['future role','update iam.profile_roles set starts_at=clock_timestamp()+interval \'1 day\' where profile_id=$1','update iam.profile_roles set starts_at=clock_timestamp()-interval \'1 day\' where profile_id=$1',parent.profile],
+  ['profile inactive','update iam.profiles set is_active=false where id=$1','update iam.profiles set is_active=true where id=$1',parent.profile],
+  ['identity inactive',"update auth.identities set status='disabled' where id=$1","update auth.identities set status='active' where id=$1",parent.identity],
+ ];
+ for(const [name,change,restore,id] of mutations) await check('Recovery Parent '+name,async()=>{
+  await clearFailures();await admin.query(change,[id]);assert.equal(await proof(),false);await admin.query(restore,[id]);
+ });
+ await check('Recovery Parent ambiguity rejected',async()=>{
+  const other=await person(a,'Synthetic Parent','parent');
+  await admin.query("insert into app.student_guardians(school_id,student_id,profile_id,guardian_type,full_name) values($1,$2,$3,'autre','Synthetic')",[a.school_id,a.student_id,other.profile]);
+  await clearFailures();assert.equal(await proof(),false);
+  await admin.query('update iam.profiles set is_active=false where id=$1',[other.profile]);
+ });
+ await check('Recovery Parent five failures block proof but not login',async()=>{
+  await clearFailures();for(let n=0;n<5;n++)assert.equal(await proof(['Wrong',...valid.slice(1)]),false);
+  assert.equal(await proof(),false);
+  assert.equal((await admin.query('select failures from auth.recovery_failure_buckets where attempt_key=$1',[key])).rows[0].failures,5);
+  assert.equal((await auth.query('select * from api.auth_resolve_identity($1)',[parent.email])).rows[0].identity_id,parent.identity);
+  await admin.query("update auth.recovery_failure_buckets set window_started_at=clock_timestamp()-interval '31 minutes' where attempt_key=$1",[key]);
+  assert.equal(await proof(),true);
+ });
+ await check('Recovery Parent cross-school child rejected',async()=>{
+  await clearFailures();await admin.query("update app.students set first_name='Foreign' where id=$1",[b.student_id]);
+  assert.equal(await proof([valid[0],valid[1],'Foreign Student',valid[3]]),false);
+ });
+ const schoolName=(await admin.query('select name from app.schools where id=$1',[a.school_id])).rows[0].name;
+ for(const role of ['admin','teacher','cashier','guard','hr','staff']) await check('Recovery autonomous active '+role,async()=>{
+  const p=await person(a,'Synthetic '+role,role);
+  assert.equal((await auth.query('select api.auth_recover_profile_account($1,$2,$3,$4,$5) ok',['Synthetic '+role,phone,schoolName,role,digest(randomBytes(32))])).rows[0].ok,true);
+  assert.equal((await auth.query('select api.auth_recover_profile_account($1,$2,$3,$4,$5) ok',['Synthetic '+role,phone,'Wrong school',role,digest(randomBytes(32))])).rows[0].ok,false);
+  assert.equal((await auth.query('select api.auth_recover_profile_account($1,$2,$3,$4,$5) ok',['Synthetic '+role,phone,schoolName,'wrong role',digest(randomBytes(32))])).rows[0].ok,false);
+  await admin.query('update iam.profiles set is_active=false where id=$1',[p.profile]);
+ });
+ async function generate(actor=a.profile_id,target=parent.identity,code='0123456789') {
+  return (await auth.query('select api.auth_admin_generate_recovery_code($1,$2,$3) result',[actor,target,digest(code)])).rows[0].result;
+ }
+ async function redeem(code='0123456789',token=digest(randomBytes(32)),client=auth) {
+  return (await client.query('select api.auth_redeem_admin_recovery_code($1,$2,$3) ok',[parent.email,digest(code),token])).rows[0].ok;
+ }
+ await check('Recovery Admin resolver validates role school and self',async()=>{
+  assert.equal((await auth.query('select api.auth_resolve_admin_recovery_target($1,$2) id',[a.profile_id,parent.profile])).rows[0].id,parent.identity);
+  for(const [actor,target] of [[b.profile_id,parent.profile],[parent.profile,a.profile_id],[a.profile_id,a.profile_id]])
+   assert.equal((await auth.query('select api.auth_resolve_admin_recovery_target($1,$2) id',[actor,target])).rows[0].id,null);
+  const own=(await auth.query('select * from api.auth_resolve_identity($1)',[a.email])).rows[0].identity_id;
+  assert.equal(await generate(a.profile_id,own),null);assert.equal(await generate(b.profile_id),null);assert.equal(await generate(parent.profile),null);
+ });
+ await check('Recovery Admin code TTL60 canonical author and single use',async()=>{
+  assert.equal(await generate(),'CODE_GENERATED');
+  const item=(await admin.query('select authorized_by_profile_id,extract(epoch from (expires_at-created_at)) ttl from auth.admin_recovery_codes where identity_id=$1 and used_at is null',[parent.identity])).rows[0];
+  assert.equal(item.authorized_by_profile_id,a.profile_id);assert.ok(Math.abs(Number(item.ttl)-3600)<1);
+  assert.equal(await redeem(),true);assert.equal(await redeem(),false);
+ });
+ for(const table of ['iam.profiles','iam.profile_roles']) await check('Recovery Admin requires active '+table,async()=>{
+  const column=table==='iam.profiles'?'id':'profile_id';
+  await admin.query('update '+table+' set is_active=false where '+column+'=$1',[a.profile_id]);
+  assert.equal(await generate(),null);
+  await admin.query('update '+table+' set is_active=true where '+column+'=$1',[a.profile_id]);
+ });
+ await check('Recovery Admin five wrong attempts lock code',async()=>{
+  await generate();for(let n=0;n<5;n++)assert.equal(await redeem('9999999999'),false);
+  assert.equal(await redeem(),false);
+ });
+ await check('Recovery Admin expired and replaced codes rejected',async()=>{
+  await generate();await admin.query("update auth.admin_recovery_codes set expires_at=clock_timestamp()-interval '1 second' where identity_id=$1",[parent.identity]);
+  assert.equal(await redeem(),false);await generate();await generate(a.profile_id,parent.identity,'0000000001');
+  assert.equal(await redeem(),false);assert.equal(await redeem('0000000001'),true);
+ });
+ await check('Recovery Admin concurrent code consumption exactly one winner',async()=>{
+  await generate();const other=await connect('auth');
+  const results=await Promise.all([auth,other].map(c=>redeem('0123456789',digest(randomBytes(32)),c)));
+  assert.equal(results.filter(Boolean).length,1);
+ });
+ await check('Recovery Admin rollback code when token insertion fails',async()=>{
+  await generate();
+  await admin.query("create function auth.recovery_test_fail() returns trigger language plpgsql as $$ begin raise exception 'synthetic failure'; end $$");
+  await admin.query('create trigger recovery_test_fail before insert on auth.recovery_requests for each row execute function auth.recovery_test_fail()');
+  try {await assert.rejects(redeem(),e=>e.code==='P0001');}
+  finally {await admin.query('drop trigger recovery_test_fail on auth.recovery_requests');await admin.query('drop function auth.recovery_test_fail()');}
+  assert.equal((await admin.query('select count(*)::int n from auth.admin_recovery_codes where identity_id=$1 and used_at is null',[parent.identity])).rows[0].n,1);
+  assert.equal(await redeem(),true);
+ });
+ for(const method of ['parent','admin']) await check('Recovery '+method+' token reset new login and session revocation',async()=>{
+  await clearFailures();const token=digest(randomBytes(32)),session=digest(randomBytes(32));
+  await auth.query('select * from api.auth_create_session($1,$2,$3,$4,$5,$6)',[parent.identity,parent.profile,session,3600,null,null]);
+  if(method==='parent')assert.equal(await proof(valid,token),true);else {await generate();assert.equal(await redeem('0123456789',token),true);}
+  const plain='Synthetic strong recovery '+randomBytes(16).toString('hex');const changed=await argonHash(plain);
+  for(const candidate of ['243812345678','0812/345/678','[+243] 812-345-678'])
+   assert.equal((await auth.query('select api.auth_reset_password($1,$2,$3) ok',[token,changed,candidate])).rows[0].ok,false);
+  assert.equal((await auth.query('select api.auth_reset_password($1,$2,$3) ok',[token,changed,null])).rows[0].ok,true);
+  assert.equal((await auth.query('select api.auth_reset_password($1,$2,$3) ok',[token,changed,null])).rows[0].ok,false);
+  assert.equal((await auth.query('select * from api.auth_resolve_session($1)',[session])).rowCount,0);
+  const login=(await auth.query('select * from api.auth_resolve_identity($1)',[parent.email])).rows[0];
+  assert.equal(await argonVerify(login.password_hash,plain),true);
+  assert.equal(await argonVerify(login.password_hash,previousPassword),false);
+  previousPassword=plain;
+ });
+}
+
 if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href){
  try{await qualifyInstallation({connectionString:process.env.DATABASE_URL,
   passwords:Object.fromEntries(['api','auth','worker','migrator'].map(r=>[r,process.env['SCHOOLSAFE_'+r.toUpperCase()+'_PASSWORD']]))});}

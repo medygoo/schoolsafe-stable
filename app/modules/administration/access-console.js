@@ -173,6 +173,36 @@
           checkSchool(data);
           if (!data.profile || data.profile.id !== id) { var changed = new Error('Profil modifié'); changed.status = 401; throw changed; }
           renderDetail(detail, data, catalog);
+          if ((user.roles || []).includes('admin') && id !== (user.profileId || user.profile.id) && data.profile.is_active && data.profile.account_status === 'active') {
+            var recover = document.createElement('button');
+            recover.type = 'button'; recover.className = 'ss-button';
+            recover.textContent = 'Générer un code de récupération';
+            detail.prepend(recover);
+            recover.onclick = async function () {
+              if (recover.disabled) return;
+              recover.disabled = true;
+              try {
+                var result = await root.SchoolSafeAuthNative.generateAdminRecoveryCode(id);
+                if (!current(ticket) || request !== detailRevision) return;
+                var dialog = document.createElement('dialog');
+                dialog.className = 'ss-modal';
+                dialog.innerHTML = '<h3>Code de récupération</h3><p data-code></p><p>Valable 60 minutes · Utilisable une seule fois</p><p>Transmettez ce code uniquement à la personne concernée. Elle choisira elle-même son nouveau mot de passe.</p><button type="button" class="ss-button" data-copy>Copier</button><button type="button" class="ss-button" data-close>Fermer</button><p data-result role="status"></p>';
+                dialog.querySelector('[data-code]').textContent = result.code;
+                dialog.querySelector('[data-copy]').onclick = async function () {
+                  try { await navigator.clipboard.writeText(result.code); dialog.querySelector('[data-result]').textContent = 'Code copié.'; }
+                  catch (error) { dialog.querySelector('[data-result]').textContent = 'Copie indisponible. Transmettez le code affiché.'; }
+                };
+                dialog.querySelector('[data-close]').onclick = function () { dialog.close(); };
+                dialog.addEventListener('close', function () { result.code = ''; dialog.remove(); });
+                detail.append(dialog); dialog.showModal();
+              } catch (error) {
+                if (current(ticket) && request === detailRevision) {
+                  var message = document.createElement('p'); message.setAttribute('role','alert');
+                  message.textContent = 'Génération du code refusée.'; detail.prepend(message);
+                }
+              } finally { recover.disabled = false; }
+            };
+          }
           if (typeof data.revision === 'string') editRoles(id, data, request);
         } catch (error) { if (request === detailRevision) fail(error, detail, function () { inspect(id); }, ticket); }
       }

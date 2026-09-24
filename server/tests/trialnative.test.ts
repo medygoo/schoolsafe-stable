@@ -65,11 +65,6 @@ function fakeAuthService(): AuthNativeService {
       return { ok: false as const };
     },
     ...lot4AuthStubs,
-    async recoverParentAccount() { return false; },
-    async adminGenerateRecoveryCode() { return false; },
-    async redeemAdminRecoveryCode() { return null; },
-    async createRecoveryRequest() { return null; },
-    db: {} as any,
   };
 }
 
