@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [production]
   push:
-    branches: [production, 'harness/**', 'codex/hotfix-recovery-modal-r1']
+    branches: [production, 'harness/**', 'codex/hotfix-recovery-modal-r1', 'codex/hotfix-jaspe-desktop-r1']
   workflow_dispatch:
 permissions:
   contents: read
@@ -37,6 +37,19 @@ jobs:
             sleep 1
           done
           node app/qa-recovery-modal.cjs
+      - name: JASPE desktop launcher regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          export CHROME_PATH="$(command -v google-chrome || command -v google-chrome-stable)"
+          node app/server.mjs --port 4176 > /tmp/schoolsafe-jaspe-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4176/ > /dev/null; then break; fi
+            sleep 1
+          done
+          SCHOOLSAFE_URL=http://127.0.0.1:4176/ node app/qa-jaspe-dashboard.cjs
       - name: Start disposable PostgreSQL 17.11
         shell: bash
         run: |

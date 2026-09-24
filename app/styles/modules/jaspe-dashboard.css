@@ -251,3 +251,26 @@ body.screen-workspace .dashboard-features > header h3 { font-size: 23px; color: 
   .jaspe-panel-layout { animation: none; }
   .jaspe-character-host img { animation: none; transition: none; }
 }
+
+/* Permanent desktop entry; mobile keeps its existing bottom navigation. */
+.topbar-jaspe {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ss-space-2);
+  height: 44px;
+  padding: 0 var(--ss-space-3);
+  border: 1px solid var(--ss-border-default);
+  border-radius: var(--ss-radius);
+  background: var(--ss-bg-primary);
+  color: var(--ss-text-primary);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.topbar-jaspe:hover { background: var(--ss-bg-secondary); }
+.topbar-jaspe svg { width: 20px; height: 20px; }
+@media (min-width: 769px) and (max-width: 1024px) {
+  .topbar-jaspe { width: 44px; padding: 0; }
+  .topbar-jaspe span { display: none; }
+}
