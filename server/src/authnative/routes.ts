@@ -5,6 +5,7 @@ import { z } from "zod";
 import { SchoolSafeError } from "../http/errors.js";
 import { newRequestId } from "../http/request-id.js";
 import { clearSessionCookie, readSessionCookie, setSessionCookie } from "./cookie.js";
+import { generateSessionToken, hashSessionToken } from "./tokens.js";
 import type { AuthNativeService } from "./service.js";
 
 const loginSchema = z.object({
@@ -170,7 +171,7 @@ export function registerAuthNativeRoutes(
     });
   });
 
-  // HOTFIX RECOVERY V1 — Méthode 1 : Récupération parentale
+  // HOTFIX RECOVERY V1-R1 — Méthode 1 : Récupération parentale
   // Vérifie : Nom Parent + Téléphone + Nom Enfant + Classe
   app.post("/auth/recover/parent", async (request, reply) => {
     const body = z.object({
@@ -180,18 +181,24 @@ export function registerAuthNativeRoutes(
       className: z.string().min(2).max(50),
     }).parse(request.body);
     try {
-      const token = await service.recoverParentAccount(
+      // Générer un token opaque côté Node
+      const rawToken = generateSessionToken();
+      const tokenHash = hashSessionToken(rawToken);
+      
+      const success = await service.recoverParentAccount(
         body.parentFullName,
         body.phoneNumber,
         body.childFullName,
-        body.className
+        body.className,
+        tokenHash
       );
-      if (!token) {
-        // Message générique pour éviter l'énumération
+      
+      if (!success) {
         throw new SchoolSafeError(400, "VALIDATION_INVALID", "Les informations saisies ne permettent pas de confirmer votre identité.", false);
       }
+      
       return reply.code(200).send({
-        reset_token: token,
+        reset_token: rawToken, // Le token clair est renvoyé au frontend pour le reset final
         message: "Identité confirmée. Veuillez choisir un nouveau mot de passe.",
         request_id: newRequestId(),
       });
@@ -201,25 +208,84 @@ export function registerAuthNativeRoutes(
     }
   });
 
-  // HOTFIX RECOVERY V1 — Méthode 2 : Code école
-  // Vérifie : Code École + Code Récupération + Identifiant
-  app.post("/auth/recover/school-code", async (request, reply) => {
+  // HOTFIX RECOVERY V1-R1 — Méthode 2 : Assistance Administrateur
+  // Génère un code temporaire pour un utilisateur cible (Admin authentifié requis)
+  app.post("/auth/recovery/admin/generate", async (request, reply) => {
+    // Cette route devrait être protégée par une session admin active
+    const token = readSessionCookie(request);
+    if (!token) {
+      throw new SchoolSafeError(401, "AUTH_REQUIRED", "Session administrateur requise", false);
+    }
+    const session = await service.resolveSession(token);
+    if (!session) {
+      throw new SchoolSafeError(401, "AUTH_REQUIRED", "Session invalide", false);
+    }
+    
     const body = z.object({
-      schoolCode: z.string().min(2).max(20),
-      recoveryCode: z.string().min(5).max(50),
-      login: z.string().min(1).max(320),
+      targetProfileId: z.string().uuid(),
     }).parse(request.body);
+
     try {
-      const token = await service.recoverBySchoolCode(
-        body.schoolCode,
-        body.recoveryCode,
-        body.login
+      // Trouver l'identity_id de la cible
+      const targetInfo = await service.db.query<{id: string}>(
+        "select i.id from auth.identities i join iam.profiles p on p.user_id = i.user_id where p.id = $1 limit 1",
+        [body.targetProfileId]
       );
-      if (!token) {
-        throw new SchoolSafeError(400, "VALIDATION_INVALID", "Les informations saisies ne permettent pas de confirmer votre identité.", false);
+      const targetIdentityId = targetInfo.rows[0]?.id;
+      if (!targetIdentityId) {
+        throw new SchoolSafeError(404, "NOT_FOUND", "Utilisateur cible introuvable", false);
       }
+
+      // Générer le code 10 chiffres
+      const { randomInt } = await import("node:crypto");
+      const code = randomInt(0, 10_000_000_000).toString().padStart(10, "0");
+      const codeHash = hashSessionToken(code);
+
+      const success = await service.adminGenerateRecoveryCode(
+        session.profileId,
+        targetIdentityId,
+        codeHash
+      );
+
+      if (!success) {
+        throw new SchoolSafeError(403, "AUTH_REQUIRED", "Génération de code refusée", false);
+      }
+
       return reply.code(200).send({
-        reset_token: token,
+        code: code,
+        expiresInMinutes: 60,
+        request_id: newRequestId(),
+      });
+    } catch (e) {
+      if (e instanceof SchoolSafeError) throw e;
+      throw new SchoolSafeError(500, "INTERNAL_ERROR", "Erreur serveur", true);
+    }
+  });
+
+  // HOTFIX RECOVERY V1-R1 — Consommation du code Admin
+  // Route publique : Login + Code -> Token de reset
+  app.post("/auth/recovery/admin/redeem", async (request, reply) => {
+    const body = z.object({
+      login: z.string().min(1).max(320),
+      code: z.string().length(10),
+    }).parse(request.body);
+
+    try {
+      const codeHash = hashSessionToken(body.code);
+      const identityId = await service.redeemAdminRecoveryCode(body.login, codeHash);
+      
+      if (!identityId) {
+        throw new SchoolSafeError(400, "VALIDATION_INVALID", "Le code de récupération est invalide ou expiré.", false);
+      }
+
+      // Générer un token de reset final et l'enregistrer via le service
+      const rawToken = await service.createRecoveryRequest(identityId);
+      if (!rawToken) {
+        throw new SchoolSafeError(500, "INTERNAL_ERROR", "Échec de la création du token de récupération.", true);
+      }
+
+      return reply.code(200).send({
+        reset_token: rawToken,
         message: "Code valide. Veuillez choisir un nouveau mot de passe.",
         request_id: newRequestId(),
       });

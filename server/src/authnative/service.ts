@@ -392,64 +392,53 @@ export function createAuthNativeService(deps: AuthNativeDependencies) {
       try { return await deps.smsDelivery.sendRecoveryCode(row.phone, code); } catch { return false; }
     },
 
-    // ─── LOT 4 : Admin Recovery ─────────────────────────────────────────
-    async adminGenerateRecoveryCode(adminProfileId: string, targetIdentityId: string): Promise<string | null> {
-      if (!deps.adminRecoveryStore || !deps.adminRecoveryService) return null;
-      // Check authorization first
-      const canRecover = await deps.adminRecoveryStore.canAdminRecover(adminProfileId, targetIdentityId);
-      if (!canRecover) return null;
-      // Get target school_id
-      const targetInfo = await db.query<{school_id: string}>(
-        "select p.school_id from auth.identities i join iam.profiles p on p.user_id = i.user_id and p.is_active = true where i.id = $1 limit 1",
-        [targetIdentityId],
+    // ─── HOTFIX RECOVERY V1-R1 : Admin Assisted Recovery ──────────────
+    async adminGenerateRecoveryCode(
+      adminProfileId: string,
+      targetIdentityId: string,
+      codeHash: string,
+    ): Promise<boolean> {
+      const result = await db.query<{ auth_admin_generate_recovery_code: boolean }>(
+        "select * from api.auth_admin_generate_recovery_code($1, $2, $3)",
+        [adminProfileId, targetIdentityId, codeHash],
       );
-      const schoolId = targetInfo.rows[0]?.school_id;
-      if (!schoolId) return null;
-      const code = deps.adminRecoveryService.generateCode();
-      const codeHash = deps.adminRecoveryService.hashCode(code);
-      const stored = await deps.adminRecoveryStore.generateCode(targetIdentityId, schoolId, adminProfileId, codeHash, deps.adminRecoveryService.config.codeTtlMs);
-      return stored ? code : null;
+      return result.rows[0]?.auth_admin_generate_recovery_code === true;
     },
 
-    async redeemAdminRecoveryCode(login: string, code: string): Promise<{identityId: string} | null> {
-      if (!deps.adminRecoveryStore || !deps.adminRecoveryService) return null;
-      const codeHash = deps.adminRecoveryService.hashCode(code);
-      const result = await deps.adminRecoveryStore.redeemCode(login, codeHash, deps.adminRecoveryService.config.maxAttempts);
-      return result ? {identityId: result.identityId} : null;
+    async redeemAdminRecoveryCode(
+      login: string,
+      codeHash: string,
+    ): Promise<string | null> { // Returns identity_id if successful
+      const result = await db.query<{ auth_redeem_admin_recovery_code: string | null }>(
+        "select * from api.auth_redeem_admin_recovery_code($1, $2)",
+        [login, codeHash],
+      );
+      return result.rows[0]?.auth_redeem_admin_recovery_code ?? null;
     },
 
-    // ─── LOT 4 : WebAuthn Recovery ──────────────────────────────────────
-    async hasWebAuthnCredential(identityId: string): Promise<boolean> {
-      if (!deps.webauthnStore) return false;
-      return deps.webauthnStore.hasActiveCredential(identityId);
-    },
-
-    // ─── HOTFIX RECOVERY V1 : Parent Recovery ─────────────────────────
     async recoverParentAccount(
       parentFullName: string,
       phoneNumber: string,
       childFullName: string,
       className: string,
-    ): Promise<string | null> {
-      const result = await db.query<{ auth_recover_parent_account: string | null }>(
-        "select * from api.auth_recover_parent_account($1, $2, $3, $4)",
-        [parentFullName, phoneNumber, childFullName, className],
+      tokenHash: string,
+    ): Promise<boolean> {
+      const result = await db.query<{ auth_recover_parent_account: boolean }>(
+        "select * from api.auth_recover_parent_account($1, $2, $3, $4, $5)",
+        [parentFullName, phoneNumber, childFullName, className, tokenHash],
       );
-      return result.rows[0]?.auth_recover_parent_account ?? null;
+      return result.rows[0]?.auth_recover_parent_account === true;
     },
 
-    // ─── HOTFIX RECOVERY V1 : School Code Recovery ────────────────────
-    async recoverBySchoolCode(
-      schoolCode: string,
-      recoveryCode: string,
-      login: string,
-    ): Promise<string | null> {
-      const result = await db.query<{ auth_recover_by_school_code: string | null }>(
-        "select * from api.auth_recover_by_school_code($1, $2, $3)",
-        [schoolCode, recoveryCode, login],
+    async createRecoveryRequest(identityId: string): Promise<string | null> {
+      const rawToken = generateSessionToken();
+      const tokenHash = hashSessionToken(rawToken);
+      await db.query(
+        "insert into auth.recovery_requests (identity_id, token_hash, expires_at) values ($1, $2, now() + interval '15 minutes')",
+        [identityId, tokenHash],
       );
-      return result.rows[0]?.auth_recover_by_school_code ?? null;
+      return rawToken;
     },
   };
 };
-export type AuthNativeService = ReturnType<typeof createAuthNativeService>;
+export type AuthNativeService = ReturnType<typeof createAuthNativeService> & { db: AuthDatabase };

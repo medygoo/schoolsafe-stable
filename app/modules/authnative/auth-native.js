@@ -122,13 +122,27 @@
     return request("/auth/webauthn/recovery/assert", { method: "POST", body: { response: response } });
   }
 
-  // --- LOT 4 : Admin Recovery ---
-  async function requestAdminRecovery(login) {
-    return request("/auth/admin-recovery/request", { method: "POST", body: { login: login } });
+  // --- HOTFIX RECOVERY V1-R1 : Parent Recovery ---
+  async function recoverParent(parentFullName, phoneNumber, childFullName, className) {
+    return request("/auth/recover/parent", { 
+      method: "POST", 
+      body: { parentFullName: parentFullName, phoneNumber: phoneNumber, childFullName: childFullName, className: className } 
+    });
   }
 
-  async function redeemAdminCode(login, code) {
-    return request("/auth/admin-recovery/redeem", { method: "POST", body: { login: login, code: code } });
+  // --- HOTFIX RECOVERY V1-R1 : Admin Assisted Recovery ---
+  async function generateAdminRecoveryCode(targetProfileId) {
+    return request("/auth/recovery/admin/generate", { 
+      method: "POST", 
+      body: { targetProfileId: targetProfileId } 
+    });
+  }
+
+  async function redeemAdminRecoveryCode(login, code) {
+    return request("/auth/recovery/admin/redeem", { 
+      method: "POST", 
+      body: { login: login, code: code } 
+    });
   }
 
   window.SchoolSafeAuthNative = {
@@ -141,7 +155,7 @@
     switchProfile: switchProfile,
     forgot: forgot,
     reset: reset,
-    // LOT 4 additions
+    // LOT 4 additions (kept for backward compatibility where needed, but deprecated in UI)
     getRecoveryMethods: getRecoveryMethods,
     verifyEmail: verifyEmail,
     verifyPhone: verifyPhone,
@@ -153,5 +167,9 @@
     assertWebAuthnRecovery: assertWebAuthnRecovery,
     requestAdminRecovery: requestAdminRecovery,
     redeemAdminCode: redeemAdminCode,
+    // HOTFIX V1-R1 additions
+    recoverParent: recoverParent,
+    generateAdminRecoveryCode: generateAdminRecoveryCode,
+    redeemAdminRecoveryCode: redeemAdminRecoveryCode,
   };
 })();

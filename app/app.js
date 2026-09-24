@@ -3683,96 +3683,107 @@
   document.getElementById("forgotPassword").addEventListener("click", async function () {
     var overlay = document.createElement("div");
     overlay.className = "ss-overlay";
-    overlay.innerHTML = '<div class="ss-modal ss-modal--lg"><div class="ss-modal-head"><h2>Récupérer mon compte</h2><p>Saisissez votre identifiant pour découvrir les méthodes disponibles.</p></div><div class="ss-modal-body"><div class="ss-field"><label class="ss-label" for="recoveryIdentifier">E-mail ou téléphone</label><input class="ss-input" id="recoveryIdentifier" type="text" autocomplete="username" placeholder="nom@ecole.cd ou +243..."></div><div id="recoveryMethodsList" class="recovery-methods-list" hidden></div><div id="recoveryFeedback" class="ss-field-note"></div></div><div class="ss-modal-actions"><button class="ss-button ss-button--ghost" id="recoveryCancel" type="button">Annuler</button><button class="ss-button ss-button--primary" id="recoveryDiscover" type="button">Découvrir les méthodes</button></div></div>';
+    overlay.innerHTML = '<div class="ss-modal ss-modal--lg"><div class="ss-modal-head"><h2>Récupérer mon compte</h2><p>Choisissez votre méthode de récupération.</p></div><div class="ss-modal-body"><div id="recoveryMethodSelector" class="recovery-method-selector"><button class="ss-button ss-button--secondary recovery-choice-btn" data-choice="parent"><i data-lucide="users"></i> Je suis parent / responsable</button><button class="ss-button ss-button--secondary recovery-choice-btn" data-choice="admin"><i data-lucide="shield-check"></i> J\'ai un code de récupération de mon école</button></div><div id="recoveryFormContainer" hidden></div><div id="recoveryFeedback" class="ss-field-note"></div></div><div class="ss-modal-actions"><button class="ss-button ss-button--ghost" id="recoveryCancel" type="button">Annuler</button><button class="ss-button ss-button--primary" id="recoveryActionBtn" type="button" hidden>Vérifier</button></div></div>';
     document.body.appendChild(overlay);
-    var identifierInput = document.getElementById("recoveryIdentifier");
-    var methodsList = document.getElementById("recoveryMethodsList");
+    if (window.lucide) window.lucide.createIcons();
     var feedback = document.getElementById("recoveryFeedback");
-    var discoverBtn = document.getElementById("recoveryDiscover");
     var cancelBtn = document.getElementById("recoveryCancel");
-    identifierInput.focus();
-
+    var actionBtn = document.getElementById("recoveryActionBtn");
+    var formContainer = document.getElementById("recoveryFormContainer");
+    var selector = document.getElementById("recoveryMethodSelector");
     function closeRecovery() { overlay.remove(); }
     cancelBtn.addEventListener("click", closeRecovery);
     overlay.addEventListener("click", function (e) { if (e.target === overlay) closeRecovery(); });
-    identifierInput.addEventListener("keydown", function (e) { if (e.key === "Enter") discoverBtn.click(); if (e.key === "Escape") closeRecovery(); });
-
-    discoverBtn.addEventListener("click", async function () {
-      var login = identifierInput.value.trim();
-      if (!login) { feedback.textContent = "Veuillez saisir un identifiant."; feedback.className = "ss-field-note ss-field-note--error"; return; }
-      discoverBtn.disabled = true;
-      discoverBtn.textContent = "Recherche en cours…";
-      feedback.className = "ss-field-note";
-      feedback.textContent = "";
-      try {
-        if (!window.SchoolSafeAuthNative) throw new Error("Service indisponible.");
-        var data = await window.SchoolSafeAuthNative.getRecoveryMethods(login);
-        var methods = data && data.methods ? data.methods : [];
-        methodsList.innerHTML = "";
-        if (!methods.length) {
-          methodsList.innerHTML = "<p>Aucune méthode de récupération disponible pour cet identifiant.</p>";
-        } else {
-          methods.forEach(function (method) {
-            var btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "ss-button ss-button--secondary recovery-method-btn";
-            btn.setAttribute("data-method", method);
-            if (method === "email") { btn.innerHTML = '<i data-lucide="mail"></i> Recevoir par e-mail'; }
-            else if (method === "sms") { btn.innerHTML = '<i data-lucide="message-square"></i> Recevoir par SMS'; }
-            else if (method === "webauthn") { btn.innerHTML = '<i data-lucide="smartphone"></i> Utiliser cet appareil'; }
-            else if (method === "admin") { btn.innerHTML = '<i data-lucide="shield-check"></i> Assistance administrateur'; }
-            methodsList.appendChild(btn);
-          });
-          if (window.lucide) window.lucide.createIcons();
-        }
-        methodsList.hidden = false;
-        discoverBtn.textContent = "Actualiser";
-        discoverBtn.disabled = false;
-      } catch (err) {
-        feedback.textContent = "Erreur : " + (err.message || "échec de la découverte");
-        feedback.className = "ss-field-note ss-field-note--error";
-        discoverBtn.disabled = false;
-        discoverBtn.textContent = "Découvrir les méthodes";
-      }
-    });
-
-    methodsList.addEventListener("click", async function (e) {
-      var btn = e.target.closest(".recovery-method-btn");
+    selector.addEventListener("click", async function (e) {
+      var btn = e.target.closest(".recovery-choice-btn");
       if (!btn) return;
-      var method = btn.getAttribute("data-method");
-      var login = identifierInput.value.trim();
-      
-      if (method === "email") {
-        try {
-          await window.SchoolSafeAuthNative.forgot(login);
-          feedback.textContent = "Si un compte existe, un lien a été envoyé.";
-          feedback.className = "ss-field-note ss-field-note--success";
-        } catch (err) { feedback.textContent = "Erreur envoi e-mail."; feedback.className = "ss-field-note ss-field-note--error"; }
-      } else if (method === "sms") {
-        try {
-          await window.SchoolSafeAuthNative.requestSmsRecovery(login);
-          feedback.textContent = "Si un compte existe, un code SMS a été envoyé.";
-          feedback.className = "ss-field-note ss-field-note--success";
-          // TODO: Afficher champ saisie OTP
-        } catch (err) { feedback.textContent = "Erreur envoi SMS."; feedback.className = "ss-field-note ss-field-note--error"; }
-      } else if (method === "webauthn") {
-        try {
-          var options = await window.SchoolSafeAuthNative.getWebAuthnRecoveryOptions(login);
-          var assertion = await navigator.credentials.get({ publicKey: options });
-          var result = await window.SchoolSafeAuthNative.assertWebAuthnRecovery(assertion);
-          if (result && result.authorization) {
-            feedback.textContent = "Appareil validé. Veuillez créer un nouveau mot de passe.";
-            feedback.className = "ss-field-note ss-field-note--success";
-            // TODO: Afficher formulaire nouveau mot de passe
+      var choice = btn.getAttribute("data-choice");
+      selector.hidden = true;
+      formContainer.hidden = false;
+      actionBtn.hidden = false;
+      feedback.textContent = "";
+      feedback.className = "ss-field-note";
+      if (choice === "parent") {
+        formContainer.innerHTML = '<div class="ss-field"><label class="ss-label" for="parentName">Nom complet du parent</label><input class="ss-input" id="parentName" type="text" placeholder="Ex: Jean Dupont"></div><div class="ss-field"><label class="ss-label" for="parentPhone">Téléphone enregistré</label><input class="ss-input" id="parentPhone" type="tel" placeholder="+243..."></div><div class="ss-field"><label class="ss-label" for="childName">Nom complet de l\'enfant</label><input class="ss-input" id="childName" type="text"></div><div class="ss-field"><label class="ss-label" for="className">Classe actuelle</label><input class="ss-input" id="className" type="text" placeholder="Ex: 6ème Primaire A"></div>';
+        actionBtn.onclick = async function () {
+          var parentName = document.getElementById("parentName").value.trim();
+          var phone = document.getElementById("parentPhone").value.trim();
+          var childName = document.getElementById("childName").value.trim();
+          var className = document.getElementById("className").value.trim();
+          if (!parentName || !phone || !childName || !className) { feedback.textContent = "Veuillez remplir tous les champs."; feedback.className = "ss-field-note ss-field-note--error"; return; }
+          actionBtn.disabled = true;
+          actionBtn.textContent = "Vérification en cours…";
+          try {
+            var res = await apiPost("/auth/recover/parent", { parentFullName: parentName, phoneNumber: phone, childFullName: childName, className: className });
+            if (res.reset_token) {
+              showResetPasswordForm(res.reset_token);
+            } else {
+              feedback.textContent = "Les informations saisies ne permettent pas de confirmer votre identité.";
+              feedback.className = "ss-field-note ss-field-note--error";
+            }
+          } catch (err) {
+            feedback.textContent = err.message || "Erreur lors de la vérification.";
+            feedback.className = "ss-field-note ss-field-note--error";
+          } finally {
+            actionBtn.disabled = false;
+            actionBtn.textContent = "Vérifier";
           }
-        } catch (err) { feedback.textContent = "Échec WebAuthn."; feedback.className = "ss-field-note ss-field-note--error"; }
-      } else if (method === "admin") {
-        feedback.textContent = "Contactez l'administrateur principal de votre école pour obtenir un code de récupération.";
-        feedback.className = "ss-field-note";
-        // TODO: Afficher champ saisie code admin
+        };
+      } else if (choice === "admin") {
+        formContainer.innerHTML = '<div class="ss-field"><label class="ss-label" for="adminLogin">E-mail ou téléphone</label><input class="ss-input" id="adminLogin" type="text" autocomplete="username"></div><div class="ss-field"><label class="ss-label" for="adminCode">Code de récupération (10 chiffres)</label><input class="ss-input" id="adminCode" type="text" maxlength="10" pattern="[0-9]{10}" placeholder="0123456789"></div>';
+        actionBtn.onclick = async function () {
+          var login = document.getElementById("adminLogin").value.trim();
+          var code = document.getElementById("adminCode").value.trim();
+          if (!login || !code) { feedback.textContent = "Veuillez remplir tous les champs."; feedback.className = "ss-field-note ss-field-note--error"; return; }
+          actionBtn.disabled = true;
+          actionBtn.textContent = "Vérification en cours…";
+          try {
+            var res = await apiPost("/auth/recovery/admin/redeem", { login: login, code: code });
+            if (res.reset_token) {
+              showResetPasswordForm(res.reset_token);
+            } else {
+              feedback.textContent = "Le code de récupération est invalide ou expiré.";
+              feedback.className = "ss-field-note ss-field-note--error";
+            }
+          } catch (err) {
+            feedback.textContent = err.message || "Erreur lors de la vérification.";
+            feedback.className = "ss-field-note ss-field-note--error";
+          } finally {
+            actionBtn.disabled = false;
+            actionBtn.textContent = "Vérifier";
+          }
+        };
       }
     });
   });
+  function showResetPasswordForm(token) {
+    var overlay = document.querySelector(".ss-overlay");
+    if (!overlay) return;
+    var modal = overlay.querySelector(".ss-modal");
+    modal.innerHTML = '<div class="ss-modal-head"><h2>Nouveau mot de passe</h2></div><div class="ss-modal-body"><div class="ss-field"><label class="ss-label" for="newPassword">Nouveau mot de passe</label><input class="ss-input" id="newPassword" type="password" minlength="8"></div><div class="ss-field"><label class="ss-label" for="confirmPassword">Confirmer le mot de passe</label><input class="ss-input" id="confirmPassword" type="password" minlength="8"></div><div id="resetFeedback" class="ss-field-note"></div></div><div class="ss-modal-actions"><button class="ss-button ss-button--primary" id="saveNewPassword" type="button">Enregistrer</button></div>';
+    var newPass = document.getElementById("newPassword");
+    var confirmPass = document.getElementById("confirmPassword");
+    var saveBtn = document.getElementById("saveNewPassword");
+    var resetFeedback = document.getElementById("resetFeedback");
+    saveBtn.onclick = async function () {
+      var p1 = newPass.value;
+      var p2 = confirmPass.value;
+      if (p1.length < 8) { resetFeedback.textContent = "Le mot de passe doit contenir au moins 8 caractères."; resetFeedback.className = "ss-field-note ss-field-note--error"; return; }
+      if (p1 !== p2) { resetFeedback.textContent = "Les mots de passe ne correspondent pas."; resetFeedback.className = "ss-field-note ss-field-note--error"; return; }
+      saveBtn.disabled = true;
+      try {
+        await apiPost("/auth/native/reset", { token: token, password: p1 });
+        notify("Mot de passe réinitialisé avec succès. Veuillez vous connecter.");
+        overlay.remove();
+        showScreen("auth");
+      } catch (err) {
+        resetFeedback.textContent = err.message || "Échec de la réinitialisation.";
+        resetFeedback.className = "ss-field-note ss-field-note--error";
+      } finally {
+        saveBtn.disabled = false;
+      }
+    };
+  }
   document.getElementById("togglePassword").addEventListener("click", function () {
     var input = document.getElementById("password");
     var isPassword = input.type === "password";
