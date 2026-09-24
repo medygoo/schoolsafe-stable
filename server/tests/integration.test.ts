@@ -147,7 +147,7 @@ function makeFullApp() {
     security: { service: mockSecurity, resolveProfileAndSchool: mockResolve, access: mockAccess },
     alerts: { service: mockAlerts, resolveProfileAndSchool: mockResolve, access: mockAccess },
     approvals: { service: mockApprovals, resolveProfileAndSchool: mockResolve, access: mockAccess },
-    dashboard: { service: mockDashboard, resolveProfileAndSchool: mockResolve, access: mockAccess },
+    pilotageDashboard: { service: mockDashboard, resolveProfileAndSchool: mockResolve, access: mockAccess },
     snapshots: { service: mockSnapshots, resolveProfileAndSchool: mockResolve, access: mockAccess },
     pedagogy: { service: mockPedagogy, rankingsService: mockRankingsService, resolveProfileAndSchool: mockResolve, access: mockAccess },
     school: { service: mockSchool, resolveProfileAndSchool: mockResolve, access: mockAccess },

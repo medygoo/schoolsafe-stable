@@ -481,8 +481,6 @@
     var isTeacher = currentDemoRole === "teacher";
     var isGuard = currentDemoRole === "guard";
     if (dashboardContainer) dashboardContainer.hidden = !visible || isParent || isTeacher || isGuard;
-    var jaspeWelcome = document.getElementById("jaspeDashboardWelcome");
-    if (jaspeWelcome) jaspeWelcome.hidden = !visible;
     if (parentPortal) {
       parentPortal.hidden = !visible || !isParent;
       if (visible && isParent && window.SchoolSafeParentPortal) {
@@ -2376,6 +2374,10 @@
     if (workspaceSchoolName) {
       var schoolName = (currentSession && currentSession.school && currentSession.school.name) || "Toutes les écoles";
       workspaceSchoolName.textContent = schoolName;
+    }
+    // Initialize School Context for LOT 5
+    if (window.SchoolSafeSchoolContext && currentSession && currentSession.school) {
+      window.SchoolSafeSchoolContext.setProfile(currentSession.school);
     }
     renderSchoolBranding();
 

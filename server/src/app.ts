@@ -37,6 +37,8 @@ import { registerCardsNativeRoutes, type CardsNativeRouteDependencies } from "./
 import { registerFamilyNativeRoutes, type FamilyNativeRouteDependencies } from "./familynative/routes.js";
 import { registerDeviceHubRoutes, type DeviceHubRouteDependencies } from "./devicehub/routes.js";
 import { registerDeviceHubMachineRoutes, type DeviceHubMachineRouteDependencies } from "./devicehub/machine-routes.js";
+import { registerDocumentRoutes, type DocumentRouteDependencies } from "./documents/routes.js";
+import { registerDashboardRoutes as registerLot5DashboardRoutes, type DashboardRouteDependencies as Lot5DashboardRouteDependencies } from "./dashboard/routes.js";
 
 export type BuildAppOptions = {
   testRoutes?: boolean;
@@ -47,7 +49,7 @@ export type BuildAppOptions = {
   security?: SecurityRouteDependencies;
   alerts?: AlertRouteDependencies;
   approvals?: ApprovalRouteDependencies;
-  dashboard?: DashboardRouteDependencies;
+  pilotageDashboard?: DashboardRouteDependencies;
   email?: EmailRouteDependencies;
   snapshots?: SnapshotRouteDependencies;
   feeControl?: FeeControlRouteDependencies;
@@ -72,6 +74,8 @@ export type BuildAppOptions = {
   familyNative?: FamilyNativeRouteDependencies;
   deviceHub?: DeviceHubRouteDependencies;
   deviceHubMachine?: DeviceHubMachineRouteDependencies;
+  documents?: DocumentRouteDependencies;
+  lot5Dashboard?: Lot5DashboardRouteDependencies;
 };
 
 export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
@@ -201,8 +205,8 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
     registerApprovalRoutes(app, options.approvals);
   }
 
-  if (options.dashboard) {
-    registerDashboardRoutes(app, options.dashboard);
+  if (options.pilotageDashboard) {
+    registerDashboardRoutes(app, options.pilotageDashboard);
   }
 
   if (options.snapshots) {
@@ -239,6 +243,14 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   if (options.push) {
     registerPushRoutes(app, options.push);
+  }
+
+  if (options.documents) {
+    registerDocumentRoutes(app, options.documents);
+  }
+
+  if (options.lot5Dashboard) {
+    registerLot5DashboardRoutes(app, options.lot5Dashboard);
   }
 
   if (options.testRoutes) {
