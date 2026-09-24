@@ -6,7 +6,7 @@ import { sha256Sql } from './migration-manifest.mjs';
 
 export function installationInventory(root) {
   const sets = ['baseline', 'auth', 'access', 'finance', 'pedagogy', 'cards',
-    'family', 'devicehub', 'dashboard', 'license', 'trial', 'projections'];
+    'family', 'devicehub', 'dashboard', 'license', 'trial', 'projections', 'documents'];
   const units = [];
   for (const set of sets) {
     const manifestPath = `database/${set}/v1/manifest.json`;

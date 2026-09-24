@@ -349,6 +349,22 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "documents",
+      "file": "database/documents/v1/01_document_sequences.sql",
+      "manifest": "database/documents/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "d8e259711591de814bbbc30b534cf323b7c4bca091728686d6e79570e09396e9",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "documents",
+      "file": "database/documents/v1/02_documents.sql",
+      "manifest": "database/documents/v1/manifest.json",
+      "orderInSet": 2,
+      "sha256": "bbc84aac4cbb5a96ca93819043da861110b6010328939832d3ef501e0cd4c9a8",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "projections",
       "file": "database/projections/v1/02_student_list.sql",
       "requires": [

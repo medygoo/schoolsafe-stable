@@ -246,11 +246,11 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   }
 
   if (options.documents) {
-    registerDocumentRoutes(app, options.documents);
+    registerDocumentRoutes(app, { ...options.documents, authService: options.authNative?.service as any });
   }
 
   if (options.lot5Dashboard) {
-    registerLot5DashboardRoutes(app, options.lot5Dashboard);
+    registerLot5DashboardRoutes(app, { ...options.lot5Dashboard, authService: options.authNative?.service as any });
   }
 
   if (options.testRoutes) {

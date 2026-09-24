@@ -1,5 +1,5 @@
 // SchoolSafe Document Engine — Atomic Numbering Service.
-// Ensures unique, non-reusable sequence numbers per school/year/type.
+// Ensures unique, non-reusable sequence numbers per school/year/type using canonical schemas.
 import type { BusinessPool } from "../db/pool.js";
 
 export interface DocumentSequenceParams {
@@ -16,10 +16,10 @@ export async function getNextDocumentSequence(
 
   // Use a database-level atomic increment to prevent concurrency collisions.
   const result = await pool.query(
-    `INSERT INTO document_sequences (school_id, academic_year_id, type_code, last_sequence)
+    `INSERT INTO app.document_sequences (school_id, academic_year_id, type_code, last_sequence)
      VALUES ($1, $2, $3, 0)
-     ON CONFLICT (school_id, academic_year_id, type_code) 
-     DO UPDATE SET last_sequence = document_sequences.last_sequence + 1
+     ON CONFLICT (school_id, academic_year_id, type_code)
+     DO UPDATE SET last_sequence = app.document_sequences.last_sequence + 1
      RETURNING last_sequence;`,
     [schoolId, academicYearId, typeCode]
   );
