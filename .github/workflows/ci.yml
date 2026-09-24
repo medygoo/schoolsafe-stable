@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [production]
   push:
-    branches: [production, 'harness/**']
+    branches: [production, 'harness/**', 'codex/hotfix-recovery-modal-r1']
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,6 +24,19 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run ci
+      - name: Recovery modal browser regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          export CHROME_PATH="$(command -v google-chrome || command -v google-chrome-stable)"
+          node app/server.mjs --port 4175 > /tmp/schoolsafe-recovery-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4175/ > /dev/null; then break; fi
+            sleep 1
+          done
+          node app/qa-recovery-modal.cjs
       - name: Start disposable PostgreSQL 17.11
         shell: bash
         run: |

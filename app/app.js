@@ -3681,17 +3681,23 @@
     });
   });
   document.getElementById("forgotPassword").addEventListener("click", function () {
-    var overlay = document.createElement("div");
-    overlay.className = "ss-overlay";
-    overlay.innerHTML = '<div class="ss-modal ss-modal--lg" role="dialog" aria-modal="true" aria-label="Récupérer mon compte"><div class="ss-modal-head"><h2>Récupérer mon compte</h2></div><div class="ss-modal-body"><div id="recoveryMethodSelector"><button class="ss-button recovery-choice-btn" data-choice="autonomous">Vérifier mes informations</button><button class="ss-button recovery-choice-btn" data-choice="admin">J\'ai un code de récupération de mon école</button></div><form id="recoveryFormContainer" hidden></form><p id="recoveryFeedback" role="status"></p></div><div class="ss-modal-actions"><button id="recoveryCancel" type="button" class="ss-button">Fermer</button><button id="recoveryActionBtn" type="submit" form="recoveryFormContainer" class="ss-button" hidden>Vérifier</button></div></div>';
-    document.body.appendChild(overlay);
+    var clearRecovery = function () { form.reset(); };
+    var recoveryModal = window.ssModal({
+      title: "Récupérer mon compte",
+      size: "md",
+      focusReturn: document.getElementById("forgotPassword"),
+      onClose: function () { clearRecovery(); },
+      content: '<div id="recoveryMethodSelector"><button type="button" class="ss-button recovery-choice-btn" data-choice="autonomous">Vérifier mes informations</button><button type="button" class="ss-button recovery-choice-btn" data-choice="admin">J&#39;ai un code de récupération de mon école</button></div><form id="recoveryFormContainer" hidden></form><p id="recoveryFeedback" role="status"></p>',
+      actions: [
+        { label: "Fermer", variant: "secondary", attrs: { id: "recoveryCancel" } },
+        { label: "Vérifier", type: "submit", closeOnClick: false, attrs: { id: "recoveryActionBtn", form: "recoveryFormContainer", hidden: true } }
+      ]
+    });
+    var overlay = recoveryModal.element;
     var form = overlay.querySelector("#recoveryFormContainer");
     var feedback = overlay.querySelector("#recoveryFeedback");
     var action = overlay.querySelector("#recoveryActionBtn");
     var selector = overlay.querySelector("#recoveryMethodSelector");
-    function closeRecovery() { form.reset(); overlay.remove(); }
-    overlay.querySelector("#recoveryCancel").onclick = closeRecovery;
-    overlay.addEventListener("keydown", function (event) { if (event.key === "Escape") closeRecovery(); });
     function field(name, label, type) {
       return '<label class="ss-field">' + label + '<input class="ss-input" name="' + name + '" type="' + (type || 'text') + '" required autocomplete="off" maxlength="200"></label>';
     }
@@ -3728,10 +3734,10 @@
           } else {
             response = await window.SchoolSafeAuthNative.recoverProfile(f.fullName.value.trim(), f.phoneNumber.value.trim(), f.schoolName.value.trim(), f.roleName.value.trim());
           }
-          if (!overlay.isConnected) return;
+          if (!recoveryModal.isOpen()) return;
           if (!response || !response.reset_token) throw new Error("Recovery refused");
           form.reset();
-          showResetPasswordForm(response.reset_token, overlay);
+          clearRecovery = showResetPasswordForm(response.reset_token, recoveryModal);
         } catch (error) {
           feedback.textContent = "Les informations saisies ne permettent pas de confirmer votre identité.";
         } finally { action.disabled = false; }
@@ -3739,16 +3745,17 @@
       form.querySelector("input,select").focus();
     });
   });
-  function showResetPasswordForm(token, overlay) {
-    var modal = overlay.querySelector(".ss-modal");
-    modal.innerHTML = '<div class="ss-modal-head"><h2>Nouveau mot de passe</h2></div><form id="recoveryResetForm"><div class="ss-modal-body"><label class="ss-field">Nouveau mot de passe<input class="ss-input" name="password" type="password" minlength="8" maxlength="512" autocomplete="new-password" required></label><label class="ss-field">Confirmer le mot de passe<input class="ss-input" name="confirmation" type="password" minlength="8" maxlength="512" autocomplete="new-password" required></label><p data-feedback role="status"></p></div><div class="ss-modal-actions"><button class="ss-button" type="submit">Enregistrer</button><button class="ss-button" type="button" data-close>Fermer</button></div></form>';
-    var form = modal.querySelector("form"), feedback = modal.querySelector("[data-feedback]");
-    function close() { token = ""; form.reset(); overlay.remove(); }
-    modal.querySelector("[data-close]").onclick = close;
-    overlay.addEventListener("keydown", function (event) { if (event.key === "Escape") close(); });
+  function showResetPasswordForm(token, recoveryModal) {
+    var overlay = recoveryModal.element;
+    overlay.querySelector(".ss-modal__title").textContent = "Nouveau mot de passe";
+    recoveryModal.content.innerHTML = '<form id="recoveryResetForm"><label class="ss-field">Nouveau mot de passe<input class="ss-input" name="password" type="password" minlength="8" maxlength="512" autocomplete="new-password" required></label><label class="ss-field">Confirmer le mot de passe<input class="ss-input" name="confirmation" type="password" minlength="8" maxlength="512" autocomplete="new-password" required></label><p data-feedback role="status"></p></form>';
+    recoveryModal.footer.innerHTML = '<button class="ss-button" type="submit" form="recoveryResetForm">Enregistrer</button><button class="ss-button ss-button--secondary" type="button" data-close>Fermer</button>';
+    var form = overlay.querySelector("form"), feedback = overlay.querySelector("[data-feedback]");
+    function close() { recoveryModal.close(); }
+    overlay.querySelector("[data-close]").onclick = close;
     form.onsubmit = async function (event) {
       event.preventDefault();
-      var button = form.querySelector('[type="submit"]');
+      var button = recoveryModal.footer.querySelector('[type="submit"]');
       if (button.disabled || !form.reportValidity()) return;
       if (form.elements.password.value !== form.elements.confirmation.value) {
         feedback.textContent = "Les mots de passe ne correspondent pas."; return;
@@ -3764,6 +3771,7 @@
       } finally { button.disabled = false; }
     };
     form.elements.password.focus();
+    return function () { token = ""; form.reset(); };
   }
   document.getElementById("togglePassword").addEventListener("click", function () {
     var input = document.getElementById("password");
