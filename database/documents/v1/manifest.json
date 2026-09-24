@@ -1,17 +1,22 @@
 {
-"schema": "schoolsafe-module-manifest",
-"module": "documents",
-"version": "v1",
-"units": [
-{
-"file": "01_document_sequences.sql",
-"sha256": "d8e259711591de814bbbc30b534cf323b7c4bca091728686d6e79570e09396e9",
-"order": 1
-},
-{
-"file": "02_documents.sql",
-"sha256": "bbc84aac4cbb5a96ca93819043da861110b6010328939832d3ef501e0cd4c9a8",
-"order": 2
-}
-]
+  "schema": "schoolsafe-module-manifest",
+  "module": "documents",
+  "version": "v1",
+  "units": [
+    {
+      "file": "01_document_sequences.sql",
+      "sha256": "d8e259711591de814bbbc30b534cf323b7c4bca091728686d6e79570e09396e9",
+      "order": 1
+    },
+    {
+      "file": "02_documents.sql",
+      "sha256": "bbc84aac4cbb5a96ca93819043da861110b6010328939832d3ef501e0cd4c9a8",
+      "order": 2
+    },
+    {
+      "file": "03_document_access.sql",
+      "sha256": "ef7f7b290f507fa00290298a1cb5dff5af3f55ffbc9a21fb094a70539557fb94",
+      "order": 3
+    }
+  ]
 }

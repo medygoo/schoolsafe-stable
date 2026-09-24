@@ -365,6 +365,14 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "documents",
+      "file": "database/documents/v1/03_document_access.sql",
+      "manifest": "database/documents/v1/manifest.json",
+      "orderInSet": 3,
+      "sha256": "ef7f7b290f507fa00290298a1cb5dff5af3f55ffbc9a21fb094a70539557fb94",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "projections",
       "file": "database/projections/v1/02_student_list.sql",
       "requires": [

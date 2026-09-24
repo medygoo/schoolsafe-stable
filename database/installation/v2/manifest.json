@@ -266,6 +266,11 @@
       "order": 53,
       "file": "database/documents/v1/02_documents.sql",
       "sha256": "bbc84aac4cbb5a96ca93819043da861110b6010328939832d3ef501e0cd4c9a8"
+    },
+    {
+      "order": 54,
+      "file": "database/documents/v1/03_document_access.sql",
+      "sha256": "ef7f7b290f507fa00290298a1cb5dff5af3f55ffbc9a21fb094a70539557fb94"
     }
   ],
   "superseded": [
