@@ -18,7 +18,4 @@ try{
  runRlsTests(connectionString);
  await qualifyInstallation({connectionString,passwords});
  console.log('FROM_ZERO PASS');
-}catch(error){console.error('FROM_ZERO FAIL: '+error.message);if(process.env.SCHOOLSAFE_TEST_DEBUG==='1'){
- const cause=error.actual?.cause??error.cause;
- console.error(JSON.stringify({message:cause?.message,code:cause?.code,where:cause?.where,position:cause?.position,internalQuery:cause?.internalQuery,schema:cause?.schema,table:cause?.table,routine:cause?.routine}));
-}process.exitCode=1;}
+}catch(error){console.error('FROM_ZERO FAIL: '+error.message);if(process.env.SCHOOLSAFE_TEST_DEBUG==='1')console.error(error.cause?.message??'');process.exitCode=1;}
