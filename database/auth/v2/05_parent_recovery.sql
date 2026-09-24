@@ -2,7 +2,7 @@
 begin;
 set local role schoolsafe_owner;
 
--- FORCE RLS remains enabled. Function-local GUC restores automatically on exit/error.
+-- FORCE RLS remains enabled. Recovery functions scope PREAUTH to their lookup.
 do $schoolsafe$
 declare t text;
 begin
@@ -55,8 +55,9 @@ create or replace function api.auth_recover_parent_account(
   p_parent_full_name text,p_phone_number text,p_child_full_name text,p_class_name text,
   p_token_hash text,p_attempt_key text
 ) returns boolean language plpgsql security definer set search_path=pg_catalog
-set schoolsafe.recovery_preauth='on' as $schoolsafe$
+as $schoolsafe$
 declare identities uuid[]; bucket auth.recovery_failure_buckets%rowtype;
+  previous_preauth text:=coalesce(current_setting('schoolsafe.recovery_preauth',true),'');
 begin
   if p_attempt_key is null or p_attempt_key !~ '^[0-9a-f]{64}$'
     or p_token_hash is null or p_token_hash !~ '^[0-9a-f]{64}$' then return false; end if;
@@ -67,6 +68,7 @@ begin
     bucket.failures:=0;
   end if;
   if bucket.failures>=5 then return false; end if;
+  perform set_config('schoolsafe.recovery_preauth','on',true);
   select array_agg(distinct i.id) into identities
   from iam.profiles p
   join auth.identities i on i.user_id=p.user_id and i.status='active'
@@ -83,6 +85,7 @@ begin
     and auth.recovery_name(p.display_name)=auth.recovery_name(p_parent_full_name)
     and auth.recovery_name(concat_ws(' ',s.first_name,s.middle_name,s.last_name))=auth.recovery_name(p_child_full_name)
     and auth.recovery_name(c.name)=auth.recovery_name(p_class_name);
+  perform set_config('schoolsafe.recovery_preauth',previous_preauth,true);
   if coalesce(cardinality(identities),0)<>1 then
     update auth.recovery_failure_buckets set failures=failures+1 where attempt_key=p_attempt_key;
     return false;
@@ -96,9 +99,11 @@ grant execute on function api.auth_recover_parent_account(text,text,text,text,te
 create or replace function api.auth_recover_profile_account(
   p_full_name text,p_phone_number text,p_school_name text,p_role_name text,p_token_hash text
 ) returns boolean language plpgsql security definer set search_path=pg_catalog
-set schoolsafe.recovery_preauth='on' as $schoolsafe$
+as $schoolsafe$
 declare identities uuid[];
+  previous_preauth text:=coalesce(current_setting('schoolsafe.recovery_preauth',true),'');
 begin
+  perform set_config('schoolsafe.recovery_preauth','on',true);
   select array_agg(distinct i.id) into identities
   from iam.profiles p
   join auth.identities i on i.user_id=p.user_id and i.status='active'
@@ -111,6 +116,7 @@ begin
     and auth.recovery_name(p.display_name)=auth.recovery_name(p_full_name)
     and auth.recovery_name(s.name)=auth.recovery_name(p_school_name)
     and (auth.recovery_name(r.label)=auth.recovery_name(p_role_name) or auth.recovery_name(r.code)=auth.recovery_name(p_role_name));
+  perform set_config('schoolsafe.recovery_preauth',previous_preauth,true);
   if coalesce(cardinality(identities),0)<>1 then return false; end if;
   return auth.recovery_issue(identities[1],p_token_hash);
 end

@@ -275,7 +275,7 @@
     {
       "order": 55,
       "file": "database/auth/v2/05_parent_recovery.sql",
-      "sha256": "54fb44d12ae1f0c1b1badf17bcd5d8731b0b82de5ae32805f11bca436e8d9872"
+      "sha256": "a1e95363e4492cc21ae1185c4cc2ef0d4b463178f269328825ba73c1b24f34c1"
     },
     {
       "order": 56,
