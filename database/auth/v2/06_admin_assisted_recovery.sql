@@ -109,7 +109,7 @@ AS $schoolsafe$
 DECLARE
   v_identity_id uuid;
   v_normalized_login text;
-  v_found_id uuid;
+  v_code_id uuid;
 BEGIN
   v_normalized_login := auth.normalize_login(p_login);
 
@@ -124,20 +124,18 @@ BEGIN
     RETURN NULL;
   END IF;
 
-  -- Vérifier le code et incrémenter le compteur d'échec si nécessaire
-  UPDATE auth.admin_recovery_codes
-  SET attempt_count = attempt_count + 1,
-      used_at = CASE WHEN code_hash = p_code_hash THEN now() ELSE used_at END
+  -- Vérifier le code
+  SELECT id INTO v_code_id
+  FROM auth.admin_recovery_codes
   WHERE identity_id = v_identity_id
+  AND code_hash = p_code_hash
   AND used_at IS NULL
   AND expires_at > now()
   AND attempt_count < 5
-  AND code_hash = p_code_hash
-  RETURNING id INTO v_found_id;
+  LIMIT 1;
 
-  -- Si aucune ligne mise à jour, c'est que le code est invalide/expiré/trop de tentatives
-  IF v_found_id IS NULL THEN
-    -- Incrémenter le compteur même si le code est faux pour bloquer les brute-force
+  IF v_code_id IS NULL THEN
+    -- Incrémenter le compteur d'échec pour bloquer les brute-force
     UPDATE auth.admin_recovery_codes
     SET attempt_count = attempt_count + 1
     WHERE identity_id = v_identity_id
@@ -146,6 +144,12 @@ BEGIN
     
     RETURN NULL;
   END IF;
+
+  -- Marquer le code comme utilisé
+  UPDATE auth.admin_recovery_codes
+  SET used_at = now(),
+      attempt_count = attempt_count + 1
+  WHERE id = v_code_id;
 
   RETURN v_identity_id;
 END;
