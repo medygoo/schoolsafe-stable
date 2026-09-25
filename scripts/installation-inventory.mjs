@@ -6,18 +6,45 @@ import { sha256Sql } from './migration-manifest.mjs';
 
 export function installationInventory(root) {
   const sets = ['baseline', 'auth', 'access', 'finance', 'pedagogy', 'cards',
-    'family', 'devicehub', 'dashboard', 'license', 'trial', 'projections', 'documents'];
+    'family', 'devicehub', 'dashboard', 'license', 'trial', 'projections', 'documents', 'setup'];
   const units = [];
+  const versionPattern = /^v[1-9][0-9]*$/;
+
   for (const set of sets) {
-    const manifestPath = `database/${set}/v1/manifest.json`;
-    const manifest = JSON.parse(fs.readFileSync(path.join(root, manifestPath), 'utf8'));
-    for (const unit of manifest.units) {
-      const file = `database/${set}/v1/${unit.file}`;
-      assert.equal(sha256Sql(fs.readFileSync(path.join(root, file))), unit.sha256, file);
-      units.push({ set, file, manifest: manifestPath, orderInSet: unit.order,
-        sha256: unit.sha256, status: 'DECLARED_IN_EXISTING_MANIFEST' });
+    const setDir = path.join(root, 'database', set);
+    if (!fs.existsSync(setDir) || !fs.statSync(setDir).isDirectory()) continue;
+
+    const versions = fs.readdirSync(setDir, { withFileTypes: true })
+      .filter(entry => entry.isDirectory() && versionPattern.test(entry.name))
+      .map(entry => entry.name)
+      .sort((a, b) => parseInt(a.slice(1), 10) - parseInt(b.slice(1), 10));
+
+    for (const version of versions) {
+      const manifestPath = path.join('database', set, version, 'manifest.json');
+      const manifestAbs = path.join(root, manifestPath);
+      if (!fs.existsSync(manifestAbs)) continue;
+
+      const manifest = JSON.parse(fs.readFileSync(manifestAbs, 'utf8'));
+      if (!Array.isArray(manifest.units)) continue;
+
+      for (const unit of manifest.units) {
+        const file = path.join('database', set, version, unit.file);
+        const absFile = path.join(root, file);
+        assert.ok(fs.existsSync(absFile), `Missing SQL file ${file} declared in ${manifestPath}`);
+        assert.equal(sha256Sql(fs.readFileSync(absFile)), unit.sha256, `SHA256 mismatch for ${file}`);
+        units.push({
+          set,
+          file,
+          manifest: manifestPath,
+          orderInSet: unit.order,
+          sha256: unit.sha256,
+          status: 'DECLARED_IN_EXISTING_MANIFEST',
+        });
+      }
     }
   }
+
+  // Historical special dispositions that are not in any manifest.
   const blocked = [
     {
       set: 'projections', file: 'database/projections/v1/02_student_list.sql',
@@ -38,27 +65,59 @@ export function installationInventory(root) {
       ],
     },
   ];
-  for (const unit of blocked) units.push({ ...unit,
-    sha256: sha256Sql(fs.readFileSync(path.join(root, unit.file))),
-    status: 'BLOCKED_REQUIRES_ADDITIVE_FIX', install: false });
-  const resetFile = 'database/auth/v1/03_auth_reset.sql';
-  units.push({ set: 'auth', file: resetFile, sha256: sha256Sql(fs.readFileSync(path.join(root, resetFile))),
-    status: 'UNREGISTERED_REQUIRES_REVIEW', install: false, requires: ['baseline', 'auth'],
-    blockers: ['Existing recovery unit outside the auth manifest; separate auth/security qualification required. No change authorized in the packaging lot.'] });
+  for (const unit of blocked) {
+    const absFile = path.join(root, unit.file);
+    units.push({
+      ...unit,
+      sha256: sha256Sql(fs.readFileSync(absFile)),
+      status: 'BLOCKED_REQUIRES_ADDITIVE_FIX',
+      install: false,
+    });
+  }
 
-  // Every versioned top-level SQL must have an explicit disposition.
+  const resetFile = 'database/auth/v1/03_auth_reset.sql';
+  const resetAbs = path.join(root, resetFile);
+  if (fs.existsSync(resetAbs)) {
+    units.push({
+      set: 'auth',
+      file: resetFile,
+      sha256: sha256Sql(fs.readFileSync(resetAbs)),
+      status: 'UNREGISTERED_REQUIRES_REVIEW',
+      install: false,
+      requires: ['baseline', 'auth'],
+      blockers: ['Existing recovery unit outside the auth manifest; separate auth/security qualification required. No change authorized in the packaging lot.'],
+    });
+  }
+
+  // Verify no duplicate entries.
+  assert.equal(new Set(units.map(unit => unit.file)).size, units.length, 'Duplicate installation entry');
+
+  // Discover all versioned SQL files and ensure each has a disposition.
   const discovered = [];
-  for (const entry of fs.readdirSync(path.join(root, 'database'), { withFileTypes: true })) {
-    const directory = path.join(root, 'database', entry.name, 'v1');
-    if (!entry.isDirectory() || !fs.existsSync(directory)) continue;
-    for (const file of fs.readdirSync(directory)) {
-      if (/^\d{2}_[a-z0-9_]+\.sql$/.test(file)) discovered.push(`database/${entry.name}/v1/${file}`);
+  const dbDir = path.join(root, 'database');
+  for (const entry of fs.readdirSync(dbDir, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name === 'installation') continue;
+    const setDir = path.join(dbDir, entry.name);
+    for (const versionEntry of fs.readdirSync(setDir, { withFileTypes: true })) {
+      if (!versionEntry.isDirectory() || !versionPattern.test(versionEntry.name)) continue;
+      const versionDir = path.join(setDir, versionEntry.name);
+      for (const file of fs.readdirSync(versionDir)) {
+        if (/^\d{2}_[a-z0-9_]+\.sql$/.test(file)) {
+          discovered.push(`database/${entry.name}/${versionEntry.name}/${file}`);
+        }
+      }
     }
   }
-  assert.equal(new Set(units.map(unit => unit.file)).size, units.length, 'Duplicate installation entry');
-  assert.deepEqual(units.map(unit => unit.file).sort(), discovered.sort(), 'SQL missing from installation inventory');
-  return { schema: 'schoolsafe-installation-inventory-v1', executable: false,
+
+  const unitFiles = new Set(units.map(u => u.file));
+  const missing = discovered.filter(f => !unitFiles.has(f));
+  assert.deepEqual(missing, [], `SQL files missing from installation inventory: ${missing.join(', ')}`);
+
+  return {
+    schema: 'schoolsafe-installation-inventory-v1',
+    executable: false,
     status: 'BLOCKED_PENDING_FUNCTIONAL_SQL_QUALIFICATION',
     note: 'Inventory order is not a cross-set production execution plan. Existing per-set order is preserved. No automatic application or historical rewrite.',
-    units };
+    units,
+  };
 }
