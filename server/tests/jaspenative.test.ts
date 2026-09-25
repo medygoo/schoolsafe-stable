@@ -82,7 +82,7 @@ describe("jaspenative", () => {
     const res = await a.inject({ method: "POST", url: "/native/jaspe/chat", headers, payload });
     expect(res.statusCode).toBe(200);
     expect(init?.headers).toMatchObject({ "x-jaspe-timestamp": expect.any(String), "x-jaspe-signature": expect.stringMatching(/^[0-9a-f]{64}$/) });
-    expect(init?.body).toBe(JSON.stringify({ message: "Bonjour Jaspe", session_key: "u:" + SESSION.userId + ":" + SESSION.schoolId + ":" + SESSION.profileId }));
+    expect(init?.body).toBe(JSON.stringify({ message: "Bonjour Jaspe", session_key: "u:" + SESSION.userId + ":" + SESSION.schoolId + ":" + SESSION.profileId, school_id: SESSION.schoolId }));
     await a.close();
   });
 
@@ -155,5 +155,35 @@ describe("jaspenative", () => {
     const src = srcRaw.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, ""); // commentaires exclus
     expect(src).not.toMatch(/api[_-]?key|Bearer/i);
     expect(src).not.toMatch(/\.query\(|SELECT |INSERT |PostgreSQL/i);
+  });
+});
+
+describe("jaspe phase 2 voice routes", () => {
+  it("transcription route validates permission and relays audio without persistence", async () => {
+    let url = "";
+    const fakeFetch = (async (workerUrl, init) => {
+      url = String(workerUrl);
+      return new Response(JSON.stringify({ text: "bonjour" }), { status: 200 });
+    }) as typeof fetch;
+    const a = app({ workerUrl: "https://worker.example", fetchImpl: fakeFetch });
+    const res = await a.inject({
+      method: "POST", url: "/native/jaspe/transcribe", headers,
+      payload: { audio_base64: Buffer.from("synthetic-audio").toString("base64"), mime_type: "audio/wav" },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data.text).toBe("bonjour");
+    expect(url).toBe("https://worker.example/transcribe");
+    await a.close();
+  });
+
+  it("TTS route returns audio and rejects unsupported MIME/shape", async () => {
+    const fakeFetch = (async () => new Response(JSON.stringify({ audio_base64: Buffer.from("RIFF").toString("base64"), mime_type: "audio/wav" }), { status: 200 })) as typeof fetch;
+    const a = app({ workerUrl: "https://worker.example", fetchImpl: fakeFetch });
+    const ok = await a.inject({ method: "POST", url: "/native/jaspe/speak", headers, payload: { text: "Bonjour", lang: "fr" } });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.headers["content-type"]).toContain("audio/wav");
+    const invalid = await a.inject({ method: "POST", url: "/native/jaspe/transcribe", headers, payload: { audio_base64: "invalid", mime_type: "text/plain" } });
+    expect(invalid.statusCode).toBeGreaterThanOrEqual(400);
+    await a.close();
   });
 });

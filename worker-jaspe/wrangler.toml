@@ -18,3 +18,6 @@ JASPE_SYSTEM_PROMPT = "Tu es JASPE, l'assistante virtuelle de l'école SchoolSaf
 # --- Routes / Domaine ---
 # routes = ["http://jaspe.schoolsafe.local/*"]
 # workers_dev = true
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "schoolsafe-jaspe-rag"

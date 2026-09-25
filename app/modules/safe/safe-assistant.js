@@ -1105,6 +1105,7 @@
           state.animation = "TalkHandsOpen";
           state.suggestions = defaultSuggestions();
           render();
+          if (global.SchoolSafeJaspe2d && typeof global.SchoolSafeJaspe2d.speak === "function") global.SchoolSafeJaspe2d.speak(reply, document.documentElement.lang === "en" ? "en" : "fr");
         } else {
           showLocalFallback(raw, true);
         }

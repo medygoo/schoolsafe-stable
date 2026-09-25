@@ -422,6 +422,18 @@
     return sc;
   }
 
+  function speak(text, lang) {
+    return fetch("/native/jaspe/speak", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: String(text || "").slice(0, 2000), lang: lang === "en" ? "en" : "fr" }) }).then(function (r) {
+      if (!r.ok) throw new Error("TTS_" + r.status);
+      return r.blob();
+    }).then(function (blob) {
+      var url = URL.createObjectURL(blob);
+      var audio = new Audio(url);
+      audio.onended = function () { URL.revokeObjectURL(url); };
+      return audio.play().then(function () { return true; });
+    }).catch(function () { return false; });
+  }
+
   window.SchoolSafeJaspe2d = {
     STATES: STATES,
     init: init,
@@ -429,6 +441,7 @@
     mount: mount,
     mountShowcase: mountShowcase,
     chat: chat,
+    speak: speak,
     onStateChange: function (fn) { listeners.push(fn); },
     getState: function () { return state; },
     isReady: function () { return !!loaded["pack1/idle"]; }
