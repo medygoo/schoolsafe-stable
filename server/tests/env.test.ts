@@ -16,3 +16,18 @@ describe("parseEnv — VPS PostgreSQL", () => {
     expect(() => parseEnv({ PGPORT: "0" })).toThrow(/PGPORT/);
   });
 });
+
+describe("parseEnv — pilot school", () => {
+  it("accepts an explicit pilot school UUID", () => {
+    const env = parseEnv({ NODE_ENV: "test", PILOT_SCHOOL_ID: "33333333-0000-4000-8000-000000000001" });
+    expect(env.PILOT_SCHOOL_ID).toBe("33333333-0000-4000-8000-000000000001");
+  });
+
+  it("rejects an invalid pilot school UUID", () => {
+    expect(() => parseEnv({ NODE_ENV: "test", PILOT_SCHOOL_ID: "not-a-uuid" })).toThrow(/PILOT_SCHOOL_ID/);
+  });
+
+  it("leaves pilot access disabled when no UUID is configured", () => {
+    expect(parseEnv({ NODE_ENV: "test" }).PILOT_SCHOOL_ID).toBeUndefined();
+  });
+});

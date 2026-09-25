@@ -101,7 +101,7 @@ const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.
       resolveContext: createMachineContextResolver(pools.businessPool),
     } : undefined,
   });
-  registerLicenseGate(app, {authService: authService, licenseService});
+  registerLicenseGate(app, {authService: authService, licenseService, pilotSchoolId: env.PILOT_SCHOOL_ID});
   app.addHook("onClose", async () => {
     await Promise.allSettled([pools.authPool.end(), pools.businessPool.end()]);
   });
