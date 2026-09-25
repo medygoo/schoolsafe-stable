@@ -473,11 +473,10 @@ async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
  assert.match(name,/^schoolsafe_test_[a-z0-9_]+$/);
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'schoolsafe-additive-test-'));
  const plan=loadInstallationPlan();
- const additions=new Set([
-  'database/auth/v2/02_identity_verification.sql','database/auth/v2/03_webauthn_credentials.sql','database/auth/v2/04_admin_recovery.sql',
-  'database/documents/v1/01_document_sequences.sql','database/documents/v1/02_documents.sql','database/documents/v1/03_document_access.sql',
-  'database/auth/v2/05_parent_recovery.sql','database/auth/v2/06_admin_assisted_recovery.sql',
-  'database/setup/v3/01_resolve_setup_authorization.sql','database/setup/v3/02_bind_setup_resolver.sql']);
+ const additions=new Set(plan.units.slice(48).map(unit=>unit.file));
+ assert.equal(additions.size,12,'Expected 12 additive units beyond historical 48');
+ assert.ok(additions.has('database/auth/v3/01_inactive_school_auth_gate.sql'),'auth v3 gate must be in additions');
+ assert.ok(additions.has('database/setup/v4/01_registration_pending.sql'),'setup v4 registration must be in additions');
  let owner,migrator,created=false;
  try{
   fs.cpSync(path.join(repositoryRoot,'database'),path.join(root,'database'),{recursive:true});
@@ -511,17 +510,19 @@ async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
    assert.equal((await ledger()).length,48);
    await owner.query('update ops.installation_units set sha256=$1 where unit_order=1',[initial[0].sha256]);
   });
-  await check('additive SQL rolls back all ten migrations when the last unit fails',async()=>{
-   const faulty=sql.replace('-- APPLY 58 database/setup/v3/02_bind_setup_resolver.sql','select 1/0;\n-- APPLY 58 database/setup/v3/02_bind_setup_resolver.sql');
+  const lastUnit=plan.units.at(-1);
+  const lastMarker=`-- APPLY ${lastUnit.order} ${lastUnit.file}`;
+  await check('additive SQL rolls back all additive migrations when the last unit fails',async()=>{
+   const faulty=sql.replace(lastMarker,'select 1/0;\n'+lastMarker);
    await assert.rejects(migrator.query(faulty),e=>e.code==='22012');await migrator.query('rollback');
    assert.deepEqual(await ledger(),initial);
    assert.equal((await owner.query("select to_regprocedure('ops.resolve_school_setup_authorization(text)') resolver")).rows[0].resolver,null);
    assert.equal((await owner.query("select to_regclass('app.documents') documents")).rows[0].documents,null);
   });
-  await check('additive SQL upgrades historical 48 to 58 with immutable append-only rows',async()=>{
+  await check('additive SQL upgrades historical 48 to current plan with immutable append-only rows',async()=>{
    await migrator.query(sql);const after=await ledger();
-   assert.equal(after.length,58);assert.deepEqual(after.slice(0,48),initial);
-   assert.deepEqual(after.slice(48).map(u=>u.file_name),plan.units.filter(u=>additions.has(u.file)).map(u=>u.file));
+   assert.equal(after.length,plan.units.length);assert.deepEqual(after.slice(0,48),initial);
+   assert.deepEqual(after.slice(48).map(u=>u.file_name),plan.units.slice(48).map(u=>u.file));
   });
   await check('additive SQL second upgrade is idempotent including timestamps',async()=>{
    const before=(await owner.query('select * from ops.installation_units order by unit_order')).rows;
