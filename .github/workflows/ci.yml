@@ -73,7 +73,16 @@ jobs:
           done
           export DATABASE_URL="postgresql://schoolsafe_bootstrap:$SCHOOLSAFE_BOOTSTRAP_PASSWORD@127.0.0.1:55439/schoolsafe_test_ci"
           npm run test:installation
-      - run: docker build --target db-migrator -t schoolsafe-db-migrator-ci .
+      - name: Build and execute migrator with restrictive checkout permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod 600 scripts/migration-manifest.mjs
+          docker build --target db-migrator -t schoolsafe-db-migrator-ci .
+          node --input-type=module -e "import {loadInstallationPlan} from './scripts/installation-plan.mjs'; console.log(JSON.stringify(loadInstallationPlan().units.map(u=>({unit_order:u.order,file_name:u.file,sha256:u.sha256}))))" > /tmp/schoolsafe-test-ledger.json
+          units="$(node -e "console.log(require('/tmp/schoolsafe-test-ledger.json').length)")"
+          docker run --rm -i --network none schoolsafe-db-migrator-ci --installed-units "$units" < /tmp/schoolsafe-test-ledger.json > /tmp/schoolsafe-test-upgrade.sql
+          grep -q ALREADY_CURRENT /tmp/schoolsafe-test-upgrade.sql
       - run: docker build -t schoolsafe-ci .
       - if: always()
         run: docker rm -f schoolsafe-test || true

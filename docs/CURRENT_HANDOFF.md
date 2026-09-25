@@ -1,3 +1,11 @@
+## Ordre 3 — correction des permissions de l'image migrator (2026-09-25)
+
+- PR #25 fusionnée ; CI branche 36154252159, CI PR 36155007113 et CI production 36155829487 GREEN. SHA fusionné : 3a10576ac662169f407f5cc37494922dde0e5984.
+- CD automatique 36156602511 arrêté avant toute migration et avant redémarrage : EACCES sur migration-manifest.mjs, fichier hérité en 0600 dans le checkout VPS et copié root dans une image exécutée comme node.
+- État vérifié après arrêt : ledger 48 ; last_good_sha 355f15dfc74b225b3842aa840c8eeb632962e838 ; health HTTP 200. Le checkout VPS seul avait avancé. Aucun run échoué relancé.
+- RED reproduit sur image temporaire avec source 0600. Correction : COPY --chown=node:node des scripts et de database dans le stage db-migrator. GREEN avec tous les fichiers SQL en 0600 ; builds renderer et application réussis.
+- La CI exécute désormais réellement le renderer après build avec un fichier source 0600 et exige ALREADY_CURRENT sur le ledger synthétique complet. Nouveau circuit CI branche, PR, CI PR, merge, CI production et CD requis pour cette correction ; aucune application SQL manuelle.
+
 ## Ordre 3 final — upgrade historique et livraison automatique (2026-09-25)
 
 - Mandat courant : livrer via CI branche, PR production, CI PR, merge, CI production puis CD automatique. Remplace les STOP des lots précédents après décision explicite du propriétaire.
