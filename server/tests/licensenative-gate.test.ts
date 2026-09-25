@@ -232,3 +232,54 @@ describe("license gate — enforcement backend (P3)", () => {
     expect(response.json().code).toBe("LICENSE_INACTIVE");
   });
 });
+
+describe("license gate — one explicit pilot school", () => {
+  it.each([
+    { name: "allows school A when A is the pilot without a license", schoolId: SCHOOL_A, pilotSchoolId: SCHOOL_A, status: 200 },
+    { name: "denies school A when B is the pilot without a license", schoolId: SCHOOL_A, pilotSchoolId: SCHOOL_B, status: 403 },
+    { name: "denies school A without pilot configuration or license", schoolId: SCHOOL_A, pilotSchoolId: undefined, status: 403 },
+    { name: "does not extend pilot A access to school B", schoolId: SCHOOL_B, pilotSchoolId: SCHOOL_A, status: 403 },
+  ])("$name", async ({ schoolId, pilotSchoolId, status }) => {
+    const authService = fakeAuthForGate(schoolId);
+    const app = buildApp({
+      studentsNative: {
+        authService,
+        service: { listStudents: async () => [] } as any,
+      },
+    });
+    registerLicenseGate(app, { authService, licenseService: undefined, pilotSchoolId });
+    try {
+      const response = await app.inject({
+        method: "GET",
+        url: "/native/students",
+        headers: { cookie: "schoolsafe_session=token-valide" },
+      });
+      expect(response.statusCode).toBe(status);
+      if (status === 403) expect(response.json().code).toBe("LICENSE_INACTIVE");
+      else expect(response.json().data).toEqual([]);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it.each([undefined, "schoolsafe_session=invalid-session"])("still requires a valid session with cookie %s", async (cookie) => {
+    const authService = fakeAuthForGate(SCHOOL_A);
+    const app = buildApp({
+      studentsNative: {
+        authService,
+        service: { listStudents: async () => [] } as any,
+      },
+    });
+    registerLicenseGate(app, { authService, licenseService: undefined, pilotSchoolId: SCHOOL_A });
+    try {
+      const response = await app.inject({
+        method: "GET",
+        url: "/native/students",
+        headers: cookie ? { cookie } : {},
+      });
+      expect(response.statusCode).toBe(401);
+    } finally {
+      await app.close();
+    }
+  });
+});

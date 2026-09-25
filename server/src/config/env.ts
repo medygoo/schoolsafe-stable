@@ -6,6 +6,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(8787),
   AUTH_RECOVERY_URL: z.string().url().refine(value => new URL(value).protocol === "https:", "HTTPS required").optional(),
   SETUP_TOKEN: z.string().min(1).optional(),
+  PILOT_SCHOOL_ID: z.string().uuid().optional(),
   R2_ENDPOINT: z.string().url().optional(),
   R2_ACCESS_KEY_ID: z.string().min(1).optional(),
   R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),

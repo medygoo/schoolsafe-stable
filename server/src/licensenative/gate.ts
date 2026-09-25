@@ -18,6 +18,7 @@ export type LicenseGateDependencies = {
   authService: AuthNativeService;
   licenseService: LicenseNativeService | undefined;
   cacheTtlMs?: number;
+  pilotSchoolId?: string;
 };
 
 export function registerLicenseGate(
@@ -37,6 +38,8 @@ export function registerLicenseGate(
     if (!token) return; // la garde de session de la route répondra 401
     const session = await dependencies.authService.resolveSession(token);
     if (!session) return;
+
+    if (dependencies.pilotSchoolId && session.schoolId === dependencies.pilotSchoolId) return;
 
     if (!dependencies.licenseService) throw new SchoolSafeError(403, "LICENSE_INACTIVE", "License verification unavailable", false);
     const now = Date.now();
