@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import {installSchoolDatabase} from './install-school-db.mjs';
+import {loadInstallationPlan,repositoryRoot} from './installation-plan.mjs';
+import {renderAdditiveUpgrade} from './render-additive-upgrade.mjs';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import pg from 'pg';
+import {tsImport} from 'tsx/esm/api';
 import {hash as argonHash,verify as argonVerify} from '@node-rs/argon2';
 import {pathToFileURL} from 'node:url';
 import path from 'node:path';
@@ -23,7 +29,58 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
  const denied=promise=>assert.rejects(promise,error=>['42501','23503','23514'].includes(error.code));
  try{
   const admin=await connect();const auth=await connect('auth');const api=await connect('api');const migrator=await connect('migrator');
+  await check('ledger belongs to owner and migrator must explicitly assume owner',async()=>{
+   assert.equal((await admin.query("select pg_get_userbyid(relowner) owner from pg_class where oid='ops.installation_units'::regclass")).rows[0].owner,'schoolsafe_owner');
+   for(const role of ['schoolsafe_migrator','schoolsafe_api','schoolsafe_auth','schoolsafe_worker'])
+    assert.equal((await admin.query("select has_table_privilege($1,'ops.installation_units','SELECT,INSERT,UPDATE,DELETE') allowed",[role])).rows[0].allowed,false);
+   await denied(migrator.query('select count(*) from ops.installation_units'));
+   await migrator.query('begin');
+   try {await migrator.query('set local role schoolsafe_owner');assert.equal((await migrator.query('select count(*)::int n from ops.installation_units')).rows[0].n,58);}
+   finally {await migrator.query('rollback');}
+  });
+  await qualifyAdditiveUpgrade({admin,connectionString,passwords,check});
+  await check('migrator cannot read setup authorizations directly',async()=>{
+   const privileges=(await admin.query("select has_table_privilege('schoolsafe_migrator','auth.setup_authorizations','SELECT') direct_select, has_schema_privilege('schoolsafe_migrator','auth','USAGE') auth_usage")).rows[0];
+   assert.equal(privileges.direct_select,false);assert.equal(privileges.auth_usage,false);
+   await denied(migrator.query('select school_id from auth.setup_authorizations'));
+  });
+  await check('migrator resolves only an existing valid setup authorization',async()=>{
+   const capability=digest(randomBytes(32));
+   await migrator.query('select ops.authorize_school_setup($1,$2)',[capability,3600]);
+   const expected=(await admin.query('select school_id from auth.setup_authorizations where token_hash=$1',[capability])).rows[0].school_id;
+   const resolved=(await migrator.query('select ops.resolve_school_setup_authorization($1) school_id',[capability])).rows[0].school_id;
+   assert.equal(resolved,expected);
+  });
+  await check('setup resolver is owner-controlled and executable only by migrator',async()=>{
+   const metadata=(await admin.query("select pg_get_userbyid(proowner) owner,prosecdef,proconfig,pg_get_function_result(oid) result from pg_proc where oid='ops.resolve_school_setup_authorization(text)'::regprocedure")).rows[0];
+   assert.equal(metadata.owner,'schoolsafe_owner');assert.equal(metadata.prosecdef,true);
+   assert.deepEqual(metadata.proconfig,['search_path=pg_catalog']);assert.equal(metadata.result,'uuid');
+   for(const role of ['schoolsafe_migrator','schoolsafe_api','schoolsafe_auth','schoolsafe_worker','schoolsafe_auditor']) {
+    const allowed=(await admin.query("select has_function_privilege($1,'ops.resolve_school_setup_authorization(text)','EXECUTE') allowed",[role])).rows[0].allowed;
+    assert.equal(allowed,role==='schoolsafe_migrator');
+   }
+   const publicGrant=(await admin.query("select exists(select 1 from pg_proc p, lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a where p.oid='ops.resolve_school_setup_authorization(text)'::regprocedure and a.grantee=0 and a.privilege_type='EXECUTE') allowed")).rows[0].allowed;
+   assert.equal(publicGrant,false);
+   await denied(auth.query('select ops.resolve_school_setup_authorization($1)',[digest(randomBytes(32))]));
+   await denied(api.query('select ops.resolve_school_setup_authorization($1)',[digest(randomBytes(32))]));
+  });
+  await check('unknown and malformed setup hashes fail closed without issuing authorization',async()=>{
+   const before=(await admin.query('select count(*)::int n from auth.setup_authorizations')).rows[0].n;
+   for(const capability of [digest(randomBytes(32)),null,'','not-a-hash','A'.repeat(64)]) {
+    assert.equal((await migrator.query('select ops.resolve_school_setup_authorization($1) school_id',[capability])).rows[0].school_id,null);
+   }
+   assert.equal((await admin.query('select count(*)::int n from auth.setup_authorizations')).rows[0].n,before);
+  });
+  await check('expired setup authorization fails closed and is not renewed',async()=>{
+   const capability=digest(randomBytes(32));
+   await migrator.query('select ops.authorize_school_setup($1,$2)',[capability,60]);
+   await admin.query("update auth.setup_authorizations set expires_at=clock_timestamp()-interval '1 second' where token_hash=$1",[capability]);
+   const before=(await admin.query('select * from auth.setup_authorizations where token_hash=$1',[capability])).rows[0];
+   assert.equal((await migrator.query('select ops.resolve_school_setup_authorization($1) school_id',[capability])).rows[0].school_id,null);
+   assert.deepEqual((await admin.query('select * from auth.setup_authorizations where token_hash=$1',[capability])).rows[0],before);
+  });
   const hash=await argonHash(randomBytes(32).toString('hex'),{memoryCost:19456,timeCost:2,parallelism:1});
+  await qualifySetupResolverBinding({admin,auth,migrator,check,denied,hash});
   const schools=[];
   for(const label of ['A','B']){
    const tokenHash=digest(randomBytes(32));const email=`installation-${randomUUID()}@example.test`;
@@ -34,6 +91,7 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
    let staged;await check('stage school '+label,async()=>{
     staged=(await auth.query('select api.setup_stage_school($1,$2::jsonb) r',[tokenHash,JSON.stringify(payload)])).rows[0].r;
     assert.ok(staged.school_id&&staged.academic_year_id);
+    assert.equal((await migrator.query('select ops.resolve_school_setup_authorization($1) school_id',[tokenHash])).rows[0].school_id,staged.school_id);
    });
    await check('staging creates no partial school '+label,async()=>{
     assert.equal((await admin.query('select count(*)::int n from app.schools where id=$1',[staged.school_id])).rows[0].n,0);
@@ -41,6 +99,12 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
    let created;await check('atomic school and admin '+label,async()=>{
     created=(await auth.query('select api.setup_complete_school($1,$2,$3,$4,$5,$6) r',[tokenHash,email,hash,'Synthetic','Admin '+label,null])).rows[0].r;
     assert.ok(created.user_id&&created.profile_id);
+    assert.equal((await admin.query('select school_id from iam.profiles where id=$1',[created.profile_id])).rows[0].school_id,staged.school_id);
+    assert.equal((await admin.query('select id from app.schools where id=$1',[staged.school_id])).rows[0].id,staged.school_id);
+   });
+   await check('consumed setup authorization fails closed '+label,async()=>{
+    assert.equal((await migrator.query('select ops.resolve_school_setup_authorization($1) school_id',[tokenHash])).rows[0].school_id,null);
+    assert.ok((await admin.query('select consumed_at from auth.setup_authorizations where token_hash=$1',[tokenHash])).rows[0].consumed_at);
    });
    const school={...staged,...created,email,tokenHash};schools.push(school);
    await check('setup token consumed '+label,()=>denied(auth.query('select api.setup_complete_school($1,$2,$3,$4,$5,$6)',[tokenHash,email,hash,'Synthetic','Again',null])));
@@ -152,6 +216,7 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
    assert.equal(rows.length,4);assert.ok(rows.every(r=>!r.rolsuper&&!r.rolbypassrls));
   });
   await qualifyRecovery({admin,auth,connect,check,denied,a,b,hash});
+  await qualifySetupHttp({admin,auth,migrator,check});
   log(`POSTGRES_QUALIFICATION PASS (${passed} scenarios)`);return {passed,schools};
  }catch(error){
   throw new Error(`POSTGRES_QUALIFICATION FAIL: ${phase}; ${error.code??'assertion'}`,{cause:error});
@@ -314,4 +379,159 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1]
  try{await qualifyInstallation({connectionString:process.env.DATABASE_URL,
   passwords:Object.fromEntries(['api','auth','worker','migrator'].map(r=>[r,process.env['SCHOOLSAFE_'+r.toUpperCase()+'_PASSWORD']]))});}
  catch(error){console.error(error.message);process.exitCode=1;}
+}
+
+async function setupSnapshot(admin, capability) {
+ const counts=(await admin.query('select (select count(*)::int from app.schools) schools, (select count(*)::int from iam.profiles) profiles, (select count(*)::int from auth.identities) identities')).rows[0];
+ const authorization=(await admin.query('select school_id,payload,expires_at,consumed_at from auth.setup_authorizations where token_hash=$1',[capability])).rows[0];
+ return {counts,authorization};
+}
+
+async function qualifySetupResolverBinding({admin,auth,migrator,check,denied,hash}) {
+ const payload={identity:{name_fr:'Synthetic resolver binding'},cycles:['primary'],
+  academic_year:{label:'2026',starts_on:'2026-01-01',ends_on:'2026-12-31'},contact:{},brand:{}};
+ for(const operation of ['stage','complete']) {
+  const capability=digest(randomBytes(32));
+  await migrator.query('select ops.authorize_school_setup($1,$2)',[capability,3600]);
+  const resolved=(await migrator.query('select ops.resolve_school_setup_authorization($1) school_id',[capability])).rows[0].school_id;
+  assert.ok(resolved);
+  if(operation==='complete') await auth.query('select api.setup_stage_school($1,$2::jsonb)',[capability,JSON.stringify(payload)]);
+  for(const failure of ['null','error','mismatched-school']) {
+   await check(`setup ${operation} fails closed when resolver returns ${failure}`,async()=>{
+    const before=await setupSnapshot(admin,capability);
+    const body=failure==='error' ? 'raise insufficient_privilege;' : `return ${failure==='null'?'null':`'${randomUUID()}'::uuid`};`;
+    await admin.query('begin');
+    try {
+     // Transaction-local fault injection: prove both real RPCs consume the resolver result.
+     await admin.query(`create or replace function ops.resolve_school_setup_authorization(p_token_hash text) returns uuid language plpgsql security definer set search_path=pg_catalog as $test$ begin ${body} end $test$`);
+     await admin.query('set session authorization schoolsafe_auth');
+     if(operation==='stage') await denied(admin.query('select api.setup_stage_school($1,$2::jsonb)',[capability,JSON.stringify(payload)]));
+     else await denied(admin.query('select api.setup_complete_school($1,$2,$3,$4,$5,$6)',[capability,`binding-${randomUUID()}@example.test`,hash,'Synthetic','Admin',null]));
+    } finally {
+     await admin.query('rollback');
+     await admin.query('reset session authorization');
+    }
+    assert.deepEqual(await setupSnapshot(admin,capability),before);
+    assert.equal((await migrator.query('select ops.resolve_school_setup_authorization($1) school_id',[capability])).rows[0].school_id,resolved);
+   });
+  }
+ }
+}
+
+async function qualifySetupHttp({admin,auth,migrator,check}) {
+ const {buildApp}=await tsImport('../server/src/app.ts',import.meta.url);
+ const {createSetupNativeService}=await tsImport('../server/src/setup/service.ts',import.meta.url);
+ const token=randomBytes(32).toString('hex'), capability=digest(token);
+ const payload={token,identity:{name_fr:'Synthetic HTTP setup'},cycles:['primary'],
+  academic_year:{label:'2026',starts_on:'2026-01-01',ends_on:'2026-12-31',periods:'Trimestres'},contact:{},brand:{}};
+ const adminPayload={token,email:`http-setup-${randomUUID()}@example.test`,password:randomBytes(24).toString('hex'),first_name:'Synthetic',last_name:'Admin'};
+ const app=buildApp({setup:{service:createSetupNativeService(auth,undefined,token)}});
+ const post=(url,payload)=>app.inject({method:'POST',url,payload});
+ try {
+  await check('HTTP false setup token creates no school or administrator',async()=>{
+   const before=await setupSnapshot(admin,capability);
+   assert.deepEqual((await post('/setup/validate-token',{token:'synthetic-wrong-token'})).json(),{valid:false});
+   assert.equal((await post('/setup/school',{...payload,token:'synthetic-wrong-token'})).statusCode,403);
+   assert.equal((await post('/setup/admin',{...adminPayload,token:'synthetic-wrong-token'})).statusCode,403);
+   assert.deepEqual(await setupSnapshot(admin,capability),before);
+  });
+  await check('HTTP matching token without SQL authorization fails closed',async()=>{
+   const before=await setupSnapshot(admin,capability);
+   assert.ok((await post('/setup/school',payload)).statusCode>=400);
+   assert.ok((await post('/setup/admin',adminPayload)).statusCode>=400);
+   assert.deepEqual(await setupSnapshot(admin,capability),before);
+  });
+  await migrator.query('select ops.authorize_school_setup($1,$2)',[capability,3600]);
+  const resolved=(await migrator.query('select ops.resolve_school_setup_authorization($1) school_id',[capability])).rows[0].school_id;
+  await check('HTTP setup creates exactly the resolver school and its administrator',async()=>{
+   assert.ok(resolved);
+   const validation=await post('/setup/validate-token',{token});
+   assert.equal(validation.statusCode,200);assert.deepEqual(validation.json(),{valid:true});
+   const staged=await post('/setup/school',payload);
+   assert.equal(staged.statusCode,201);assert.equal(staged.json().school_id,resolved);
+   const before=await setupSnapshot(admin,capability);
+   const created=await post('/setup/admin',adminPayload);
+   assert.equal(created.statusCode,201);
+   assert.equal((await admin.query('select id from app.schools where id=$1',[resolved])).rows[0].id,resolved);
+   assert.equal((await admin.query('select school_id from iam.profiles where id=$1',[created.json().profile_id])).rows[0].school_id,resolved);
+   const after=await setupSnapshot(admin,capability);
+   assert.equal(after.counts.schools,before.counts.schools+1);assert.equal(after.counts.identities,before.counts.identities+1);
+   assert.ok(after.authorization.consumed_at);
+  });
+  await check('HTTP consumed setup cannot create another school or administrator',async()=>{
+   const before=await setupSnapshot(admin,capability);
+   assert.equal((await migrator.query('select ops.resolve_school_setup_authorization($1) school_id',[capability])).rows[0].school_id,null);
+   assert.ok((await post('/setup/school',payload)).statusCode>=400);
+   assert.ok((await post('/setup/admin',adminPayload)).statusCode>=400);
+   assert.deepEqual(await setupSnapshot(admin,capability),before);
+  });
+ } finally {await app.close();}
+}
+
+async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
+ const target=new URL(connectionString);const name=decodeURIComponent(target.pathname.slice(1))+'_upgrade';
+ assert.match(name,/^schoolsafe_test_[a-z0-9_]+$/);
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'schoolsafe-additive-test-'));
+ const plan=loadInstallationPlan();
+ const additions=new Set([
+  'database/auth/v2/02_identity_verification.sql','database/auth/v2/03_webauthn_credentials.sql','database/auth/v2/04_admin_recovery.sql',
+  'database/documents/v1/01_document_sequences.sql','database/documents/v1/02_documents.sql','database/documents/v1/03_document_access.sql',
+  'database/auth/v2/05_parent_recovery.sql','database/auth/v2/06_admin_assisted_recovery.sql',
+  'database/setup/v3/01_resolve_setup_authorization.sql','database/setup/v3/02_bind_setup_resolver.sql']);
+ let owner,migrator,created=false;
+ try{
+  fs.cpSync(path.join(repositoryRoot,'database'),path.join(root,'database'),{recursive:true});
+  const historical={...plan,units:plan.units.filter(u=>!additions.has(u.file)).map((u,i)=>({...u,order:i+1}))};delete historical.digest;
+  for(const file of additions)fs.unlinkSync(path.join(root,file));
+  for(const dir of new Set([...additions].map(f=>path.dirname(f)))){
+   const manifestPath=path.join(root,dir,'manifest.json');const manifest=JSON.parse(fs.readFileSync(manifestPath));
+   manifest.units=manifest.units.filter(u=>!additions.has(dir.replaceAll('\\','/')+'/'+u.file)).map((u,i)=>({...u,order:i+1}));
+   fs.writeFileSync(manifestPath,JSON.stringify(manifest));
+   fs.writeFileSync(path.join(root,dir,'manifest.sha256'),manifest.units.map(u=>u.sha256+'  '+u.file).join('\n')+'\n');
+  }
+  fs.writeFileSync(path.join(root,'database/installation/v2/manifest.json'),JSON.stringify(historical));
+  await admin.query('create database "'+name+'"');created=true;target.pathname='/'+name;
+  await installSchoolDatabase({connectionString:target.toString(),database:name,mode:'apply',passwords,root,log:()=>{}});
+  owner=new pg.Client({connectionString:target.toString()});await owner.connect();
+  target.username='schoolsafe_migrator';target.password=passwords.migrator;
+  migrator=new pg.Client({connectionString:target.toString()});await migrator.connect();
+  const ledger=async()=> (await owner.query('select unit_order,file_name,sha256 from ops.installation_units order by unit_order')).rows;
+  const initial=await ledger();assert.equal(initial.length,48);
+  const sql=renderAdditiveUpgrade({installed:initial});
+  await check('additive SQL rejects runtime membership in migration authority',async()=>{
+   await owner.query('grant schoolsafe_owner to schoolsafe_api');
+   try {
+    await assert.rejects(migrator.query(sql),/UPGRADE_REFUSED: runtime migration authority/);await migrator.query('rollback');
+    assert.deepEqual(await ledger(),initial);
+   } finally {await migrator.query('rollback');await owner.query('revoke schoolsafe_owner from schoolsafe_api');}
+  });
+  await check('additive SQL rejects a stale snapshot and preserves tampered history',async()=>{
+   await owner.query("update ops.installation_units set sha256=repeat('0',64) where unit_order=1");
+   await assert.rejects(migrator.query(sql),/UPGRADE_REFUSED/);await migrator.query('rollback');
+   assert.equal((await ledger()).length,48);
+   await owner.query('update ops.installation_units set sha256=$1 where unit_order=1',[initial[0].sha256]);
+  });
+  await check('additive SQL rolls back all ten migrations when the last unit fails',async()=>{
+   const faulty=sql.replace('-- APPLY 58 database/setup/v3/02_bind_setup_resolver.sql','select 1/0;\n-- APPLY 58 database/setup/v3/02_bind_setup_resolver.sql');
+   await assert.rejects(migrator.query(faulty),e=>e.code==='22012');await migrator.query('rollback');
+   assert.deepEqual(await ledger(),initial);
+   assert.equal((await owner.query("select to_regprocedure('ops.resolve_school_setup_authorization(text)') resolver")).rows[0].resolver,null);
+   assert.equal((await owner.query("select to_regclass('app.documents') documents")).rows[0].documents,null);
+  });
+  await check('additive SQL upgrades historical 48 to 58 with immutable append-only rows',async()=>{
+   await migrator.query(sql);const after=await ledger();
+   assert.equal(after.length,58);assert.deepEqual(after.slice(0,48),initial);
+   assert.deepEqual(after.slice(48).map(u=>u.file_name),plan.units.filter(u=>additions.has(u.file)).map(u=>u.file));
+  });
+  await check('additive SQL second upgrade is idempotent including timestamps',async()=>{
+   const before=(await owner.query('select * from ops.installation_units order by unit_order')).rows;
+   const currentSql=renderAdditiveUpgrade({installed:await ledger()});assert.ok(!currentSql.includes('-- APPLY'));
+   await migrator.query(currentSql);
+   assert.deepEqual((await owner.query('select * from ops.installation_units order by unit_order')).rows,before);
+  });
+ } finally {
+  await migrator?.end();await owner?.end();
+  if(created)await admin.query('drop database "'+name+'"');
+  const resolved=path.resolve(root);assert.equal(path.dirname(resolved),path.resolve(os.tmpdir()));assert.ok(path.basename(resolved).startsWith('schoolsafe-additive-test-'));fs.rmSync(resolved,{recursive:true});
+ }
 }

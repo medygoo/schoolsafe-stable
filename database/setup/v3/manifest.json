@@ -1,0 +1,17 @@
+{
+  "schema": "schoolsafe-migrations-v3",
+  "name": "setup",
+  "version": 3,
+  "units": [
+    {
+      "order": 1,
+      "file": "01_resolve_setup_authorization.sql",
+      "sha256": "227830a257d3340f8f6758d8001257f85a5f2c12829161c1e844e148f7a3431d"
+    },
+    {
+      "order": 2,
+      "file": "02_bind_setup_resolver.sql",
+      "sha256": "0d6d25259d3b4f681435b51d1e5ab32bb17c87b2447da10f6210240a28e8903a"
+    }
+  ]
+}
