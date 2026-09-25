@@ -535,3 +535,34 @@ async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
   const resolved=path.resolve(root);assert.equal(path.dirname(resolved),path.resolve(os.tmpdir()));assert.ok(path.basename(resolved).startsWith('schoolsafe-additive-test-'));fs.rmSync(resolved,{recursive:true});
  }
 }
+
+export async function qualifyRegistrationPending({admin,auth,check,denied}){
+ await check('registration RPC exists with required signature',async()=>{
+  const row=(await admin.query("select pg_get_userbyid(proowner) owner,prosecdef,proconfig,pg_get_function_result(oid) result from pg_proc where oid='api.school_registration_prepare(jsonb,text)'::regprocedure")).rows[0];
+  assert.ok(row,'api.school_registration_prepare(jsonb,text) must exist');
+  assert.equal(row.owner,'schoolsafe_owner');
+  assert.equal(row.prosecdef,true);
+  assert.deepEqual(row.proconfig,['search_path=pg_catalog']);
+  assert.equal(row.result,'jsonb');
+ });
+ await check('registration table auth.school_registration_requests exists',async()=>{
+  const row=(await admin.query("select relrowsecurity,relforcerowsecurity from pg_class where oid='auth.school_registration_requests'::regclass")).rows[0];
+  assert.ok(row,'auth.school_registration_requests must exist');
+  assert.equal(row.relrowsecurity,true);
+  assert.equal(row.relforcerowsecurity,true);
+ });
+ await check('runtime roles cannot access registration requests directly',async()=>{
+  for(const role of ['schoolsafe_api','schoolsafe_auth','schoolsafe_worker','schoolsafe_migrator','schoolsafe_auditor']){
+   const privileges=(await admin.query("select has_table_privilege($1,'auth.school_registration_requests','SELECT,INSERT,UPDATE,DELETE') allowed",[role])).rows[0];
+   assert.equal(privileges.allowed,false,`${role} must not access auth.school_registration_requests`);
+  }
+ });
+ await check('only schoolsafe_auth can execute registration RPC',async()=>{
+  for(const role of ['schoolsafe_api','schoolsafe_worker','schoolsafe_migrator','schoolsafe_auditor']){
+   const allowed=(await admin.query("select has_function_privilege($1,'api.school_registration_prepare(jsonb,text)','EXECUTE') allowed",[role])).rows[0].allowed;
+   assert.equal(allowed,false,`${role} must not execute api.school_registration_prepare`);
+  }
+  const authAllowed=(await admin.query("select has_function_privilege('schoolsafe_auth','api.school_registration_prepare(jsonb,text)','EXECUTE') allowed")).rows[0].allowed;
+  assert.equal(authAllowed,true);
+ });
+}

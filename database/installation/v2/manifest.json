@@ -291,6 +291,16 @@
       "order": 58,
       "file": "database/setup/v3/02_bind_setup_resolver.sql",
       "sha256": "0d6d25259d3b4f681435b51d1e5ab32bb17c87b2447da10f6210240a28e8903a"
+    },
+    {
+      "order": 59,
+      "file": "database/auth/v3/01_inactive_school_auth_gate.sql",
+      "sha256": "b755367ce6863d03ecb019c130ff0be145f3befe854a9e003909779444a93461"
+    },
+    {
+      "order": 60,
+      "file": "database/setup/v4/01_registration_pending.sql",
+      "sha256": "a3739a3cec6a3a3ef8dc048e72a8f6089c7cc2d35fccc03c5deb6fa64cb29d2a"
     }
   ],
   "superseded": [

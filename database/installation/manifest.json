@@ -419,6 +419,22 @@
       "blockers": [
         "Existing recovery unit outside the auth manifest; separate auth/security qualification required. No change authorized in the packaging lot."
       ]
+    },
+    {
+      "set": "auth",
+      "file": "database/auth/v3/01_inactive_school_auth_gate.sql",
+      "manifest": "database/auth/v3/manifest.json",
+      "orderInSet": 1,
+      "sha256": "b755367ce6863d03ecb019c130ff0be145f3befe854a9e003909779444a93461",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "setup",
+      "file": "database/setup/v4/01_registration_pending.sql",
+      "manifest": "database/setup/v4/manifest.json",
+      "orderInSet": 1,
+      "sha256": "a3739a3cec6a3a3ef8dc048e72a8f6089c7cc2d35fccc03c5deb6fa64cb29d2a",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
     }
   ]
 }
