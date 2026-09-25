@@ -1,3 +1,28 @@
+## Ordre 3 final — upgrade historique et livraison automatique (2026-09-25)
+
+- Mandat courant : livrer via CI branche, PR production, CI PR, merge, CI production puis CD automatique. Remplace les STOP des lots précédents après décision explicite du propriétaire.
+- Départ : 5965cde63e71fc60bd1df91bd832e5b361386709 ; branche codex/pilot-activation-code-v1. Travail précédent conservé.
+- Les 48 lignes production correspondent exactement à ee57304883d2d370aaa17ea53bfecffa27f1a8d3. Dix fichiers manquent au plan cible de 58 ; leurs identités historiques et ordre relatif sont inchangés.
+- render-additive-upgrade.mjs valide les identités, épingle le lineage historique, rend uniquement les migrations absentes dans l'ordre du plan. Transaction globale, verrou consultatif et ledger, vérification du snapshot sous verrou, administration par SET LOCAL ROLE owner, ledger append-only. Aucun accès direct migrator/runtime ajouté.
+- Installateur : propriétaire explicite du ledger, reconnaissance de l'ordre append-only après upgrade. Les migrations historiques SQL et leurs manifestes sont inchangés.
+- RED : propriétaire incorrect du ledger ; renderer absent ; appartenance runtime au rôle owner non détectée. GREEN final : 7 tests installateur, 104 scénarios PostgreSQL et 6 suites RLS (installation locale neuve ET clone réel isolé), 410 tests serveur, CI locale, typecheck, diff check. Builds Docker application et db-migrator GREEN sur le moteur VPS existant, Docker local indisponible.
+- Clone réel : upgrade 48 vers 58, second passage sans écriture, altération SHA refusée, échec dernière unité avec rollback complet. Identifiants primaires historiques conservés. Les essais sont confinés aux bases de test ; aucune migration métier production encore appliquée à ce stade.
+- Backup : /opt/schoolsafe/backups/predeploy-pilot-20260925.dump, root:root 0600, pg_restore -l validé. À conserver.
+- Déployeur VPS sauvegardé dans /usr/local/lib/schoolsafe/deploy.py.pre-auto-cd puis adapté : HEAD production exact, renderer du même checkout SHA, psql socket migrator ON_ERROR_STOP=1, migration avant build/redémarrage ; simulation d'échec prouve arrêt avant application. Aucun mot de passe DB, changement .env/Compose ou PILOT_SCHOOL_ID.
+- CI couvre production, harness/** et codex/**. CD workflow_run ne traite que la CI push production réussie, vérifie le HEAD actuel avant SSH et conserve les secrets et le commutateur existants. Ancien workflow manuel remplacé.
+- Revue de sécurité indépendante effectuée ; garde de membership runtime corrigé et testé. Suite clone utilise son bootstrap uniquement dans le conteneur PostgreSQL isolé, jamais un nouveau rôle production.
+- Prochaine étape au moment du commit : pousser avec force-with-lease, attendre CI branche, créer PR production, attendre CI PR puis merge normal ; vérifier CI/CD/SHA/ledger/health et supprimer seulement le clone de répétition après GREEN complet.
+
+## Ordre 2/3 — ledger corrigé, upgrade bloqué (2026-09-25)
+
+- Branche : codex/pilot-activation-code-v1 ; HEAD : 5965cde63e71fc60bd1df91bd832e5b361386709.
+- Correction locale non commitée : install-school-db.mjs attribue explicitement ops.installation_units à schoolsafe_owner ; test PostgreSQL ajouté dans test-installation-v2-postgres.mjs.
+- RED observé : propriétaire incorrect. GREEN : installation complète, 99 scénarios PostgreSQL et 6 suites RLS ; accès direct migrator/runtime refusé, accès migrator par SET LOCAL ROLE réussi. git diff --check réussi.
+- Production : identité postgres vérifiée ; transaction autorisée limitée au propriétaire du ledger et révocation des droits runtime exécutée. Propriétaire désormais schoolsafe_owner ; aucun GRANT direct migrator ; aucun changement métier.
+- STOP : ledger production = 48 unités, plan local = 58. Le préfixe exact échoue à 32 positions (17..48). Premier écart : unité installée 17 = database/access/v1/01_role_templates.sql ; plan 17 = database/auth/v2/02_identity_verification.sql. Ne pas assimiler cet écart d'ordre à une preuve de modification du contenu d'un même fichier.
+- Aucune migration v3 appliquée, aucun workflow/deployeur modifié, aucun commit, push, PR, merge ou déploiement pour ce lot.
+- Prochaine action : définir et autoriser une réconciliation vérifiable de cet historique avant de reprendre l'upgrade ; ne pas réécrire silencieusement le ledger ni contourner le contrôle de préfixe.
+
 # Handoff courant SchoolSafe
 
 ## 25 septembre 2026 — résolveur raccordé au setup existant, qualification locale GREEN

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import pg from 'pg';
+import {planAdditiveUpgrade} from './render-additive-upgrade.mjs';
 import {loadInstallationPlan,repositoryRoot,transactionalSql} from './installation-plan.mjs';
 
 export function validateTarget(connectionString,database){
@@ -43,7 +44,8 @@ export async function installSchoolDatabase({connectionString,database,mode='che
   const ledger=(await client.query("select to_regclass('ops.installation_units') ledger")).rows[0].ledger;
   if(ledger){
    const rows=(await client.query('select unit_order,file_name,sha256,plan_sha256 from ops.installation_units order by unit_order')).rows;
-   assert.deepEqual(rows,plan.units.map(u=>({unit_order:u.order,file_name:u.file,sha256:u.sha256,plan_sha256:plan.digest})),'Installed versions differ; automatic upgrade is refused');
+   assert.equal(planAdditiveUpgrade(rows,plan).missing.length,0,'Installed versions differ; use the controlled additive upgrade');
+   assert.ok(rows.every(r=>r.plan_sha256===plan.digest),'Installation plan digest differs');
    await verifySecurity(client);
    await client.query('rollback');transaction=false;log('CHECK PASS: exact installation already present; no changes');return {status:'installed',units:rows.length};
   }
@@ -66,6 +68,7 @@ export async function installSchoolDatabase({connectionString,database,mode='che
   await client.query(`create table ops.installation_units(
    unit_order integer primary key,file_name text not null unique,sha256 text not null,
    plan_sha256 text not null,installed_at timestamptz not null default clock_timestamp());
+   alter table ops.installation_units owner to schoolsafe_owner;
    revoke all on ops.installation_units from public,schoolsafe_api,schoolsafe_auth,schoolsafe_worker`);
   for(const unit of plan.units)await client.query('insert into ops.installation_units(unit_order,file_name,sha256,plan_sha256) values($1,$2,$3,$4)',[unit.order,unit.file,unit.sha256,plan.digest]);
   await client.query('commit');transaction=false;log(`INSTALL PASS: ${sqlUnits.length} units committed atomically`);

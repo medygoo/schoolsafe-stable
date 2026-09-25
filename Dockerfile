@@ -2,6 +2,14 @@
 # Build : npm run build (tsc)
 # Start : node dist/src/index.js
 
+# SQL renderer: no network credentials, HTTP server or application startup.
+FROM node:22-alpine AS db-migrator
+WORKDIR /work
+COPY scripts/render-additive-upgrade.mjs scripts/installation-plan.mjs scripts/migration-manifest.mjs ./scripts/
+COPY database/ ./database/
+USER node
+ENTRYPOINT ["node", "scripts/render-additive-upgrade.mjs"]
+
 # ---- Stage 1 : Builder ----
 FROM node:22-alpine AS builder
 WORKDIR /app

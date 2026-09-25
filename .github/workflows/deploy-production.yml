@@ -1,11 +1,8 @@
-name: Deploy manually after production approval
+name: Deploy production after CI
 on:
-  workflow_dispatch:
-    inputs:
-      sha:
-        description: Validated full production commit SHA
-        required: true
-        type: string
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
 permissions:
   contents: read
   actions: read
@@ -14,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/production' && vars.SCHOOLSAFE_DEPLOY_ENABLED == 'true'
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'production' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository && vars.SCHOOLSAFE_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -24,15 +21,15 @@ jobs:
           ref: production
           fetch-depth: 0
           persist-credentials: false
-      - name: Validate requested SHA
+      - name: Validate exact current production SHA
         shell: bash
         env:
-          COMMIT_SHA: ${{ inputs.sha }}
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           [[ "$COMMIT_SHA" =~ ^[0-9a-f]{40}$ ]]
-          git merge-base --is-ancestor "$COMMIT_SHA" origin/production
+          test "$(git rev-parse origin/production)" = "$COMMIT_SHA"
           successful_runs="$(
             gh api -H 'Accept: application/vnd.github+json' "/repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?branch=production&event=push&head_sha=${COMMIT_SHA}&status=success&per_page=1" --jq '.total_count'
           )"
@@ -40,12 +37,14 @@ jobs:
       - name: Invoke restricted VPS deployer
         shell: bash
         env:
-          COMMIT_SHA: ${{ inputs.sha }}
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+          GH_TOKEN: ${{ github.token }}
           DEPLOY_KEY: ${{ secrets.SCHOOLSAFE_DEPLOY_SSH_KEY }}
           KNOWN_HOSTS: ${{ secrets.SCHOOLSAFE_DEPLOY_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
           [[ "$COMMIT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(gh api "/repos/${GITHUB_REPOSITORY}/git/ref/heads/production" --jq .object.sha)" = "$COMMIT_SHA"
           test -n "$DEPLOY_KEY"
           test -n "$KNOWN_HOSTS"
           key_file="$(mktemp)"

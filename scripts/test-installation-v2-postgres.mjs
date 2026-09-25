@@ -1,4 +1,9 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import {installSchoolDatabase} from './install-school-db.mjs';
+import {loadInstallationPlan,repositoryRoot} from './installation-plan.mjs';
+import {renderAdditiveUpgrade} from './render-additive-upgrade.mjs';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import pg from 'pg';
 import {tsImport} from 'tsx/esm/api';
@@ -24,6 +29,16 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
  const denied=promise=>assert.rejects(promise,error=>['42501','23503','23514'].includes(error.code));
  try{
   const admin=await connect();const auth=await connect('auth');const api=await connect('api');const migrator=await connect('migrator');
+  await check('ledger belongs to owner and migrator must explicitly assume owner',async()=>{
+   assert.equal((await admin.query("select pg_get_userbyid(relowner) owner from pg_class where oid='ops.installation_units'::regclass")).rows[0].owner,'schoolsafe_owner');
+   for(const role of ['schoolsafe_migrator','schoolsafe_api','schoolsafe_auth','schoolsafe_worker'])
+    assert.equal((await admin.query("select has_table_privilege($1,'ops.installation_units','SELECT,INSERT,UPDATE,DELETE') allowed",[role])).rows[0].allowed,false);
+   await denied(migrator.query('select count(*) from ops.installation_units'));
+   await migrator.query('begin');
+   try {await migrator.query('set local role schoolsafe_owner');assert.equal((await migrator.query('select count(*)::int n from ops.installation_units')).rows[0].n,58);}
+   finally {await migrator.query('rollback');}
+  });
+  await qualifyAdditiveUpgrade({admin,connectionString,passwords,check});
   await check('migrator cannot read setup authorizations directly',async()=>{
    const privileges=(await admin.query("select has_table_privilege('schoolsafe_migrator','auth.setup_authorizations','SELECT') direct_select, has_schema_privilege('schoolsafe_migrator','auth','USAGE') auth_usage")).rows[0];
    assert.equal(privileges.direct_select,false);assert.equal(privileges.auth_usage,false);
@@ -451,4 +466,72 @@ async function qualifySetupHttp({admin,auth,migrator,check}) {
    assert.deepEqual(await setupSnapshot(admin,capability),before);
   });
  } finally {await app.close();}
+}
+
+async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
+ const target=new URL(connectionString);const name=decodeURIComponent(target.pathname.slice(1))+'_upgrade';
+ assert.match(name,/^schoolsafe_test_[a-z0-9_]+$/);
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'schoolsafe-additive-test-'));
+ const plan=loadInstallationPlan();
+ const additions=new Set([
+  'database/auth/v2/02_identity_verification.sql','database/auth/v2/03_webauthn_credentials.sql','database/auth/v2/04_admin_recovery.sql',
+  'database/documents/v1/01_document_sequences.sql','database/documents/v1/02_documents.sql','database/documents/v1/03_document_access.sql',
+  'database/auth/v2/05_parent_recovery.sql','database/auth/v2/06_admin_assisted_recovery.sql',
+  'database/setup/v3/01_resolve_setup_authorization.sql','database/setup/v3/02_bind_setup_resolver.sql']);
+ let owner,migrator,created=false;
+ try{
+  fs.cpSync(path.join(repositoryRoot,'database'),path.join(root,'database'),{recursive:true});
+  const historical={...plan,units:plan.units.filter(u=>!additions.has(u.file)).map((u,i)=>({...u,order:i+1}))};delete historical.digest;
+  for(const file of additions)fs.unlinkSync(path.join(root,file));
+  for(const dir of new Set([...additions].map(f=>path.dirname(f)))){
+   const manifestPath=path.join(root,dir,'manifest.json');const manifest=JSON.parse(fs.readFileSync(manifestPath));
+   manifest.units=manifest.units.filter(u=>!additions.has(dir.replaceAll('\\','/')+'/'+u.file)).map((u,i)=>({...u,order:i+1}));
+   fs.writeFileSync(manifestPath,JSON.stringify(manifest));
+   fs.writeFileSync(path.join(root,dir,'manifest.sha256'),manifest.units.map(u=>u.sha256+'  '+u.file).join('\n')+'\n');
+  }
+  fs.writeFileSync(path.join(root,'database/installation/v2/manifest.json'),JSON.stringify(historical));
+  await admin.query('create database "'+name+'"');created=true;target.pathname='/'+name;
+  await installSchoolDatabase({connectionString:target.toString(),database:name,mode:'apply',passwords,root,log:()=>{}});
+  owner=new pg.Client({connectionString:target.toString()});await owner.connect();
+  target.username='schoolsafe_migrator';target.password=passwords.migrator;
+  migrator=new pg.Client({connectionString:target.toString()});await migrator.connect();
+  const ledger=async()=> (await owner.query('select unit_order,file_name,sha256 from ops.installation_units order by unit_order')).rows;
+  const initial=await ledger();assert.equal(initial.length,48);
+  const sql=renderAdditiveUpgrade({installed:initial});
+  await check('additive SQL rejects runtime membership in migration authority',async()=>{
+   await owner.query('grant schoolsafe_owner to schoolsafe_api');
+   try {
+    await assert.rejects(migrator.query(sql),/UPGRADE_REFUSED: runtime migration authority/);await migrator.query('rollback');
+    assert.deepEqual(await ledger(),initial);
+   } finally {await migrator.query('rollback');await owner.query('revoke schoolsafe_owner from schoolsafe_api');}
+  });
+  await check('additive SQL rejects a stale snapshot and preserves tampered history',async()=>{
+   await owner.query("update ops.installation_units set sha256=repeat('0',64) where unit_order=1");
+   await assert.rejects(migrator.query(sql),/UPGRADE_REFUSED/);await migrator.query('rollback');
+   assert.equal((await ledger()).length,48);
+   await owner.query('update ops.installation_units set sha256=$1 where unit_order=1',[initial[0].sha256]);
+  });
+  await check('additive SQL rolls back all ten migrations when the last unit fails',async()=>{
+   const faulty=sql.replace('-- APPLY 58 database/setup/v3/02_bind_setup_resolver.sql','select 1/0;\n-- APPLY 58 database/setup/v3/02_bind_setup_resolver.sql');
+   await assert.rejects(migrator.query(faulty),e=>e.code==='22012');await migrator.query('rollback');
+   assert.deepEqual(await ledger(),initial);
+   assert.equal((await owner.query("select to_regprocedure('ops.resolve_school_setup_authorization(text)') resolver")).rows[0].resolver,null);
+   assert.equal((await owner.query("select to_regclass('app.documents') documents")).rows[0].documents,null);
+  });
+  await check('additive SQL upgrades historical 48 to 58 with immutable append-only rows',async()=>{
+   await migrator.query(sql);const after=await ledger();
+   assert.equal(after.length,58);assert.deepEqual(after.slice(0,48),initial);
+   assert.deepEqual(after.slice(48).map(u=>u.file_name),plan.units.filter(u=>additions.has(u.file)).map(u=>u.file));
+  });
+  await check('additive SQL second upgrade is idempotent including timestamps',async()=>{
+   const before=(await owner.query('select * from ops.installation_units order by unit_order')).rows;
+   const currentSql=renderAdditiveUpgrade({installed:await ledger()});assert.ok(!currentSql.includes('-- APPLY'));
+   await migrator.query(currentSql);
+   assert.deepEqual((await owner.query('select * from ops.installation_units order by unit_order')).rows,before);
+  });
+ } finally {
+  await migrator?.end();await owner?.end();
+  if(created)await admin.query('drop database "'+name+'"');
+  const resolved=path.resolve(root);assert.equal(path.dirname(resolved),path.resolve(os.tmpdir()));assert.ok(path.basename(resolved).startsWith('schoolsafe-additive-test-'));fs.rmSync(resolved,{recursive:true});
+ }
 }

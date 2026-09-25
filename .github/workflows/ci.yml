@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [production]
   push:
-    branches: [production, 'harness/**', 'codex/hotfix-recovery-modal-r1', 'codex/hotfix-jaspe-desktop-r1']
+    branches: [production, 'harness/**', 'codex/**']
   workflow_dispatch:
 permissions:
   contents: read
@@ -73,6 +73,7 @@ jobs:
           done
           export DATABASE_URL="postgresql://schoolsafe_bootstrap:$SCHOOLSAFE_BOOTSTRAP_PASSWORD@127.0.0.1:55439/schoolsafe_test_ci"
           npm run test:installation
+      - run: docker build --target db-migrator -t schoolsafe-db-migrator-ci .
       - run: docker build -t schoolsafe-ci .
       - if: always()
         run: docker rm -f schoolsafe-test || true
