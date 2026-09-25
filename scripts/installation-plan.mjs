@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {sha256Sql,normalizeSql} from './migration-manifest.mjs';
 export const repositoryRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const safeFile=/^database\/[a-z]+\/v[12]\/\d{2}_[a-z0-9_]+\.sql$/;
+const safeFile=/^database\/[a-z]+\/v[1-9]\d*\/\d{2}_[a-z0-9_]+\.sql$/;
 export function loadInstallationPlan(root=repositoryRoot){
  const plan=JSON.parse(fs.readFileSync(path.join(root,'database/installation/v2/manifest.json'),'utf8'));
  assert.equal(plan.schema,'schoolsafe-installation-v2');assert.equal(plan.postgres,170011);

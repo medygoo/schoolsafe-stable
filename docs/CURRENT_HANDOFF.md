@@ -1,5 +1,50 @@
 # Handoff courant SchoolSafe
 
+## 25 septembre 2026 — résolveur raccordé au setup existant, qualification locale GREEN
+
+- Branche `codex/pilot-activation-code-v1`, base `d94e45a69843a6080736b1c02ec93d4367e46df5`.
+- Deux unités additives setup v3 : résolveur sécurisé puis raccordement des RPC
+  `api.setup_stage_school` et `api.setup_complete_school`. Routes et service
+  existants conservés ; aucune nouvelle route, aucun credential migrator dans
+  l'application. Migrations setup v1/v2 inchangées.
+- Chaque RPC utilise l'UUID résolu et revérifie la même autorisation sous verrou
+  avant mutation. NULL, erreur ou UUID incohérent arrêtent la requête. Consommation
+  et création école/admin restent atomiques ; aucun renouvellement automatique.
+- Résolveur SECURITY DEFINER, owner schoolsafe_owner, search_path pg_catalog.
+  EXECUTE direct réservé au migrator ; auth peut seulement l'atteindre depuis
+  les RPC SECURITY DEFINER existantes. Aucun SELECT ni USAGE auth ajouté au migrator.
+- RED réel : les RPC historiques acceptaient une autorisation malgré un résultat
+  NULL injecté dans le résolveur. GREEN PostgreSQL 17.11 : 98 scénarios dont les
+  refus NULL/erreur/UUID incohérent sur les deux RPC et le parcours HTTP réel
+  validation -> école -> admin ; UUID créé identique au résolu, faux token et
+  autorisation consommée sans nouvelle école/admin. Six suites RLS PASS.
+- Installation : 58 unités, rollback atomique et rejeu identique PASS. 33 tests
+  setup/licence ciblés PASS. npm run ci PASS : 3 permissions, 4 installateur,
+  typecheck et 410 tests serveur. git diff --check PASS.
+- Mandat : commit local uniquement après revue ; aucun push, merge, déploiement
+  ou accès VPS. Aucun secret ni UUID d'école réelle ajouté. PILOT_SCHOOL_ID runtime
+  non modifié. L'installateur conserve son refus de mise à niveau automatique.
+- Prochaine étape : lot distinct explicitement autorisé pour la migration de
+  production et la configuration runtime pilote ; ne pas exécuter ici.
+## Historique — 25 septembre 2026 : résolveur seul, blocage remplacé par le raccordement ci-dessus
+
+- Branche : `codex/pilot-activation-code-v1`, base `d94e45a69843a6080736b1c02ec93d4367e46df5`.
+- Migration additive `database/setup/v3/01_resolve_setup_authorization.sql` :
+  `ops.resolve_school_setup_authorization(text)` retourne uniquement l'UUID
+  d'une autorisation existante, non consommée et non expirée. SECURITY DEFINER,
+  propriétaire schoolsafe_owner, search_path pg_catalog, EXECUTE migrator seul.
+  Aucun nouveau droit sur auth ; migrations setup v1/v2 inchangées.
+- RED réel PostgreSQL 17.11 : lecture directe refusée, puis résolution absente
+  (42883). GREEN : 88 scénarios PostgreSQL, 6 suites RLS, 33 tests ciblés,
+  npm run ci (3 permissions, 4 installateur, typecheck, 410 tests serveur).
+  git diff --check PASS. Aucune opération sur le VPS, aucun push/déploiement.
+- Raccordement non réalisé : aucun provisioner pilote n'existe dans les fichiers
+  locaux, suivis ou ignorés, ni dans l'arbre production 355f15dfc74b225b3842aa840c8eeb632962e838.
+  Le setup applicatif fonctionne avec schoolsafe_auth ; ne pas lui accorder
+  EXECUTE sur le résolveur migrator ni lui donner des credentials migrator.
+- Prochaine action : obtenir le chemin du provisioner existant demandé,
+  puis brancher et tester son arrêt sur UUID absent avant tout commit du lot.
+  La question de localisation a été soumise au propriétaire.
 ## 20 septembre 2026 ? installation v2 qualifiee, PR #2 ouverte
 
 - Branche Codex : `codex/schoolsafe-installation-v2`, base production
