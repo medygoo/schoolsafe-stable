@@ -53,15 +53,11 @@
   }
 
   async function loadBackendConfig() {
-    try {
-      var res = await fetch(apiBase + "/config", { method: "GET", headers: { Accept: "application/json" } });
-      if (!res.ok) return null;
-      backendConfig = await res.json();
-      window.schoolSafeBackendConfig = backendConfig;
-      return backendConfig;
-    } catch (e) {
-      return null;
-    }
+    var res = await fetch(apiBase + "/config", { method: "GET", cache: "no-store", headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error("Serveur de configuration indisponible (HTTP " + res.status + ").");
+    backendConfig = await res.json();
+    window.schoolSafeBackendConfig = backendConfig;
+    return backendConfig;
   }
 
   async function apiPost(path, body) {
@@ -85,8 +81,6 @@
     var result = await apiPost("/setup/validate-token", { token: token });
     if (!result || !result.valid) throw new Error("Token de configuration invalide.");
     setupToken = token;
-    renderStep();
-    showScreen("setup");
   }
 
   function hasLiveSession() {
@@ -3368,8 +3362,10 @@
   document.getElementById("closeSetup").addEventListener("click", function () { showScreen("auth"); });
   document.getElementById("startSetup").addEventListener("click", function () {
     if (window.ssModal) {
+      var setupValidationPending = false;
       window.ssModal({
         title: "Configuration de l'école",
+        onClose: function () { return !setupValidationPending; },
         subtitle: "Saisissez le token de configuration fourni par SchoolSafe",
         content: '<div class="school-form"><label for="setup-token-input">Token</label><input type="text" id="setup-token-input" class="ss-input" placeholder="Token de configuration" autocomplete="off"></div>',
         size: "sm",
@@ -3379,15 +3375,23 @@
           {
             label: "Valider",
             variant: "primary",
-            close: false,
+            closeOnClick: false,
             onClick: async function (event, modalApi) {
               var input = document.getElementById("setup-token-input");
               var token = input ? input.value.trim() : "";
               if (!token) { modalApi.setError("Veuillez saisir un token."); return; }
+              modalApi.setError("");
+              setupValidationPending = true;
               modalApi.setLoading(true);
               try {
                 await validateSetupToken(token);
+                setupValidationPending = false;
+                modalApi.setLoading(false);
+                modalApi.close();
+                renderStep();
+                showScreen("setup");
               } catch (error) {
+                setupValidationPending = false;
                 modalApi.setLoading(false);
                 modalApi.setError(error.message || "Impossible de valider le token.");
               }
@@ -3398,7 +3402,10 @@
     } else {
       var token = window.prompt("Token de configuration de l'école :");
       if (!token) return;
-      validateSetupToken(token).catch(function (e) { notify(e.message || "Impossible de valider le token."); });
+      validateSetupToken(token).then(function () {
+        renderStep();
+        showScreen("setup");
+      }).catch(function (e) { notify(e.message || "Impossible de valider le token."); });
     }
   });
   function bindIfExists(id, event, handler) {

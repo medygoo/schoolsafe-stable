@@ -1,5 +1,5 @@
 var CACHE_PREFIX = "schoolsafe-v2-";
-var CACHE_NAME = CACHE_PREFIX + "a51-session-denials-2026-09-19";
+var CACHE_NAME = CACHE_PREFIX + "setup-token-ui-r1-2026-09-25";
 var CORE_PATHS = [
   "./",
   "./index.html",
@@ -73,11 +73,18 @@ self.addEventListener("activate", function (event) {
 async function networkFirst(request) {
   var cache = await caches.open(CACHE_NAME);
   try {
-    var response = await fetch(request);
-    if (response.ok) await cache.put(request, response.clone());
+    var response = await fetch(request, { cache: "no-cache" });
+    // A cache write failure must not replace a fresh network response.
+    if (response.ok) await cache.put(request, response.clone()).catch(function () {});
     return response;
   } catch (error) {
-    return (await cache.match(request)) || (await cache.match(scopeUrl("./index.html"))) || (await cache.match(scopeUrl("./")));
+    var cached = await cache.match(request);
+    if (cached) return cached;
+    if (request.mode === "navigate") {
+      var shell = (await cache.match(scopeUrl("./index.html"))) || (await cache.match(scopeUrl("./")));
+      if (shell) return shell;
+    }
+    throw error;
   }
 }
 
@@ -98,8 +105,9 @@ self.addEventListener("fetch", function (event) {
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
   // Jamais de cache sur l'API : auth, session, licence, essai, métier natif.
   // Même origine en production : ces réponses sont personnelles et vivantes.
-  if (url.pathname.indexOf("/auth/") === 0 || url.pathname.indexOf("/native/") === 0 || url.pathname.indexOf("/api/") === 0) return;
-  event.respondWith(request.mode === "navigate" ? networkFirst(request) : cacheFirst(request));
+  if (/^\/(?:auth|native|api|setup)(?:\/|$)/.test(url.pathname) || url.pathname === "/config") return;
+  var immutableAsset = /\.(?:woff2?|ttf|otf|png|jpe?g|gif|svg|webp|avif|ico)$/i.test(url.pathname);
+  event.respondWith(request.mode !== "navigate" && immutableAsset ? cacheFirst(request) : networkFirst(request));
 });
 
 self.addEventListener("sync", function (event) {
