@@ -5,8 +5,8 @@
 # SQL renderer: no network credentials, HTTP server or application startup.
 FROM node:22-alpine AS db-migrator
 WORKDIR /work
-COPY scripts/render-additive-upgrade.mjs scripts/installation-plan.mjs scripts/migration-manifest.mjs ./scripts/
-COPY database/ ./database/
+COPY --chown=node:node scripts/render-additive-upgrade.mjs scripts/installation-plan.mjs scripts/migration-manifest.mjs ./scripts/
+COPY --chown=node:node database/ ./database/
 USER node
 ENTRYPOINT ["node", "scripts/render-additive-upgrade.mjs"]
 
