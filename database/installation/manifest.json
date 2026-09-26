@@ -517,6 +517,14 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "setup",
+      "file": "database/setup/v5/01_registration_approval.sql",
+      "manifest": "database/setup/v5/manifest.json",
+      "orderInSet": 1,
+      "sha256": "28324ce2620900a60b65a29f3dd107187c03ad1258a4e2dba8e4cf9daf3ccdde",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "projections",
       "file": "database/projections/v1/02_student_list.sql",
       "requires": [

@@ -8,6 +8,7 @@ import { defaultReadinessProbe, type ReadinessProbe } from "./health/readiness.j
 import { SchoolSafeError, type ApiErrorBody } from "./http/errors.js";
 import { newRequestId } from "./http/request-id.js";
 import { registerSetupRoutes, type SetupRouteDependencies } from "./setup/routes.js";
+import { registerRegistrationRoutes, type RegistrationRouteDependencies } from "./setup/registration-routes.js";
 import { registerSecurityRoutes, type SecurityRouteDependencies } from "./security/routes.js";
 import { registerAlertRoutes, type AlertRouteDependencies } from "./pilotage/alerts/routes.js";
 import { registerApprovalRoutes, type ApprovalRouteDependencies } from "./pilotage/approvals/routes.js";
@@ -76,6 +77,7 @@ export type BuildAppOptions = {
   deviceHubMachine?: DeviceHubMachineRouteDependencies;
   documents?: DocumentRouteDependencies;
   lot5Dashboard?: Lot5DashboardRouteDependencies;
+  registration?: RegistrationRouteDependencies;
 };
 
 export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
@@ -187,6 +189,10 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   if (options.setup) {
     registerSetupRoutes(app, options.setup);
+  }
+
+  if (options.registration) {
+    registerRegistrationRoutes(app, options.registration);
   }
 
   if (options.cards) {
