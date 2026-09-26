@@ -150,6 +150,12 @@
   }
 
   window.SchoolSafeAuthNative = {
+    registerAccount: function (payload) { return request("/auth/registrations", {method:"POST", body:payload}); },
+    reviewAccountRegistration: function (token) { return request("/auth/registrations/review", {method:"POST", body:{token:token}}); },
+    decideAccountRegistration: function (token, decision) { return request("/auth/registrations/decision", {method:"POST", body:{token:token, decision:decision}}); },
+    onboardingMe: function () { return request("/auth/onboarding/me", {}); },
+    createOnboardingSchool: function (payload) { return request("/auth/onboarding/school", {method:"POST", body:payload}); },
+    logoutOnboarding: function () { return request("/auth/onboarding/logout", {method:"POST", body:{}}); },
     isAvailable: isAvailable,
     login: login,
     me: me,

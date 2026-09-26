@@ -7,7 +7,7 @@
   "scripts": {
     "typecheck": "npm run typecheck --workspace server",
     "test": "npm run test --workspace server",
-    "ci": "node scripts/check-migration-versions.mjs --require-installable && npm run check:permissions && npm run test:installer && npm run typecheck && npm test",
+    "ci": "node scripts/check-migration-versions.mjs --require-installable && npm run check:permissions && npm run test:installer && npm run typecheck && npm test && node --test app/qa-setup-token.test.cjs",
     "check:permissions": "node --test scripts/permission-contract.test.mjs",
     "check:migration-versions": "node scripts/check-migration-versions.mjs",
     "build:auth-sdk": "esbuild frontend/vendor/supabase-entry.js --bundle --format=iife --global-name=SchoolSafeSupabaseSDK --outfile=app/vendor/supabase-sdk.js",

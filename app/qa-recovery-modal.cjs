@@ -34,9 +34,10 @@ async function scenario(browser, name, viewport) {
   });
   page.on('pageerror', error => errors.push('pageerror: ' + error.message));
   let authMocks = 0;
+  let onboardingMocks = 0;
   page.on('console', message => {
     if (message.type() !== 'error') return;
-    const expected401 = message.location().url === 'http://127.0.0.1:8787/auth/native/me'
+    const expected401 = ['http://127.0.0.1:8787/auth/native/me', 'http://127.0.0.1:8787/auth/onboarding/me'].includes(message.location().url)
       && /^Failed to load resource: the server responded with a status of 401 /.test(message.text());
     if (!expected401) errors.push('console: ' + message.text());
   });
@@ -46,13 +47,20 @@ async function scenario(browser, name, viewport) {
     return route.fulfill({ status: 401, contentType: 'application/json',
       body: JSON.stringify({ code: 'AUTH_REQUIRED', message: 'Authentification requise' }) });
   });
+  await page.route('**/auth/onboarding/me', route => {
+    assert.equal(route.request().method(), 'GET');
+    onboardingMocks++;
+    return route.fulfill({ status: 401, contentType: 'application/json',
+      body: JSON.stringify({ code: 'AUTH_REQUIRED', message: 'Session onboarding requise' }) });
+  });
   try {
     await page.goto(baseURL, { waitUntil: 'networkidle' });
     await page.locator('#enterSplash').click();
     await expect(page.locator('#auth.active')).toBeVisible();
+    assert.equal(authMocks, 1, 'Anonymous auth 401 intercepted');
+    assert.equal(onboardingMocks, 1, 'Anonymous onboarding 401 intercepted');
     assert.deepEqual(errors, [], 'STOP: global error before Recovery');
-    assert.equal(authMocks, 1, 'Anonymous 401 intercepted');
-    console.log(name + ': Auth visible; AUTH_TEST_ISOLATION: 401 MOCK PASS; prior errors: 0');
+    console.log(name + ': Auth visible; AUTH_ME_MOCKED: 1; ONBOARDING_ME_MOCKED: 1; prior global errors: 0');
     const overlay = page.locator('.ss-modal-overlay.is-open');
     async function openRecovery() {
       await expect(page.locator('#forgotPassword')).toBeVisible();

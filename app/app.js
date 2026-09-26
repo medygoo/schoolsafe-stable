@@ -27,7 +27,11 @@
   var schoolLogoObjectUrl = null;
   var backendConfig = null;
   var pendingPhone = null;
-  var setupToken = null;
+  var onboardingIdentity = null;
+  var setupSubmitting = false;
+  var setupLogoPreview = null;
+  var approvalFragment = window.schoolSafeAccountApproval;
+  delete window.schoolSafeAccountApproval;
 
   var SESSION_STORAGE_KEY = "schoolsafe-v2-session";
   function tryLocalStorage() { try { return window.localStorage; } catch (e) { return null; } }
@@ -73,14 +77,6 @@
       throw new Error(message);
     }
     return data;
-  }
-
-  async function validateSetupToken(token) {
-    var config = await loadBackendConfig();
-    if (!config) throw new Error("Serveur de configuration non disponible.");
-    var result = await apiPost("/setup/validate-token", { token: token });
-    if (!result || !result.valid) throw new Error("Token de configuration invalide.");
-    setupToken = token;
   }
 
   function hasLiveSession() {
@@ -130,7 +126,12 @@
 
   function storeSession(session) {
     currentSession = session;
-    if (session) storageSet("schoolsafe-v2-session", JSON.stringify(session));
+    if (session) {
+      var safeSession = Object.assign({}, session);
+      delete safeSession.token;
+      delete safeSession.password;
+      storageSet("schoolsafe-v2-session", JSON.stringify(safeSession));
+    }
     else storageRemove("schoolsafe-v2-session");
   }
 
@@ -3358,56 +3359,129 @@
       }
     }
   })();
-  document.getElementById("setupHome").addEventListener("click", function () { showScreen("splash"); });
-  document.getElementById("closeSetup").addEventListener("click", function () { showScreen("auth"); });
-  document.getElementById("startSetup").addEventListener("click", function () {
-    if (window.ssModal) {
-      var setupValidationPending = false;
-      window.ssModal({
-        title: "Configuration de l'école",
-        onClose: function () { return !setupValidationPending; },
-        subtitle: "Saisissez le token de configuration fourni par SchoolSafe",
-        content: '<div class="school-form"><label for="setup-token-input">Token</label><input type="text" id="setup-token-input" class="ss-input" placeholder="Token de configuration" autocomplete="off"></div>',
-        size: "sm",
-        closeOnBackdrop: false,
-        actions: [
-          { label: "Annuler", variant: "ghost", close: true },
-          {
-            label: "Valider",
-            variant: "primary",
-            closeOnClick: false,
-            onClick: async function (event, modalApi) {
-              var input = document.getElementById("setup-token-input");
-              var token = input ? input.value.trim() : "";
-              if (!token) { modalApi.setError("Veuillez saisir un token."); return; }
-              modalApi.setError("");
-              setupValidationPending = true;
-              modalApi.setLoading(true);
-              try {
-                await validateSetupToken(token);
-                setupValidationPending = false;
-                modalApi.setLoading(false);
-                modalApi.close();
-                renderStep();
-                showScreen("setup");
-              } catch (error) {
-                setupValidationPending = false;
-                modalApi.setLoading(false);
-                modalApi.setError(error.message || "Impossible de valider le token.");
-              }
-            }
-          }
-        ]
-      });
-    } else {
-      var token = window.prompt("Token de configuration de l'école :");
-      if (!token) return;
-      validateSetupToken(token).then(function () {
-        renderStep();
-        showScreen("setup");
-      }).catch(function (e) { notify(e.message || "Impossible de valider le token."); });
+
+  async function openOnboarding() {
+    var identity = await window.SchoolSafeAuthNative.onboardingMe();
+    if (!identity || identity.status !== "approved") throw new Error("Session d’onboarding indisponible.");
+    clearSession();
+    onboardingIdentity = identity;
+    stepIndex = 0;
+    renderStep();
+    showScreen("setup");
+  }
+
+  async function leaveOnboarding() {
+    if (setupSubmitting) return;
+    try {
+      await window.SchoolSafeAuthNative.logoutOnboarding();
+      onboardingIdentity = null;
+      if (setupLogoPreview) URL.revokeObjectURL(setupLogoPreview);
+      setupLogoPreview = null;
+      document.getElementById("stepContent").replaceChildren();
+      showScreen("auth");
+    } catch (error) { notify("Déconnexion indisponible. Réessayez."); }
+  }
+  document.getElementById("setupHome").addEventListener("click", leaveOnboarding);
+  document.getElementById("closeSetup").addEventListener("click", leaveOnboarding);
+
+  document.getElementById("createAccount").addEventListener("click", function () {
+    var pending = false;
+    function input(name, label, type, limit, autocomplete) {
+      return '<label class="ss-field">' + label + '<input class="ss-input" name="' + name +
+        '" type="' + type + '" required maxlength="' + limit + '" autocomplete="' + autocomplete + '"' +
+        (type === "password" ? ' minlength="8"' : '') + '></label>';
     }
+    var modal = window.ssModal({
+      title: "Créer un compte personnel", size: "md",
+      onClose: function () {
+        if (pending) return false;
+        form.reset();
+      },
+      content: '<form id="accountRegistrationForm" class="ss-form-grid ss-form-grid--2">' +
+        input("first_name", "Prénom", "text", 100, "given-name") +
+        input("last_name", "Nom", "text", 100, "family-name") +
+        input("email", "E-mail", "email", 254, "email") +
+        input("phone", "Téléphone", "tel", 40, "tel") +
+        input("password", "Mot de passe", "password", 64, "new-password") +
+        input("confirmation", "Confirmer le mot de passe", "password", 64, "new-password") + '</form>',
+      actions: [
+        { label: "Annuler", variant: "secondary" },
+        { label: "Envoyer la demande", type: "submit", closeOnClick: false, attrs: {form:"accountRegistrationForm"} }
+      ]
+    });
+    var form = modal.element.querySelector("form");
+    form.onsubmit = async function (event) {
+      event.preventDefault();
+      if (pending || !form.reportValidity()) return;
+      var fields = form.elements;
+      var phone = normalizePhone(fields.phone.value);
+      if (!fields.first_name.value.trim() || !fields.last_name.value.trim()) { modal.setError("Le prénom et le nom sont obligatoires."); return; }
+      if (fields.password.value !== fields.confirmation.value) { modal.setError("Les mots de passe ne correspondent pas."); return; }
+      if (!/^\+243[0-9]{9}$/.test(phone)) { modal.setError("Renseignez un numéro de téléphone valide."); return; }
+      pending = true; modal.setError(""); modal.setLoading(true);
+      try {
+        var config = await loadBackendConfig();
+        if (!config.account_registration_available) throw new Error("Inscription temporairement indisponible.");
+        var result = await window.SchoolSafeAuthNative.registerAccount({
+          first_name: fields.first_name.value.trim(), last_name: fields.last_name.value.trim(),
+          email: fields.email.value.trim().toLowerCase(), phone: phone, password: fields.password.value
+        });
+        if (!result || result.status !== "pending") throw new Error("Inscription temporairement indisponible.");
+        form.reset();
+        modal.content.innerHTML = '<p role="status">Votre demande a été envoyée.<br>Votre compte reste verrouillé jusqu’à validation SchoolSafe.</p>';
+        modal.footer.innerHTML = '<button type="button" class="ss-button">Fermer</button>';
+        modal.footer.querySelector("button").onclick = function () { modal.close(); };
+      } catch (error) { modal.setError(error.message || "Inscription temporairement indisponible."); }
+      finally { pending = false; modal.setLoading(false); }
+    };
   });
+
+  async function showAccountApproval(rawToken) {
+    var token = rawToken, pending = false;
+    var modal = window.ssModal({
+      title: "Validation du compte", size: "md",
+      content: '<p role="status">Vérification du lien…</p>',
+      onClose: function () {
+        if (pending) return false;
+        token = "";
+        modal.content.replaceChildren();
+      },
+      actions: [{label: "Fermer", variant: "secondary"}]
+    });
+    try {
+      if (!/^[A-Za-z0-9_-]{43}$/.test(token || "")) throw new Error("Invalid link");
+      pending = true; modal.setLoading(true);
+      var review = await window.SchoolSafeAuthNative.reviewAccountRegistration(token);
+      if (!review || review.status !== "pending") throw new Error("Invalid link");
+      modal.content.innerHTML = '<div class="account-approval-review">' +
+        row("Prénom", review.first_name) + row("Nom", review.last_name) +
+        row("E-mail", review.email) + row("Téléphone", review.phone) + '</div><p data-approval-feedback role="status"></p>';
+      review = null;
+      modal.footer.innerHTML = '<button type="button" class="ss-button ss-button--secondary" data-decision="reject">REFUSER</button>' +
+        '<button type="button" class="ss-button" data-decision="approve">APPROUVER</button>';
+      modal.footer.querySelectorAll("[data-decision]").forEach(function (button) {
+        button.onclick = async function () {
+          if (pending || !token) return;
+          pending = true; modal.setError(""); modal.setLoading(true);
+          try {
+            var result = await window.SchoolSafeAuthNative.decideAccountRegistration(token, button.dataset.decision);
+            if (!result || !["approved", "rejected"].includes(result.status)) throw new Error("Invalid decision");
+            token = "";
+            modal.content.textContent = result.status === "approved"
+              ? "Compte approuvé. L’utilisateur peut maintenant se connecter et créer son école."
+              : "Compte refusé.";
+            modal.footer.innerHTML = '<button type="button" class="ss-button">Fermer</button>';
+            modal.footer.querySelector("button").onclick = function () { modal.close(); };
+          } catch (error) { modal.setError("Décision indisponible. Le lien peut être expiré ou déjà utilisé."); }
+          finally { pending = false; modal.setLoading(false); }
+        };
+      });
+    } catch (error) {
+      token = "";
+      modal.content.textContent = "Lien invalide ou expiré.";
+    } finally { rawToken = ""; pending = false; modal.setLoading(false); }
+  }
+
   function bindIfExists(id, event, handler) {
     var el = document.getElementById(id);
     if (el) el.addEventListener(event, handler);
@@ -3638,6 +3712,13 @@
       var rememberMe = document.getElementById("remember")?.checked === true;
       var nativeResult = await window.SchoolSafeAuthNative.login(identifier, password, undefined, rememberMe);
       if (!nativeResult) throw new Error("Réponse de connexion incomplète. Réessayez.");
+      if (nativeResult.code === "ONBOARDING_REQUIRED") {
+        passwordInput.value = "";
+        password = "";
+        pendingNativeLogin = null;
+        await openOnboarding();
+        return;
+      }
       if (nativeResult.code === "PROFILE_CHOICE_REQUIRED"
           && nativeResult.profiles && nativeResult.profiles.length) {
         pendingNativeLogin = { login: identifier, password: password };
@@ -3850,31 +3931,35 @@
     publicHonors: "Après validation",
     primaryColor: "#071a3d",
     accentColor: "#e9a515",
-    documentFooter: "",
-    officialLogoData: "",
-    adminFirstName: "",
-    adminLastName: "",
-    adminEmail: "",
-    adminPhone: "+243 ",
-    adminPassword: "",
-    adminPasswordConfirm: ""
+    documentFooter: ""
   };
   var state = loadDraft();
+
+  function safeSchoolDraft(source) {
+    var result = Object.assign({}, defaults, {cycles: defaults.cycles.slice()});
+    Object.keys(defaults).forEach(function (key) {
+      if (key !== "cycles" && source && typeof source[key] === "string") result[key] = source[key];
+    });
+    if (source && Array.isArray(source.cycles)) {
+      result.cycles = ["nursery", "primary", "secondary"].filter(function (key) { return source.cycles.includes(key); });
+    }
+    return result;
+  }
 
   function loadDraft() {
     try {
       var saved = window.localStorage.getItem("schoolsafe-v2-setup");
-      return saved ? Object.assign({}, defaults, JSON.parse(saved)) : Object.assign({}, defaults);
+      var sanitized = safeSchoolDraft(saved ? JSON.parse(saved) : {});
+      if (saved) window.localStorage.setItem("schoolsafe-v2-setup", JSON.stringify(sanitized));
+      return sanitized;
     } catch (error) {
-      return Object.assign({}, defaults);
+      storageRemove("schoolsafe-v2-setup");
+      return safeSchoolDraft({});
     }
   }
 
   function saveDraft() {
-    var toStore = Object.assign({}, state);
-    delete toStore.adminPassword;
-    delete toStore.adminPasswordConfirm;
-    try { window.localStorage.setItem("schoolsafe-v2-setup", JSON.stringify(toStore)); } catch (error) {}
+    try { window.localStorage.setItem("schoolsafe-v2-setup", JSON.stringify(safeSchoolDraft(state))); } catch (error) {}
   }
 
   function esc(value) {
@@ -3999,11 +4084,11 @@
   }
 
   function renderBrand() {
-    var logoInputHtml = '<label class="logo-upload" for="officialLogoInput"><span><i data-lucide="image-up"></i><b>' + (state.officialLogoData ? "Logo officiel chargé" : "Sélectionner le logo officiel") + '</b><span>PNG haute définition, fond transparent recommandé</span></span><input id="officialLogoInput" type="file" accept="image/png,image/jpeg" hidden></label>';
+    var logoInputHtml = '<label class="logo-upload" for="officialLogoInput"><span><i data-lucide="image-up"></i><b>' + (setupLogoPreview ? "Aperçu du logo chargé" : "Aperçu du logo (facultatif)") + '</b><span>PNG haute définition, fond transparent recommandé</span></span><input id="officialLogoInput" type="file" accept="image/png,image/jpeg" hidden></label>';
     return [
-      intro("Installez l’identité officielle", "Le logo validé sera obligatoire sur chaque PDF officiel. Les couleurs personnalisent l’interface sans modifier le moteur de cartes."),
+      intro("Installez l’identité officielle", "Le logo est facultatif. L’aperçu reste dans cet onglet ; le logo officiel pourra être ajouté après la création de l’école."),
       '<div class="ss-form-grid ss-form-grid--2">',
-      ssField({ label: "Logo officiel de l’école", inputHtml: logoInputHtml, className: "ss-field--wide" }),
+      ssField({ label: "Logo officiel de l’école", inputHtml: logoInputHtml + (setupLogoPreview ? '<img class="setup-logo-preview" alt="Aperçu du logo" src="' + setupLogoPreview + '">' : ""), className: "ss-field--wide" }),
       field("Couleur principale", "primaryColor", state.primaryColor, { type: "color" }),
       field("Couleur d’accent", "accentColor", state.accentColor, { type: "color" }),
       field("Mention de pied de page des PDF", "documentFooter", state.documentFooter, { wide: true, textarea: true, placeholder: "Adresse, contacts et références légales" }),
@@ -4012,18 +4097,16 @@
   }
 
   function renderAdmin() {
-    return [
-      intro("Créez le premier responsable", "L’Administrateur principal attribuera ensuite les profils, les modules, les actions et les périmètres de chaque membre du personnel."),
-      '<div class="ss-form-grid ss-form-grid--2">',
-      field("Prénom", "adminFirstName", state.adminFirstName),
-      field("Nom", "adminLastName", state.adminLastName),
-      field("E-mail professionnel", "adminEmail", state.adminEmail, { type: "email", placeholder: "direction@ecole.cd" }),
-      field("Téléphone", "adminPhone", state.adminPhone, { type: "tel" }),
-      field("Mot de passe", "adminPassword", state.adminPassword, { type: "password", placeholder: "Minimum 8 caractères" }),
-      field("Confirmer le mot de passe", "adminPasswordConfirm", state.adminPasswordConfirm, { type: "password" }),
-      '<div class="ss-field ss-field--wide">' + ssState({ type: "warning", title: "Sécurité", message: "Ce compte sera créé immédiatement. L’authentification forte sera exigée pour les profils sensibles.", size: "inline" }) + "</div>",
-      "</div>"
-    ].join("");
+    var identity = onboardingIdentity || {};
+    function readonly(id, label, value) {
+      return '<label class="ss-field">' + label + '<input class="ss-input" id="' + id + '" value="' + esc(value) + '" readonly></label>';
+    }
+    return intro("Votre compte approuvé", "Ce compte deviendra l’Administrateur principal de cette école.") +
+      '<div class="ss-form-grid ss-form-grid--2">' +
+      readonly("adminFirstName", "Prénom", identity.first_name) +
+      readonly("adminLastName", "Nom", identity.last_name) +
+      readonly("adminEmail", "E-mail", identity.email) +
+      readonly("adminPhone", "Téléphone", identity.phone) + '</div>';
   }
 
   function row(label, value) {
@@ -4033,7 +4116,7 @@
   function renderReview() {
     var cycleNames = { nursery: "Maternelle", primary: "Primaire", secondary: "Secondaire et Humanités" };
     return [
-      intro("Contrôlez avant de poursuivre", "Cette étape termine uniquement la maquette locale. Elle ne crée aucune base, aucun compte et aucun service sur le VPS."),
+      intro("Contrôlez avant de poursuivre", "Vérifiez les informations. La validation créera votre école et attribuera les droits d’Administrateur principal à votre compte approuvé."),
       '<div class="review-grid">',
       '<section class="review-block"><h3>Établissement</h3>',
       row("Nom", state.schoolName), row("Statut", state.schoolType), row("Code", state.schoolCode),
@@ -4043,9 +4126,9 @@
       row("Localisation", [state.city, state.province].filter(Boolean).join(", ")), row("E-mail", state.email), row("Téléphone", state.phone),
       row("Site", state.websiteMode), row("Adresse", state.websiteAddress || state.website), row("Publications", "Actualités, galerie et palmarès après validation"),
       '</section><section class="review-block"><h3>Administrateur principal</h3>',
-      row("Nom", [state.adminFirstName, state.adminLastName].filter(Boolean).join(" ")), row("E-mail", state.adminEmail), row("Téléphone", state.adminPhone),
+      row("Nom", [(onboardingIdentity || {}).first_name, (onboardingIdentity || {}).last_name].filter(Boolean).join(" ")), row("E-mail", (onboardingIdentity || {}).email), row("Téléphone", (onboardingIdentity || {}).phone),
       '</section></div>',
-      '<div class="warning-note"><i data-lucide="shield-alert"></i><span>La prochaine phase préparera l’analyse d’impact de l’authentification, des permissions et du schéma de données. Les opérations officielles sont traitées par le serveur de l’école.</span></div>'
+      '<div class="warning-note"><i data-lucide="shield-alert"></i><span>Après la création, connectez-vous avec votre compte personnel pour administrer votre école.</span></div>'
     ].join("");
   }
 
@@ -4053,7 +4136,7 @@
 
   function collectFields() {
     document.querySelectorAll("#stepContent input:not([name=cycles]), #stepContent select, #stepContent textarea").forEach(function (control) {
-      if (control.name) state[control.name] = control.value;
+      if (Object.prototype.hasOwnProperty.call(defaults, control.name)) state[control.name] = control.value;
     });
     var cycleControls = Array.prototype.slice.call(document.querySelectorAll('input[name="cycles"]'));
     if (cycleControls.length) {
@@ -4094,9 +4177,10 @@
       var file = upload.files && upload.files[0];
       if (!file) return;
       if (!/^image\/(png|jpeg)$/.test(file.type)) { notify("Utilisez un logo PNG ou JPEG."); return; }
-      var reader = new FileReader();
-      reader.onload = function () { state.officialLogoData = reader.result; saveDraft(); notify("Logo officiel enregistré dans le brouillon local."); renderStep(); };
-      reader.readAsDataURL(file);
+      if (setupLogoPreview) URL.revokeObjectURL(setupLogoPreview);
+      setupLogoPreview = URL.createObjectURL(file);
+      notify("Aperçu du logo disponible pour cet onglet.");
+      renderStep();
     });
     document.querySelectorAll("#stepContent input, #stepContent select, #stepContent textarea").forEach(function (control) {
       control.addEventListener("change", collectFields);
@@ -4114,30 +4198,23 @@ function validateStep(index) {
       if (!state.yearLabel.trim()) return "Le libellé de l'année est obligatoire.";
       if (!state.yearStart) return "La date de début d'année est obligatoire.";
       if (!state.yearEnd) return "La date de fin d'année est obligatoire.";
+      if (state.yearStart >= state.yearEnd) return "La fin de l’année doit suivre sa date de début.";
     }
     if (index === 3) {
       if (!state.email.trim()) return "L'e-mail officiel est obligatoire.";
       if (!state.phone.trim()) return "Le téléphone officiel est obligatoire.";
       if (state.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email.trim())) return "L'e-mail saisi n'est pas valide.";
     }
-    if (index === 4) {
-      if (!state.officialLogoData) return "Le logo officiel est obligatoire.";
-    }
-    if (index === 5) {
-      if (!state.adminFirstName.trim() || !state.adminLastName.trim()) return "Le prénom et le nom sont obligatoires.";
-      if (!state.adminEmail.trim()) return "L'e-mail de l'administrateur est obligatoire.";
-      if (state.adminEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.adminEmail.trim())) return "L'e-mail de l'administrateur n'est pas valide.";
-      if (!state.adminPassword || state.adminPassword.length < 8) return "Le mot de passe doit faire au moins 8 caractères.";
-      if (state.adminPassword !== state.adminPasswordConfirm) return "Les mots de passe ne correspondent pas.";
+    if (index === 5 && (!onboardingIdentity || onboardingIdentity.status !== "approved")) {
+      return "Reconnectez-vous pour continuer la création de votre école.";
     }
     return null;
   }
 
   async function submitSetup() {
-    if (!setupToken) throw new Error("Token de configuration manquant.");
+    if (!onboardingIdentity) throw new Error("Session d’onboarding requise.");
 
     var schoolPayload = {
-      token: setupToken,
       identity: {
         name_fr: state.schoolName,
         name_en: state.name_en || state.schoolName,
@@ -4159,7 +4236,7 @@ function validateStep(index) {
         address: state.address,
         email: state.email,
         phone: state.phone,
-        website_url: state.website,
+        website_url: state.websiteAddress || state.website,
         website_mode: state.websiteMode,
         public_news: state.publicNews,
         public_gallery: state.publicGallery,
@@ -4168,23 +4245,12 @@ function validateStep(index) {
       brand: {
         primary_color: state.primaryColor,
         accent_color: state.accentColor,
-        document_footer: state.documentFooter,
-        logo_path: state.officialLogoData || null
+        document_footer: state.documentFooter
       }
     };
 
-    await apiPost("/setup/school", schoolPayload);
-
-    var adminPayload = {
-      token: setupToken,
-      email: state.adminEmail,
-      password: state.adminPassword,
-      first_name: state.adminFirstName,
-      last_name: state.adminLastName,
-      phone: state.adminPhone
-    };
-
-    await apiPost("/setup/admin", adminPayload);
+    var result = await window.SchoolSafeAuthNative.createOnboardingSchool(schoolPayload);
+    if (!result || result.status !== "completed") throw new Error("Création de l’école non confirmée.");
   }
 
   function renderStep() {
@@ -4227,6 +4293,9 @@ function validateStep(index) {
           return;
         }
         clearSession();
+        if (refused) {
+          try { await openOnboarding(); return; } catch (_) { onboardingIdentity = null; }
+        }
       }
     }
     renderStep();
@@ -4240,6 +4309,7 @@ function validateStep(index) {
     renderStep();
   });
   document.getElementById("nextStep").addEventListener("click", async function () {
+    if (setupSubmitting) return;
     collectFields();
     var error = validateStep(stepIndex);
     if (error) { notify(error); return; }
@@ -4250,26 +4320,43 @@ function validateStep(index) {
       return;
     }
 
+    for (var index = 0; index < stepLabels.length - 1; index++) {
+      var missing = validateStep(index);
+      if (missing) { stepIndex = index; renderStep(); notify(missing); return; }
+    }
+    setupSubmitting = true;
     var button = document.getElementById("nextStep");
-    button.disabled = true;
+    document.querySelectorAll("#setup button, #setup input, #setup select, #setup textarea").forEach(function (control) { control.disabled = true; });
     button.innerHTML = 'Configuration en cours…';
 
     try {
       await submitSetup();
       storageRemove("schoolsafe-v2-setup");
-      notify("Configuration enregistrée. Connectez-vous avec le compte administrateur.");
-      window.setTimeout(function () {
-        showScreen("auth");
-        button.disabled = false;
-      }, 900);
+      onboardingIdentity = null;
+      state = safeSchoolDraft({});
+      if (setupLogoPreview) URL.revokeObjectURL(setupLogoPreview);
+      setupLogoPreview = null;
+      document.getElementById("stepContent").replaceChildren();
+      showScreen("auth");
+      notify("Votre école est créée. Votre compte Administrateur principal est prêt.");
     } catch (error) {
-      console.error("Setup error", error);
       notify("Échec de la configuration : " + (error.message || "erreur inconnue"));
       button.disabled = false;
       button.innerHTML = 'Terminer la configuration <i data-lucide="check"></i>';
       icons();
+    } finally {
+      setupSubmitting = false;
+      document.querySelectorAll("#setup button, #setup input, #setup select, #setup textarea").forEach(function (control) { control.disabled = false; });
     }
   });
 
-  restoreSession();
+  if (typeof approvalFragment === "string") {
+    var initialApproval = approvalFragment;
+    approvalFragment = null;
+    showScreen("auth");
+    showAccountApproval(initialApproval);
+    initialApproval = null;
+  } else {
+    restoreSession();
+  }
 }());

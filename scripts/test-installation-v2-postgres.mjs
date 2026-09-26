@@ -39,6 +39,7 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
    finally {await migrator.query('rollback');}
   });
   await qualifyAdditiveUpgrade({admin,connectionString,passwords,check});
+  await qualifyInstalled62Upgrade({admin,connectionString,passwords,check});
   await check('migrator cannot read setup authorizations directly',async()=>{
    const privileges=(await admin.query("select has_table_privilege('schoolsafe_migrator','auth.setup_authorizations','SELECT') direct_select, has_schema_privilege('schoolsafe_migrator','auth','USAGE') auth_usage")).rows[0];
    assert.equal(privileges.direct_select,false);assert.equal(privileges.auth_usage,false);
@@ -251,6 +252,7 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
   await qualifySetupHttp({admin,auth,migrator,check});
   await qualifyRegistrationPending({admin,auth,check,denied});
   await qualifyRegistrationApproval({admin,auth,check,denied});
+  await qualifyAccountRegistrationOnboarding({admin,auth,api,connect,check,denied,hash,context});
   log(`POSTGRES_QUALIFICATION PASS (${passed} scenarios)`);return {passed,schools};
  }catch(error){
   throw new Error(`POSTGRES_QUALIFICATION FAIL: ${phase}; ${error.code??'assertion'}`,{cause:error});
@@ -523,6 +525,7 @@ async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
   'database/setup/v4/01_registration_pending.sql',
   'database/auth/v4/01_auth_resolve_identity_preauth.sql',
    'database/setup/v5/01_registration_approval.sql',
+   'database/auth/v5/01_account_registration_onboarding.sql',
  ]);
  assert.equal(additions.size,plan.units.length-48,'Additions must cover the current plan beyond historical 48');
  assert.ok(additions.has('database/auth/v3/01_inactive_school_auth_gate.sql'),'auth v3 gate must be in additions');
@@ -652,4 +655,268 @@ export async function qualifyRegistrationApproval({admin,auth,check,denied}){
    assert.equal(authAllowed,true,`schoolsafe_auth must execute ${fn}`);
   }
  });
+}
+
+export async function qualifyAccountRegistrationOnboarding({admin,auth,api,connect,check,denied,hash,context}) {
+ const snapshot=async()=> (await admin.query(`select (select count(*)::int from iam.users) users,
+ (select count(*)::int from auth.identities) identities,(select count(*)::int from auth.credentials) credentials,
+ (select count(*)::int from app.schools) schools,(select count(*)::int from iam.profiles) profiles,
+ (select count(*)::int from iam.roles) roles,(select count(*)::int from app.academic_years) years,
+ (select count(*)::int from app.school_contacts) contacts,(select count(*)::int from app.school_settings) settings,
+ (select count(*)::int from app.school_cycles) cycles,(select count(*)::int from iam.profile_roles) assignments,
+ (select count(*)::int from audit.events) audit_events,(select count(*)::int from auth.setup_authorizations) capabilities`)).rows[0];
+ let serial=0;
+ const payload=()=>({first_name:' Synthetic ',last_name:' Applicant ',email:`account-${randomUUID()}@example.test`,phone:'+24389'+String(++serial).padStart(7,'0')});
+ const prepare=async(p=payload(),ip='198.51.100.'+(serial%250+1),client=auth)=>({...(await client.query('select api.account_registration_prepare($1,$2,$3) r',[p,hash,ip])).rows[0].r,payload:p});
+ const issue=async(id,capability=digest(randomBytes(32)))=>{await auth.query('select api.account_registration_issue_approval($1,$2,$3)',[id,capability,new Date(Date.now()+600000)]);return capability;};
+ let pending,identity,approval;
+ await check('account-first pending creates only one inactive account and no school objects',async()=>{
+  const before=await snapshot();pending=await prepare();assert.equal(pending.status,'pending');assert.ok(pending.request_id);
+  const after=await snapshot();assert.deepEqual(after,{...before,users:before.users+1,identities:before.identities+1,credentials:before.credentials+1});
+  identity=(await admin.query('select r.*,i.status identity_status,u.is_active from auth.account_registration_requests r join auth.identities i on i.id=r.identity_id join iam.users u on u.id=r.user_id where r.id=$1',[pending.request_id])).rows[0];
+  assert.equal(identity.identity_status,'disabled');assert.equal(identity.is_active,false);
+  assert.equal((await auth.query('select * from api.auth_resolve_identity($1)',[pending.payload.email])).rowCount,0);
+  assert.equal((await auth.query('select * from api.auth_resolve_onboarding_identity($1)',[pending.payload.email])).rowCount,0);
+ });
+ await check('account-first approval activates exact account without school/profile creation',async()=>{
+  const before=await snapshot();approval=await issue(pending.request_id);
+  const review=(await auth.query('select api.account_registration_review($1) r',[approval])).rows[0].r;
+  assert.deepEqual(Object.keys(review).sort(),['request_id','first_name','last_name','email','phone','status'].sort());assert.equal(review.first_name,'Synthetic');
+  assert.equal((await auth.query('select api.account_registration_decide($1,$2) r',[approval,'approve'])).rows[0].r.status,'approved');
+  assert.deepEqual(await snapshot(),before);
+  const resolved=(await auth.query('select * from api.auth_resolve_onboarding_identity($1)',[pending.payload.email])).rows;
+  assert.equal(resolved.length,1);assert.equal(resolved[0].identity_id,identity.identity_id);assert.equal(resolved[0].user_id,identity.user_id);assert.equal(resolved[0].password_hash,hash);
+  await denied(auth.query('select api.account_registration_decide($1,$2)',[approval,'approve']));
+ });
+ const schoolPayload={identity:{name_fr:'Synthetic account-first school'},cycles:['primary'],academic_year:{label:'2026-2027',starts_on:'2026-09-01',ends_on:'2027-07-31',periods:'Trimestres'},contact:{website_url:'https://example.test',website_mode:'External',public_news:'Yes',public_gallery:'No',public_honors:'Yes'},brand:{}};
+ let sessionHash=digest(randomBytes(32)),created;
+ await check('account-first onboarding session creates no ordinary auth session',async()=>{
+  const before=(await admin.query('select count(*)::int n from auth.sessions')).rows[0].n;
+  const session=(await auth.query('select * from api.auth_create_onboarding_session($1,$2,$3,$4,$5)',[identity.identity_id,sessionHash,3600,'192.0.2.1','synthetic-agent'])).rows[0];assert.ok(session.session_id);
+  assert.equal((await admin.query('select count(*)::int n from auth.sessions')).rows[0].n,before);
+  const me=(await auth.query('select api.auth_resolve_onboarding_session($1) r',[sessionHash])).rows[0].r;assert.equal(me.email,pending.payload.email);assert.equal(me.status,'approved');
+ });
+ await check('account-first creates school with same identity and canonical administrator atomically',async()=>{
+  const before=await snapshot();created=(await auth.query('select api.account_onboarding_create_school($1,$2) r',[sessionHash,schoolPayload])).rows[0].r;
+  assert.equal(created.status,'completed');assert.ok(created.school_id&&created.profile_id);
+  const after=await snapshot();assert.equal(after.users,before.users);assert.equal(after.identities,before.identities);assert.equal(after.credentials,before.credentials);assert.equal(after.schools,before.schools+1);assert.equal(after.profiles,before.profiles+1);
+  const profile=(await admin.query('select user_id,school_id from iam.profiles where id=$1',[created.profile_id])).rows[0];assert.equal(profile.user_id,identity.user_id);assert.equal(profile.school_id,created.school_id);
+  const roles=(await admin.query('select r.code from iam.profile_roles pr join iam.roles r on r.id=pr.role_id and r.school_id=pr.school_id where pr.profile_id=$1',[created.profile_id])).rows;assert.deepEqual(roles,[{code:'admin'}]);
+  assert.equal((await auth.query('select * from api.auth_resolve_onboarding_identity($1)',[pending.payload.email])).rowCount,0);
+  assert.equal((await auth.query('select * from api.auth_resolve_identity($1)',[pending.payload.email])).rows[0].identity_id,identity.identity_id);
+  assert.equal((await auth.query('select api.auth_resolve_onboarding_session($1) r',[sessionHash])).rows[0].r,null);
+  await denied(auth.query('select api.account_onboarding_create_school($1,$2)',[sessionHash,schoolPayload]));
+ });
+ const calls=[
+ 'api.account_registration_prepare(jsonb,text,inet)','api.account_registration_issue_approval(uuid,text,timestamptz)',
+ 'api.account_registration_mark_email_sent(uuid)','api.account_registration_review(text)','api.account_registration_decide(text,text)',
+ 'api.account_registration_cancel_delivery_failure(uuid)','api.auth_resolve_onboarding_identity(text)',
+ 'api.auth_create_onboarding_session(uuid,text,integer,inet,text)','api.auth_resolve_onboarding_session(text)',
+ 'api.auth_revoke_onboarding_session(text)','api.account_onboarding_create_school(text,jsonb)'];
+ await check('account-first tables FORCE RLS and new RPCs expose only owner-controlled auth execution',async()=>{
+  for(const name of ['account_registration_requests','onboarding_sessions','account_registration_events']){
+   const table='auth.'+name;
+   const meta=(await admin.query('select relrowsecurity,relforcerowsecurity,pg_get_userbyid(relowner) owner from pg_class where oid=$1::regclass',[table])).rows[0];
+   assert.deepEqual(meta,{relrowsecurity:true,relforcerowsecurity:true,owner:'schoolsafe_owner'});
+   for(const role of ['schoolsafe_api','schoolsafe_auth','schoolsafe_worker','schoolsafe_migrator','schoolsafe_auditor'])assert.equal((await admin.query("select has_table_privilege($1,$2,'SELECT,INSERT,UPDATE,DELETE') allowed",[role,table])).rows[0].allowed,false);
+   await denied(auth.query('select * from '+table));
+   assert.equal((await admin.query("select count(*)::int n from pg_policy where polrelid=$1::regclass and polroles<>array[(select oid from pg_roles where rolname='schoolsafe_owner')]",[table])).rows[0].n,0);
+  }
+  for(const fn of calls){
+   const meta=(await admin.query('select pg_get_userbyid(proowner) owner,prosecdef,proconfig from pg_proc where oid=$1::regprocedure',[fn])).rows[0];assert.deepEqual(meta,{owner:'schoolsafe_owner',prosecdef:true,proconfig:['search_path=pg_catalog']});
+   for(const role of ['schoolsafe_api','schoolsafe_auth','schoolsafe_worker','schoolsafe_migrator','schoolsafe_auditor'])assert.equal((await admin.query("select has_function_privilege($1,$2,'EXECUTE') allowed",[role,fn])).rows[0].allowed,role==='schoolsafe_auth');
+   assert.equal((await admin.query("select exists(select 1 from pg_proc p,lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a where p.oid=$1::regprocedure and a.grantee=0) allowed",[fn])).rows[0].allowed,false);
+  }
+  await denied(api.query('select api.account_registration_review($1)',[approval]));
+ });
+ await check('account-first input rejects school and password fields and invalid identity values',async()=>{
+  const before=await snapshot();
+  for(const change of [{password:'forbidden'},{school_id:randomUUID()},{admin:{}},{first_name:' '},{email:'invalid'},{phone:'123'},{last_name:12}])await assert.rejects(prepare({...payload(),...change}),e=>e.code==='23514');
+  await assert.rejects(auth.query('select api.account_registration_prepare($1,$2,$3)',[payload(),'plaintext','192.0.2.1']),e=>e.code==='23514');
+  assert.deepEqual(await snapshot(),before);
+ });
+ await check('account-first duplicate email or phone is atomic with identical generic refusal',async()=>{
+  const before=await snapshot();const errors=[];
+  for(const p of [{...payload(),email:pending.payload.email.toUpperCase()},{...payload(),phone:pending.payload.phone}]){
+   await assert.rejects(prepare(p),e=>{errors.push(e.message);return e.code==='23505';});
+  }
+  assert.equal(errors[0],errors[1]);assert.deepEqual(await snapshot(),before);
+ });
+ const peer=await connect('auth');
+ await check('account-first concurrent duplicate email and phone each have exactly one winner',async()=>{
+  for(const field of ['email','phone']){
+   const one=payload(),two={...payload(),[field]:one[field]};const before=await snapshot();
+   const results=await Promise.allSettled([prepare(one,'198.18.1.1',auth),prepare(two,'198.18.1.2',peer)]);
+   assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(results.find(r=>r.status==='rejected').reason.code,'23505');
+   const after=await snapshot();assert.equal(after.users,before.users+1);assert.equal(after.identities,before.identities+1);
+  }
+ });
+ await check('account-first serialized IP window admits five and rejects concurrent sixth even after compensation',async()=>{
+  const clients=await Promise.all(Array.from({length:6},()=>connect('auth')));
+  const results=await Promise.allSettled(clients.map(c=>prepare(payload(),'198.18.2.1',c)));
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,5);assert.equal(results.find(r=>r.status==='rejected').reason.code,'P0001');
+  const id=results.find(r=>r.status==='fulfilled').value.request_id;
+  assert.equal((await auth.query('select api.account_registration_cancel_delivery_failure($1) ok',[id])).rows[0].ok,true);
+  await assert.rejects(prepare(payload(),'198.18.2.1'),e=>e.code==='P0001');
+ });
+ await check('account-first consumed or invalid approval tokens cannot review decide or be reissued',async()=>{
+  for(const token of [null,'bad',digest(randomBytes(32)),approval]){
+   await denied(auth.query('select api.account_registration_review($1)',[token]));await denied(auth.query('select api.account_registration_decide($1,$2)',[token,'approve']));
+  }
+  await denied(issue(pending.request_id));
+  await auth.query('select api.account_registration_mark_email_sent($1)',[pending.request_id]);
+  assert.ok((await admin.query('select approval_email_sent_at from auth.account_registration_requests where id=$1',[pending.request_id])).rows[0].approval_email_sent_at);
+  assert.equal((await auth.query('select api.account_registration_cancel_delivery_failure($1) ok',[pending.request_id])).rows[0].ok,false);
+ });
+ await check('account-first expiry bounds and expired approval fail closed',async()=>{
+  const p=await prepare();
+  for(const values of [[null,new Date(Date.now()+60000)],['bad',new Date(Date.now()+60000)],[digest(randomBytes(32)),null],[digest(randomBytes(32)),new Date(Date.now()-1000)],[digest(randomBytes(32)),new Date(Date.now()+172801000)]])await assert.rejects(auth.query('select api.account_registration_issue_approval($1,$2,$3)',[p.request_id,...values]),e=>e.code==='23514');
+  const token=await issue(p.request_id);await admin.query("update auth.account_registration_requests set approval_expires_at=clock_timestamp()-interval '1 second' where id=$1",[p.request_id]);
+  await denied(auth.query('select api.account_registration_review($1)',[token]));await denied(auth.query('select api.account_registration_decide($1,$2)',[token,'approve']));
+ });
+ await check('account-first rejection leaves account disabled without school creation',async()=>{
+  const p=await prepare(),token=await issue(p.request_id);const before=await snapshot();
+  assert.equal((await auth.query('select api.account_registration_decide($1,$2) r',[token,'reject'])).rows[0].r.status,'rejected');assert.deepEqual(await snapshot(),before);
+  assert.equal((await auth.query('select * from api.auth_resolve_onboarding_identity($1)',[p.payload.email])).rowCount,0);
+  assert.equal((await auth.query('select * from api.auth_resolve_identity($1)',[p.payload.email])).rowCount,0);
+  const state=(await admin.query('select u.is_active,i.status from auth.account_registration_requests r join iam.users u on u.id=r.user_id join auth.identities i on i.id=r.identity_id where r.id=$1',[p.request_id])).rows[0];assert.deepEqual(state,{is_active:false,status:'disabled'});
+ });
+ await check('account-first double decision has one winner and one event',async()=>{
+  const p=await prepare(),token=await issue(p.request_id);
+  const results=await Promise.allSettled([auth.query('select api.account_registration_decide($1,$2)',[token,'approve']),peer.query('select api.account_registration_decide($1,$2)',[token,'reject'])]);
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(results.find(r=>r.status==='rejected').reason.code,'42501');
+  assert.equal((await admin.query("select count(*)::int n from auth.account_registration_events where request_id=$1 and event_type<>'account.registration.pending'",[p.request_id])).rows[0].n,1);
+ });
+ await check('account-first failed delivery removes only pending account and supports retry',async()=>{
+  const before=await snapshot(),p=await prepare();await issue(p.request_id);
+  assert.equal((await auth.query('select api.account_registration_cancel_delivery_failure($1) ok',[p.request_id])).rows[0].ok,true);assert.deepEqual(await snapshot(),before);
+  assert.equal((await admin.query('select count(*)::int n from auth.account_registration_events where request_id=$1',[p.request_id])).rows[0].n,0);
+  assert.equal((await prepare(p.payload)).status,'pending');
+ });
+ await check('account-first cancellation and approval race cannot delete an approved account',async()=>{
+  const p=await prepare(),token=await issue(p.request_id);
+  const result=await Promise.allSettled([auth.query('select api.account_registration_decide($1,$2) r',[token,'approve']),peer.query('select api.account_registration_cancel_delivery_failure($1) ok',[p.request_id])]);
+  const row=(await admin.query('select status from auth.account_registration_requests where id=$1',[p.request_id])).rows[0];
+  if(row){assert.equal(row.status,'approved');assert.equal(result[0].status,'fulfilled');assert.equal(result[1].value.rows[0].ok,false);}else{assert.equal(result[0].status,'rejected');assert.equal(result[1].value.rows[0].ok,true);}
+ });
+ await check('account-first approval refuses altered identity binding and leaves decision pending',async()=>{
+  const p=await prepare(),token=await issue(p.request_id);const row=(await admin.query('select user_id from auth.account_registration_requests where id=$1',[p.request_id])).rows[0];
+  await admin.query('update iam.users set phone=$1 where id=$2',['+243888888888',row.user_id]);
+  try{await denied(auth.query('select api.account_registration_decide($1,$2)',[token,'approve']));}finally{await admin.query('update iam.users set phone=$1 where id=$2',[p.payload.phone,row.user_id]);}
+  assert.equal((await auth.query('select api.account_registration_review($1) r',[token])).rows[0].r.status,'pending');
+ });
+ const freshApproved=async()=>{const p=await prepare();await auth.query('select api.account_registration_decide($1,$2)',[await issue(p.request_id),'approve']);const id=(await auth.query('select * from api.auth_resolve_onboarding_identity($1)',[p.payload.email])).rows[0];return {...p,...id};};
+ const session=async(id,token=digest(randomBytes(32)))=>{await auth.query('select * from api.auth_create_onboarding_session($1,$2,$3,$4,$5)',[id,token,3600,null,'synthetic']);return token;};
+ const ready=await freshApproved();
+ await check('account-first onboarding rejects unknown pending rejected and completed identities',async()=>{
+  const p=await prepare();const id=(await admin.query('select identity_id from auth.account_registration_requests where id=$1',[p.request_id])).rows[0].identity_id;
+  for(const candidate of [randomUUID(),id,identity.identity_id])await denied(session(candidate));
+  for(const ttl of [null,0,3601])await assert.rejects(auth.query('select * from api.auth_create_onboarding_session($1,$2,$3,$4,$5)',[ready.identity_id,digest(randomBytes(32)),ttl,null,null]),e=>e.code==='23514');
+  for(const token of [null,'raw-token','A'.repeat(64)])await assert.rejects(auth.query('select * from api.auth_create_onboarding_session($1,$2,$3,$4,$5)',[ready.identity_id,token,3600,null,null]),e=>e.code==='23514');
+ });
+ await check('account-first onboarding rejects expired revoked and unknown session hashes',async()=>{
+  const expired=await session(ready.identity_id),revoked=await session(ready.identity_id);
+  await admin.query("update auth.onboarding_sessions set created_at=clock_timestamp()-interval '2 hours',expires_at=clock_timestamp()-interval '1 hour' where token_hash=$1",[expired]);
+  await auth.query('select api.auth_revoke_onboarding_session($1)',[revoked]);
+  for(const token of [expired,revoked,digest(randomBytes(32)),null]){
+   assert.equal((await auth.query('select api.auth_resolve_onboarding_session($1) r',[token])).rows[0].r,null);
+   await denied(auth.query('select api.account_onboarding_create_school($1,$2)',[token,schoolPayload]));
+  }
+ });
+ let readyToken=await session(ready.identity_id);
+ await check('account-first inactive user or identity immediately invalidates onboarding capabilities',async()=>{
+  for(const candidate of ['user','identity']){
+   if(candidate==='user')await admin.query('update iam.users set is_active=false where id=$1',[ready.user_id]);else await admin.query("update auth.identities set status='disabled' where id=$1",[ready.identity_id]);
+   try{
+    assert.equal((await auth.query('select * from api.auth_resolve_onboarding_identity($1)',[ready.payload.email])).rowCount,0);
+    assert.equal((await auth.query('select api.auth_resolve_onboarding_session($1) r',[readyToken])).rows[0].r,null);
+    await denied(session(ready.identity_id));await denied(auth.query('select api.account_onboarding_create_school($1,$2)',[readyToken,schoolPayload]));
+   }finally{if(candidate==='user')await admin.query('update iam.users set is_active=true where id=$1',[ready.user_id]);else await admin.query("update auth.identities set status='active' where id=$1",[ready.identity_id]);}
+  }
+ });
+ await check('account-first existing active school profile blocks all onboarding entry points',async()=>{
+  const profile=randomUUID();await admin.query('insert into iam.profiles(id,user_id,school_id,display_name,is_active) values($1,$2,$3,$4,true)',[profile,ready.user_id,created.school_id,'Synthetic conflicting membership']);
+  try{
+   assert.equal((await auth.query('select * from api.auth_resolve_onboarding_identity($1)',[ready.payload.email])).rowCount,0);
+   assert.equal((await auth.query('select api.auth_resolve_onboarding_session($1) r',[readyToken])).rows[0].r,null);
+   await denied(session(ready.identity_id));await denied(auth.query('select api.account_onboarding_create_school($1,$2)',[readyToken,schoolPayload]));
+  }finally{await admin.query('delete from iam.profiles where id=$1',[profile]);}
+ });
+ await check('account-first school refuses admin password school identifier and inline logo',async()=>{
+  const before=await snapshot();
+  for(const change of [{admin:{}},{password:'forbidden'},{school_id:randomUUID()},{brand:{logo_base64:'forbidden'}},{brand:{logo_path:'data:image/png;base64,x'}},{cycles:['invalid']}])await assert.rejects(auth.query('select api.account_onboarding_create_school($1,$2)',[readyToken,{...schoolPayload,...change}]),e=>e.code==='23514');
+  assert.deepEqual(await snapshot(),before);
+ });
+ await check('account-first school completion rolls back all writes and session changes on event failure',async()=>{
+  const before=await snapshot();const requestBefore=(await admin.query('select * from auth.account_registration_requests where id=$1',[ready.request_id])).rows[0];
+  await admin.query("create function auth.account_test_fail() returns trigger language plpgsql as $$ begin if new.event_type='account.registration.completed' then raise exception 'synthetic completion failure'; end if;return new;end $$");
+  await admin.query('create trigger account_test_fail before insert on auth.account_registration_events for each row execute function auth.account_test_fail()');
+  try{await assert.rejects(auth.query('select api.account_onboarding_create_school($1,$2)',[readyToken,schoolPayload]),/synthetic completion failure/);}finally{await admin.query('drop trigger account_test_fail on auth.account_registration_events');await admin.query('drop function auth.account_test_fail()');}
+  assert.deepEqual(await snapshot(),before);assert.deepEqual((await admin.query('select * from auth.account_registration_requests where id=$1',[ready.request_id])).rows[0],requestBefore);
+  assert.ok((await auth.query('select api.auth_resolve_onboarding_session($1) r',[readyToken])).rows[0].r);
+ });
+ await check('account-first distinct concurrent sessions create one school and revoke all onboarding sessions',async()=>{
+  const second=await session(ready.identity_id),before=await snapshot();
+  const results=await Promise.allSettled([auth.query('select api.account_onboarding_create_school($1,$2) r',[readyToken,schoolPayload]),peer.query('select api.account_onboarding_create_school($1,$2) r',[second,schoolPayload])]);
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(results.find(r=>r.status==='rejected').reason.code,'42501');
+  assert.equal((await snapshot()).schools,before.schools+1);assert.equal((await admin.query('select count(*)::int n from auth.onboarding_sessions where identity_id=$1 and revoked_at is null',[ready.identity_id])).rows[0].n,0);
+ });
+ await check('account-first completed account supports ordinary exact profile sessions with school isolation',async()=>{
+  const profiles=(await auth.query('select * from api.auth_list_profiles($1)',[identity.identity_id])).rows;assert.equal(profiles.length,1);assert.equal(profiles[0].profile_id,created.profile_id);
+  const ordinaryHash=digest(randomBytes(32));await auth.query('select * from api.auth_create_session($1,$2,$3,$4,$5,$6)',[identity.identity_id,created.profile_id,ordinaryHash,3600,null,null]);
+  const resolved=(await auth.query('select * from api.auth_resolve_session($1)',[ordinaryHash])).rows;assert.equal(resolved.length,1);assert.equal(resolved[0].school_id,created.school_id);
+  const foreign=(await admin.query('select school_id from iam.profiles where user_id=$1',[ready.user_id])).rows[0].school_id;
+  await denied(context(api,{user_id:identity.user_id,profile_id:created.profile_id,school_id:foreign},async()=>{}));
+  await context(api,{user_id:identity.user_id,profile_id:created.profile_id,school_id:created.school_id},async c=>{
+   const result=(await c.query('select api.student_list() r')).rows[0].r;assert.equal(result.total,0);assert.deepEqual(result.rows,[]);
+  });
+  const contact=(await admin.query('select website_url,website_mode,public_news,public_gallery,public_honors from app.school_contacts where school_id=$1',[created.school_id])).rows[0];assert.deepEqual(contact,schoolPayload.contact);
+ });
+ await check('account-first event records contain no hashes or secrets and context is restored',async()=>{
+  assert.equal((await admin.query("select count(*)::int n from auth.account_registration_events where payload<>'{}'::jsonb")).rows[0].n,0);
+  assert.equal((await admin.query("select count(*)::int n from auth.onboarding_sessions where token_hash !~ '^[0-9a-f]{64}$'")).rows[0].n,0);
+  assert.equal((await admin.query("select count(*)::int n from audit.events where event_type='school.onboarding.completed' and entity_id=$1",[created.school_id])).rows[0].n,1);
+  await auth.query('begin');try{
+   const setting=async()=> (await auth.query("select coalesce(current_setting('schoolsafe.preauth',true),'') value")).rows[0].value;
+   const before=await setting();await auth.query('select * from api.auth_resolve_onboarding_identity($1)',[ready.payload.email]);assert.equal(await setting(),before);
+  }finally{await auth.query('rollback');}
+ });
+}
+
+async function qualifyInstalled62Upgrade({admin,connectionString,passwords,check}) {
+ const plan=loadInstallationPlan();const unit=plan.units.at(-1);
+ assert.equal(unit.file,'database/auth/v5/01_account_registration_onboarding.sql');assert.equal(plan.units.length,63);
+ const target=new URL(connectionString),name=decodeURIComponent(target.pathname.slice(1))+'_upgrade62';
+ assert.match(name,/^schoolsafe_test_[a-z0-9_]+$/);
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'schoolsafe-account-upgrade-'));let created=false,owner,migrator,auth;
+ try {
+  fs.cpSync(path.join(repositoryRoot,'database'),path.join(root,'database'),{recursive:true});
+  fs.unlinkSync(path.join(root,unit.file));
+  fs.writeFileSync(path.join(root,'database/auth/v5/manifest.json'),JSON.stringify({schema:'schoolsafe-migrations-v5',name:'auth',version:5,units:[]}));
+  fs.writeFileSync(path.join(root,'database/auth/v5/manifest.sha256'),'\n');
+  const initialPlan={...plan,units:plan.units.slice(0,62)};delete initialPlan.digest;
+  fs.writeFileSync(path.join(root,'database/installation/v2/manifest.json'),JSON.stringify(initialPlan));
+  await admin.query('create database "'+name+'"');created=true;target.pathname='/'+name;
+  await installSchoolDatabase({connectionString:target.toString(),database:name,mode:'apply',passwords,root,log:()=>{}});
+  owner=new pg.Client({connectionString:target.toString()});await owner.connect();
+  target.username='schoolsafe_migrator';target.password=passwords.migrator;migrator=new pg.Client({connectionString:target.toString()});await migrator.connect();
+  target.username='schoolsafe_auth';target.password=passwords.auth;auth=new pg.Client({connectionString:target.toString()});await auth.connect();
+  const ledger=async()=> (await owner.query('select unit_order,file_name,sha256 from ops.installation_units order by unit_order')).rows;
+  const initial=await ledger();assert.equal(initial.length,62);const sql=renderAdditiveUpgrade({installed:initial});
+  assert.equal((sql.match(/-- APPLY /g)??[]).length,1);
+  await check('account-first upgrade 62 rollback leaves all historical units and no new tables',async()=>{
+   const faulty=sql.replace(/^commit;$/im,'select 1/0;\ncommit;');assert.ok(faulty!==sql,'Upgrade commit marker required');
+   await assert.rejects(migrator.query(faulty),e=>e.code==='22012');await migrator.query('rollback');
+   assert.deepEqual(await ledger(),initial);assert.equal((await owner.query("select to_regclass('auth.account_registration_requests') object")).rows[0].object,null);
+  });
+  await check('account-first upgrade 62 to 63 appends exactly one immutable ledger unit',async()=>{
+   await migrator.query(sql);const after=await ledger();assert.equal(after.length,63);assert.deepEqual(after.slice(0,62),initial);assert.equal(after[62].file_name,unit.file);assert.equal(after[62].sha256,unit.sha256);
+   const before=(await owner.query('select * from ops.installation_units order by unit_order')).rows;await migrator.query(renderAdditiveUpgrade({installed:after}));assert.deepEqual((await owner.query('select * from ops.installation_units order by unit_order')).rows,before);
+   const hash=await argonHash(randomBytes(32).toString('hex'),{memoryCost:19456,timeCost:2,parallelism:1});
+   const result=(await auth.query('select api.account_registration_prepare($1,$2,$3) r',[{first_name:'Upgrade',last_name:'Proof',email:'upgrade-'+randomUUID()+'@example.test',phone:'+243899999999'},hash,'198.19.0.1'])).rows[0].r;assert.equal(result.status,'pending');
+  });
+ } finally {
+  await Promise.allSettled([auth?.end(),migrator?.end(),owner?.end()]);if(created)await admin.query('drop database "'+name+'"');
+  const resolved=path.resolve(root);assert.equal(path.dirname(resolved),path.resolve(os.tmpdir()));assert.ok(path.basename(resolved).startsWith('schoolsafe-account-upgrade-'));fs.rmSync(resolved,{recursive:true});
+ }
 }

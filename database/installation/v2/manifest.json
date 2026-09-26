@@ -311,6 +311,11 @@
       "order": 62,
       "file": "database/setup/v5/01_registration_approval.sql",
       "sha256": "71bab1a7e95c82e5e633d791e89cb28ab499fb3a0acac83b896f3dfbd00acee4"
+    },
+    {
+      "order": 63,
+      "file": "database/auth/v5/01_account_registration_onboarding.sql",
+      "sha256": "1cdf3ccb948afe213d4b3da6fbde986e283f8d27503cbb059b47920e9bd51563"
     }
   ],
   "superseded": [

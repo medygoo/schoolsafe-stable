@@ -1,3 +1,7 @@
+import {createAccountRegistrationService} from "./onboarding/account-registration-service.js";
+import {createApprovalService} from "./onboarding/approval-service.js";
+import {createOnboardingSchoolService} from "./onboarding/school-service.js";
+import {createGoogleMailDelivery} from "./onboarding/google-mail-delivery.js";
 import {createBrevoEmailService} from "./email/service.js";
 import {createRecoveryDelivery} from "./authnative/recovery-delivery.js";
 import {createMachineContextResolver} from "./devicehub/machine-context.js";
@@ -28,6 +32,11 @@ import { createDeviceHubService } from "./devicehub/service.js";
 
 /** Assemble uniquement les services qui utilisent les sessions et pools du VPS. */
 export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
+  const accountRegistrationAvailable = Boolean(env.SCHOOLSAFE_GOOGLE_MAIL_URL && env.SCHOOLSAFE_GOOGLE_MAIL_SECRET && env.SCHOOLSAFE_APPROVAL_URL);
+  const onboardingDb = createPgAuthDatabase(pools.authPool);
+  const googleDelivery = accountRegistrationAvailable ? createGoogleMailDelivery({
+    url: env.SCHOOLSAFE_GOOGLE_MAIL_URL!, secret: env.SCHOOLSAFE_GOOGLE_MAIL_SECRET!,
+  }) : undefined;
   const recovery = env.BREVO_API_KEY && env.BREVO_SENDER_EMAIL && env.AUTH_RECOVERY_URL
     ? createRecoveryDelivery(createBrevoEmailService({apiKey: env.BREVO_API_KEY, senderEmail: env.BREVO_SENDER_EMAIL}), env.AUTH_RECOVERY_URL) : undefined;
   const authService = createAuthNativeService({ db: createPgAuthDatabase(pools.authPool), emailDelivery: recovery });
@@ -42,6 +51,13 @@ const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.
       )
     : undefined;
   const app = buildApp({
+    onboarding: {
+      registrationService: createAccountRegistrationService({db: onboardingDb, delivery: googleDelivery,
+        approvalUrl: env.SCHOOLSAFE_APPROVAL_URL, ttlSeconds: env.SCHOOLSAFE_APPROVAL_TTL_SECONDS}),
+      approvalService: createApprovalService(onboardingDb),
+      schoolService: createOnboardingSchoolService(onboardingDb),
+      cookieSecure: env.NODE_ENV === "production",
+    },
     readinessProbe: async () => {
       try {
         await Promise.all([pools.authPool.query("select 1"), pools.businessPool.query("select 1")]);
@@ -61,7 +77,7 @@ const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.
       ratePerMinute: env.JASPE_RATE_PER_MINUTE,
     }) },
     licenseNative: licenseService ? { authService: authService, service: licenseService } : undefined,
-    setup: { service: createSetupNativeService(pools.authPool, pools.businessPool, env.SETUP_TOKEN) },
+    setup: { service: createSetupNativeService(pools.authPool, pools.businessPool, env.SETUP_TOKEN, accountRegistrationAvailable) },
     financeNative: { authService: authService, service: createFinanceNativeService(pools.businessPool) },
     pedagogyNative: { authService: authService, service: createPedagogyNativeService(pools.businessPool) },
     controlPrintNative: {

@@ -1,3 +1,4 @@
+import { registerOnboardingRoutes, type OnboardingRouteDependencies } from "./onboarding/routes.js";
 import Fastify, { type FastifyInstance } from "fastify";
 import multipart from "@fastify/multipart";
 import cors from "@fastify/cors";
@@ -42,6 +43,7 @@ import { registerDocumentRoutes, type DocumentRouteDependencies } from "./docume
 import { registerDashboardRoutes as registerLot5DashboardRoutes, type DashboardRouteDependencies as Lot5DashboardRouteDependencies } from "./dashboard/routes.js";
 
 export type BuildAppOptions = {
+  onboarding?: OnboardingRouteDependencies;
   testRoutes?: boolean;
   readinessProbe?: ReadinessProbe;
   bootstrap?: BootstrapRouteDependencies;
@@ -130,6 +132,8 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   if (options.bootstrap) {
     registerBootstrapRoutes(app, options.bootstrap);
   }
+
+  if (options.onboarding) registerOnboardingRoutes(app, options.onboarding);
 
   if (options.authNative) {
     registerAuthNativeRoutes(app, options.authNative);
