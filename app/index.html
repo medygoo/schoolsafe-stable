@@ -2,6 +2,14 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <script>
+    // Capture the approval capability before loading application resources.
+    (function () {
+      if (location.hash.indexOf("#account-approval=") !== 0) return;
+      window.schoolSafeAccountApproval = location.hash.slice("#account-approval=".length);
+      history.replaceState(history.state, "", location.pathname + location.search);
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#071a3d">
   <!-- Repli pour les hébergements statiques. Les protections frame-ancestors
@@ -247,8 +255,8 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
           <details class="auth-other-access">
             <summary>Autres accès</summary>
           <div class="first-install">
-            <span>Nouvelle instance SchoolSafe</span>
-            <button class="ss-button ss-button--secondary" id="startSetup" type="button">Activer une école</button>
+            <span>Nouveau compte SchoolSafe</span>
+            <button class="ss-button ss-button--secondary" id="createAccount" type="button">Créer un compte</button>
           </div>
           </details>
         </form>
@@ -293,7 +301,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         <nav id="stepNav" aria-label="Étapes de configuration"></nav>
         <div class="setup-security">
           <i data-lucide="shield-check"></i>
-          <p><b>Instance mono-école</b><span>Aucune donnée n'est envoyée dans cette prévisualisation.</span></p>
+          <p><b>Votre école SchoolSafe</b><span>Votre compte approuvé deviendra Administrateur principal.</span></p>
         </div>
       </aside>
       <div class="setup-main">

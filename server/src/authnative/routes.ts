@@ -4,7 +4,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { SchoolSafeError } from "../http/errors.js";
 import { newRequestId } from "../http/request-id.js";
-import { clearSessionCookie, readSessionCookie, setSessionCookie } from "./cookie.js";
+import { clearSessionCookie, readSessionCookie, setSessionCookie, readOnboardingCookie, clearOnboardingCookie, setOnboardingCookie } from "./cookie.js";
 import { generateSessionToken, hashSessionToken } from "./tokens.js";
 import type { AuthNativeService } from "./service.js";
 import { generateAdminRecoveryCode } from './admin-recovery.js';
@@ -53,6 +53,12 @@ export function registerAuthNativeRoutes(
       throw new SchoolSafeError(401, "AUTH_REQUIRED", "Identifiants invalides", false);
     }
 
+    if (result.onboarding) {
+      if (readSessionCookie(request)) clearSessionCookie(reply, {secure: cookieSecure});
+      setOnboardingCookie(reply, result.token, {secure: cookieSecure});
+      return reply.code(200).send({code: "ONBOARDING_REQUIRED"});
+    }
+    if (readOnboardingCookie(request)) clearOnboardingCookie(reply, {secure: cookieSecure});
     const maxAge = remember ? 604800 : 43200;
     setSessionCookie(reply, result.token, {
       secure: cookieSecure,

@@ -10,14 +10,14 @@ export interface SetupService {
   createAdmin(payload: SetupAdminPayload): Promise<AdminSetupResult>;
 }
 /** The migrator authorizes a one-use capability; auth RPCs bind its school in PostgreSQL. */
-export function createSetupNativeService(authPool: AuthPool, _businessPool: BusinessPool, setupToken: string | undefined): SetupService {
+export function createSetupNativeService(authPool: AuthPool, _businessPool: BusinessPool, setupToken: string | undefined, accountRegistrationAvailable = false): SetupService {
   const allowed = (token: string) => Boolean(setupToken && timingSafeEqual(digest(token), digest(setupToken)));
   function tokenHash(token: string) {
     if (!allowed(token)) throw new Error("Setup authorization required");
     return digest(token).toString("hex");
   }
   return {
-    getConfig: () => ({setup_available: Boolean(setupToken), auth_mode: "native"}),
+    getConfig: () => ({setup_available: Boolean(setupToken), auth_mode: "native", account_registration_available: accountRegistrationAvailable}),
     validateToken: allowed,
     async createSchool({token, ...payload}) {
       const result = await authPool.query<{result: SetupResult}>(

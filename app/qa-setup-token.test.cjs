@@ -60,89 +60,109 @@ after(async () => {
   if (preview && preview.exitCode === null) { preview.kill(); await once(preview, 'exit'); }
 });
 
-async function openModal(t, viewport) {
-  const context = await browser.newContext({ serviceWorkers: 'block', viewport });
+const applicant = {first_name:'Ada',last_name:'Test',email:'ada@example.test',phone:'+243812345678'};
+const syntheticToken = 'a'.repeat(43);
+async function openUI(t, viewport, options = {}) {
+  const context = await browser.newContext({serviceWorkers:'block',viewport});
   t.after(() => context.close());
+  if (options.draft) await context.addInitScript(draft => localStorage.setItem('schoolsafe-v2-setup', JSON.stringify(draft)), options.draft);
   const page = await context.newPage();
-  await page.route('**/auth/native/me', route => route.fulfill({
-    status: 401, json: { message: 'Authentication required' },
-  }));
-  await page.goto(uiURL, { waitUntil: 'networkidle' });
-  await page.locator('#enterSplash').click();
-  await page.locator('.auth-other-access summary').click();
-  await page.locator('#startSetup').click();
-  const modal = page.locator('.ss-modal-overlay.is-open');
+  page.setDefaultTimeout(5000);
+  const calls = [];
+  await page.route('**/config', r => options.configError ? r.abort() : r.fulfill({json:{auth_mode:'native',account_registration_available:options.available !== false}}));
+  await page.route('**/auth/native/me', r => r.fulfill({status:401,json:{message:'Session required'}}));
+  await page.route('**/auth/onboarding/me', r => r.fulfill(options.resume ? {json:{...applicant,status:'approved'}} : {status:401,json:{message:'Session required'}}));
+  page.on('request', r => { if (r.url().includes(':8787')) calls.push({url:r.url(),method:r.method()}); });
+  if (options.prepare) await options.prepare(page);
+  await page.goto(uiURL + (options.fragment || ''), {waitUntil:'networkidle'});
+  return {page,context,calls};
+}
+async function registration(t, viewport, options) {
+  const result = await openUI(t,viewport,options);
+  await result.page.locator('#enterSplash').click();
+  await result.page.locator('.auth-other-access summary').click();
+  await result.page.locator('#createAccount').click();
+  const modal=result.page.locator('.ss-modal-overlay.is-open');
   await expect(modal).toBeVisible();
-  return { page, modal, button: modal.getByRole('button', { name: 'Valider', exact: true }) };
+  return {...result,modal,form:modal.locator('#accountRegistrationForm')};
 }
-
-for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844 }]) {
-  const size = viewport.width === 390 ? 'mobile' : 'desktop';
-  test(size + ': empty code keeps a visible error without server requests', async t => {
-    const { page, modal, button } = await openModal(t, viewport);
-    let calls = 0;
-    await page.route('**/config', route => { calls++; return route.abort(); });
-    await button.click();
-    await expect(modal.locator('.ss-modal__error')).toBeVisible();
-    await expect(modal.locator('.ss-modal__error')).toContainText('Veuillez saisir un token.');
-    await expect(button).toBeEnabled();
-    assert.equal(calls, 0);
-    await expect(page.locator('#setup')).not.toHaveClass(/active/);
-  });
-
-  for (const scenario of [
-    { name: 'invalid code', response: { status: 200, json: { valid: false } }, error: 'Token de configuration invalide.' },
-    { name: 'server refusal', response: { status: 403, json: { message: 'Autorisation expirée.' } }, error: 'Autorisation expirée.' },
-    { name: 'validation HTTP unavailable', response: { status: 503, json: { message: 'Service indisponible.' } }, error: 'Service indisponible.' },
-    { name: 'validation network unavailable', abort: true },
-    { name: 'config HTTP unavailable', configStatus: 503 },
-    { name: 'config network unavailable', configAbort: true },
-  ]) {
-    test(size + ': ' + scenario.name + ' remains visible and retryable', async t => {
-      const { page, modal, button } = await openModal(t, viewport);
-      let validations = 0;
-      await page.route('**/config', route => scenario.configAbort ? route.abort() : route.fulfill({
-        status: scenario.configStatus || 200, json: { setup_available: true },
-      }));
-      await page.route('**/setup/validate-token', route => {
-        validations++;
-        return scenario.abort ? route.abort() : route.fulfill(scenario.response || { json: { valid: true } });
-      });
-      await modal.locator('#setup-token-input').fill('synthetic-test-code');
-      await button.click();
-      await expect(modal.locator('.ss-modal__error')).toBeVisible();
-      if (scenario.error) await expect(modal.locator('.ss-modal__error')).toContainText(scenario.error);
-      else await expect(modal.locator('.ss-modal__error')).not.toHaveText('');
-      await expect(button).toBeEnabled();
-      await expect(modal).not.toHaveClass(/is-loading/);
-      await expect(page.locator('#setup')).not.toHaveClass(/active/);
-      if (scenario.configStatus || scenario.configAbort) assert.equal(validations, 0);
-    });
-  }
-
-  test(size + ': valid code waits for server then closes modal and opens setup', async t => {
-    const { page, modal, button } = await openModal(t, viewport);
-    await page.route('**/config', route => route.fulfill({ json: { setup_available: true } }));
-    let release;
-    const responseGate = new Promise(resolve => { release = resolve; });
-    t.after(() => release());
-    await page.route('**/setup/validate-token', async route => {
-      assert.deepEqual(route.request().postDataJSON(), { token: 'synthetic-test-code' });
-      await responseGate;
-      await route.fulfill({ json: { valid: true } });
-    });
-    await modal.locator('#setup-token-input').fill('  synthetic-test-code  ');
-    await button.click();
-    await expect(modal).toBeVisible();
-    await expect(modal).toHaveClass(/is-loading/);
-    await expect(button).toBeDisabled();
-    await expect(page.locator('#setup')).not.toHaveClass(/active/);
-    release();
-    await expect(page.locator('#setup.active')).toBeVisible();
-    await expect(page.locator('.ss-modal-overlay')).toHaveCount(0);
-  });
+async function fillAccount(form) {
+  for (const [key,value] of Object.entries({...applicant,password:'synthetic-password-123',confirmation:'synthetic-password-123'})) await form.locator('[name="'+key+'"]').fill(value);
 }
-
+async function noSensitiveStorage(page) {
+  const stored=await page.evaluate(()=>JSON.stringify([Object.entries(localStorage),Object.entries(sessionStorage)]));
+  for(const forbidden of [syntheticToken,'synthetic-password-123','legacy-secret','data:image','officialLogoData','adminPassword']) assert.ok(!stored.includes(forbidden),'Sensitive storage: '+forbidden);
+}
+for(const viewport of [{width:1440,height:1000},{width:390,height:844}]) {
+ const size=viewport.width===390?'mobile':'desktop';
+ test(size+': account registration validates, waits and creates only pending account',async t=>{
+  const {page,modal,form,calls}=await registration(t,viewport);
+  let sent=[],release;const gate=new Promise(r=>release=r);t.after(()=>release());
+  await page.route('**/auth/registrations',async r=>{sent.push(r.request().postDataJSON());assert.equal(r.request().method(),'POST');await gate;r.fulfill({status:202,json:{request_id:'request',status:'pending'}});});
+  const submit=modal.locator('[type=submit]');
+  await submit.click();assert.equal(sent.length,0);
+  await fillAccount(form);await form.locator('[name=confirmation]').fill('different-password');await submit.click();
+  await expect(modal.locator('.ss-modal__error')).toContainText('correspondent');assert.equal(sent.length,0);
+  await form.locator('[name=confirmation]').fill('synthetic-password-123');await form.locator('[name=phone]').fill('123');await submit.click();assert.equal(sent.length,0);
+  await form.locator('[name=phone]').fill('0812345678');await submit.click();await expect(submit).toBeDisabled();
+  await page.keyboard.press('Escape');await expect(modal).toBeVisible();
+  await expect.poll(()=>sent.length).toBe(1); assert.deepEqual(sent,[{...applicant,password:'synthetic-password-123'}]);release();
+  await expect(modal).toContainText('Votre demande a été envoyée.');await expect(modal).toContainText('Votre compte reste verrouillé jusqu’à validation SchoolSafe.');
+  await expect(page.locator('#setup')).not.toHaveClass(/active/);await expect(modal.locator('input[type=password]')).toHaveCount(0);
+  assert.ok(!calls.some(c=>c.url.includes('/setup/')));await noSensitiveStorage(page);
+ });
+ for(const scenario of ['duplicate','delivery failure','network failure','config unavailable','disabled']) test(size+': registration '+scenario+' stays visible',async t=>{
+  const {page,modal,form}=await registration(t,viewport,{configError:scenario==='config unavailable',available:scenario!=='disabled'});
+  let submissions=0;await page.route('**/auth/registrations',r=>{submissions++;return scenario==='network failure'?r.abort():r.fulfill({status:scenario==='duplicate'?409:503,json:{message:'Inscription indisponible'}});});
+  await fillAccount(form);await modal.locator('[type=submit]').click();await expect(modal.locator('.ss-modal__error')).toBeVisible();
+  await expect(modal.locator('[type=submit]')).toBeEnabled();await expect(page.locator('#setup')).not.toHaveClass(/active/);
+  if(['disabled','config unavailable'].includes(scenario))assert.equal(submissions,0);await noSensitiveStorage(page);
+ });
+ for(const decision of ['approve','reject'])test(size+': fragment approval '+decision+' is scrubbed and requires explicit POST',async t=>{
+  let reviews=0,decisions=0,release;const gate=new Promise(r=>release=r);t.after(()=>release());
+  const {page}=await openUI(t,viewport,{fragment:'#account-approval='+syntheticToken,prepare:async page=>{
+   await page.route('**/auth/registrations/review',async r=>{reviews++;assert.equal(new URL(page.url()).hash,'');assert.equal(r.request().method(),'POST');assert.deepEqual(r.request().postDataJSON(),{token:syntheticToken});await r.fulfill({json:{...applicant,first_name:'<img src=x onerror=alert(1)>',request_id:'request',status:'pending'}});});
+   await page.route('**/auth/registrations/decision',async r=>{decisions++;assert.equal(r.request().method(),'POST');assert.deepEqual(r.request().postDataJSON(),{token:syntheticToken,decision});await gate;await r.fulfill({json:{request_id:'request',status:decision==='approve'?'approved':'rejected'}});});
+  }});
+  const modal=page.locator('.ss-modal-overlay.is-open');await expect(modal).toContainText(applicant.email);assert.equal(reviews,1);assert.equal(decisions,0);
+  await expect(modal.locator('img')).toHaveCount(0);assert.equal(new URL(page.url()).hash,'');
+  await modal.getByRole('button',{name:decision==='approve'?'APPROUVER':'REFUSER',exact:true}).click();
+  await expect(modal.getByRole('button',{name:'APPROUVER',exact:true})).toBeDisabled();await expect(modal.getByRole('button',{name:'REFUSER',exact:true})).toBeDisabled();
+  await page.keyboard.press('Escape');await expect(modal).toBeVisible();assert.equal(decisions,1);release();
+  await expect(modal).toContainText(decision==='approve'?'Compte approuvé':'Compte refusé');await noSensitiveStorage(page);
+ });
+ for(const invalid of [false,true])test(size+': expired or malformed approval '+invalid+' reveals no account',async t=>{
+  let reviews=0;const {page}=await openUI(t,viewport,{fragment:'#account-approval='+(invalid?'invalid':syntheticToken),prepare:async page=>{
+   await page.route('**/auth/registrations/review',r=>{reviews++;return r.fulfill({status:403,json:{message:'Approval unavailable'}});});
+  }});
+  const modal=page.locator('.ss-modal-overlay.is-open');await expect(modal).toContainText('Lien invalide ou expiré.');await expect(modal).not.toContainText(applicant.email);
+  assert.equal(reviews,invalid?0:1);assert.equal(new URL(page.url()).hash,'');await noSensitiveStorage(page);
+ });
+ test(size+': approved login resumes seven steps, keeps administrator and submits one school',async t=>{
+  const {page,calls}=await openUI(t,viewport,{draft:{schoolName:'Brouillon',setupToken:'legacy-secret',adminPassword:'legacy-secret',officialLogoData:'data:image/png;base64,legacy-secret'}});
+  await noSensitiveStorage(page);
+  await page.route('**/auth/native/login',r=>r.fulfill({json:{code:'ONBOARDING_REQUIRED'}}));
+  await page.route('**/auth/onboarding/me',r=>r.fulfill({json:{...applicant,status:'approved'}}));
+  let submissions=[];await page.route('**/auth/onboarding/school',r=>{submissions.push(r.request().postDataJSON());return r.fulfill({status:201,json:{school_id:'school',profile_id:'profile',status:'completed'}});});
+  await page.locator('#enterSplash').click();await page.locator('#emailIdentifier').fill(applicant.email);await page.locator('#password').fill('synthetic-password-123');await page.locator('#loginForm button[type=submit]').click();
+  await expect(page.locator('#setup.active')).toBeVisible();await expect(page.locator('#password')).toHaveValue('');
+  await expect(page.locator('#stepNav button')).toHaveCount(7);for(const button of await page.locator('#stepNav button').all())await expect(button).toBeVisible();
+  await page.locator('#schoolName').fill('École Test');await page.locator('#nextStep').click();await page.locator('#nextStep').click();await page.locator('#nextStep').click();
+  await page.locator('#email').fill('school@example.test');await page.locator('#phone').fill('+243812345678');await page.locator('#nextStep').click();await page.locator('#nextStep').click();
+  await expect(page.locator('#stepTitle')).toHaveText('Administrateur principal');await expect(page.locator('#stepContent')).toContainText('Ce compte deviendra l’Administrateur principal de cette école.');
+  for(const [id,key] of [['adminFirstName','first_name'],['adminLastName','last_name'],['adminEmail','email'],['adminPhone','phone']]){await expect(page.locator('#'+id)).toHaveValue(applicant[key]);await expect(page.locator('#'+id)).toHaveAttribute('readonly','');}
+  await expect(page.locator('#stepContent input[type=password]')).toHaveCount(0);await page.locator('#nextStep').click();await page.locator('#nextStep').click();
+  await expect(page.locator('#auth.active')).toBeVisible();assert.equal(submissions.length,1);
+  assert.deepEqual(Object.keys(submissions[0]).sort(),['identity','cycles','academic_year','contact','brand'].sort());assert.equal(submissions[0].identity.name_fr,'École Test');
+  assert.ok(!JSON.stringify(submissions[0]).includes('data:'));assert.ok(!JSON.stringify(submissions[0]).includes('admin'));assert.ok(!calls.some(c=>c.url.includes('/setup/')));
+  assert.equal(await page.evaluate(()=>localStorage.getItem('schoolsafe-v2-setup')),null);await noSensitiveStorage(page);
+ });
+ test(size+': refresh resumes only validated onboarding and logout revokes cookie',async t=>{
+  const {page}=await openUI(t,viewport,{resume:true});await expect(page.locator('#setup.active')).toBeVisible();
+  let logout=0;await page.route('**/auth/onboarding/logout',r=>{logout++;assert.equal(r.request().method(),'POST');return r.fulfill({json:{status:'logged_out'}});});
+  await page.locator('#closeSetup').click();await expect(page.locator('#auth.active')).toBeVisible();assert.equal(logout,1);await noSensitiveStorage(page);
+ });
+}
 async function controlledPage(t) {
   version = 1;
   const context = await browser.newContext({ serviceWorkers: 'allow' });
@@ -210,32 +230,4 @@ test('PWA never caches API, config or setup responses, including offline', async
       try { await fetch(p); return 'cached'; } catch { return 'network error'; }
     }, endpoint), 'network error');
   }
-});
-
-test('pending validation cannot be dismissed and failed code can be retried', async t => {
-  const { page, modal, button } = await openModal(t, { width: 390, height: 844 });
-  await page.route('**/config', route => route.fulfill({ json: { setup_available: true } }));
-  let release;
-  const responseGate = new Promise(resolve => { release = resolve; });
-  t.after(() => release());
-  let attempts = 0;
-  await page.route('**/setup/validate-token', async route => {
-    attempts++;
-    if (attempts === 1) await responseGate;
-    await route.fulfill({ json: { valid: attempts > 1 } });
-  });
-  await modal.locator('#setup-token-input').fill('synthetic-test-code');
-  await button.click();
-  await expect(button).toBeDisabled();
-  await page.keyboard.press('Escape');
-  await expect(modal).toBeVisible();
-  await modal.locator('[data-modal-close]').click();
-  await expect(modal).toBeVisible();
-  release();
-  await expect(modal.locator('.ss-modal__error')).toBeVisible();
-  await expect(button).toBeEnabled();
-  await button.click();
-  await expect(page.locator('#setup.active')).toBeVisible();
-  await expect(page.locator('.ss-modal-overlay')).toHaveCount(0);
-  assert.equal(attempts, 2);
 });

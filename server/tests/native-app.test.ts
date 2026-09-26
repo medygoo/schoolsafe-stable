@@ -16,7 +16,7 @@ describe("application VPS native", () => {
     try {
       const response = await app.inject({ method: "GET", url: "/config" });
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual({ auth_mode: "native", setup_available: false });
+      expect(response.json()).toEqual({ auth_mode: "native", setup_available: false, account_registration_available: false });
     } finally { await app.close(); }
   });
 

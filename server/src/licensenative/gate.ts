@@ -7,6 +7,7 @@
 // une révocation prend effet au plus tard après le TTL du cache.
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { SchoolSafeError } from "../http/errors.js";
+import { newRequestId } from "../http/request-id.js";
 import { readSessionCookie } from "../authnative/cookie.js";
 import type { AuthNativeService } from "../authnative/service.js";
 import type { LicenseNativeService } from "./service.js";
@@ -50,7 +51,7 @@ export function registerLicenseGate(
         userId: session.userId,
         profileId: session.profileId,
         schoolId: session.schoolId,
-        requestId: `license-gate-${now}`,
+        requestId: newRequestId(),
       });
       state = result.state;
       cache.set(session.schoolId, { state, checkedAt: now });

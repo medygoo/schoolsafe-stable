@@ -75,6 +75,7 @@ export type AdminSetupResult = {
 };
 
 export type ConfigResponse = {
+  account_registration_available: boolean;
   setup_available: boolean;
   auth_mode: string;
 };

@@ -31,7 +31,8 @@ export interface ProfileChoice {
 }
 
 export type LoginResult =
-  | { ok: true; token: string; session: AuthSessionInfo }
+  | { ok: true; onboarding?: false; token: string; session: AuthSessionInfo }
+  | { ok: true; onboarding: true; token: string }
   | { ok: false; reason: "invalid_credentials" | "locked" | "disabled" }
   | { ok: false; reason: "profile_choice_required"; profiles: ProfileChoice[] };
 
@@ -131,7 +132,15 @@ export function createAuthNativeService(deps: AuthNativeDependencies) {
         "select * from api.auth_resolve_identity($1)",
         [normalized],
       );
-      const identity = resolved.rows[0];
+      let identity: IdentityRow | undefined = resolved.rows[0];
+      let onboarding = false;
+      if (!identity) {
+        const pending = await db.query<IdentityRow>(
+          "select * from api.auth_resolve_onboarding_identity($1)", [normalized]);
+        // SQL only returns approved active accounts without an active profile.
+        identity = pending.rows[0]?.status === "active" ? pending.rows[0] : undefined;
+        onboarding = Boolean(identity);
+      }
 
       // Anti-énumération : vérification argon2 factice si l'identité est absente.
       const hash = identity?.password_hash ?? (await DUMMY_ARGON2ID_HASH_PROMISE);
@@ -148,6 +157,14 @@ export function createAuthNativeService(deps: AuthNativeDependencies) {
       }
 
       // Choix du profil : jamais de sélection arbitraire.
+      if (onboarding) {
+        const token = generateSessionToken();
+        const created = await db.query<{session_id: string; expires_at: string}>(
+          "select * from api.auth_create_onboarding_session($1,$2,$3,$4,$5)",
+          [identity.identity_id, hashSessionToken(token), 3600, ip ?? null, userAgent ?? null]);
+        if (!created.rows[0]?.session_id) return {ok: false, reason: "invalid_credentials"};
+        return {ok: true, onboarding: true, token};
+      }
       const profiles = await db.query<ProfileRow>(
         "select * from api.auth_list_profiles($1)",
         [identity.identity_id],

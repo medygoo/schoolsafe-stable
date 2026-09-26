@@ -197,6 +197,14 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "auth",
+      "file": "database/auth/v5/01_account_registration_onboarding.sql",
+      "manifest": "database/auth/v5/manifest.json",
+      "orderInSet": 1,
+      "sha256": "1cdf3ccb948afe213d4b3da6fbde986e283f8d27503cbb059b47920e9bd51563",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "access",
       "file": "database/access/v1/01_role_templates.sql",
       "manifest": "database/access/v1/manifest.json",

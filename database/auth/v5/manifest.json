@@ -1,0 +1,12 @@
+{
+  "schema": "schoolsafe-migrations-v5",
+  "name": "auth",
+  "version": 5,
+  "units": [
+    {
+      "order": 1,
+      "file": "01_account_registration_onboarding.sql",
+      "sha256": "1cdf3ccb948afe213d4b3da6fbde986e283f8d27503cbb059b47920e9bd51563"
+    }
+  ]
+}
