@@ -46,6 +46,10 @@ const envSchema = z.object({
   JASPE_WORKER_HMAC_SECRET: z.string().min(32).optional(),
   JASPE_CHAT_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(12000),
   JASPE_RATE_PER_MINUTE: z.coerce.number().int().min(1).max(600).default(20),
+  // LOT 2 — approbation sécurisée des inscriptions écoles
+  SCHOOLSAFE_APPROVER_EMAIL: z.string().email().optional(),
+  SCHOOLSAFE_APPROVAL_URL: z.string().url().refine(value => new URL(value).protocol === "https:", "HTTPS required for approval URL").optional(),
+  SCHOOLSAFE_APPROVAL_TTL_SECONDS: z.coerce.number().int().min(300).max(604800).default(172800),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

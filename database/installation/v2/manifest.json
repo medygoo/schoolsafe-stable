@@ -306,6 +306,11 @@
       "order": 61,
       "file": "database/auth/v4/01_auth_resolve_identity_preauth.sql",
       "sha256": "dee10364a89cc63a06bb7a3e462b483e37e9c00e749d5198e0d114079196a0aa"
+    },
+    {
+      "order": 62,
+      "file": "database/setup/v5/01_registration_approval.sql",
+      "sha256": "71bab1a7e95c82e5e633d791e89cb28ab499fb3a0acac83b896f3dfbd00acee4"
     }
   ],
   "superseded": [

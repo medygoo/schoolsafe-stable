@@ -249,6 +249,8 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
   });
   await qualifyRecovery({admin,auth,connect,check,denied,a,b,hash});
   await qualifySetupHttp({admin,auth,migrator,check});
+  await qualifyRegistrationPending({admin,auth,check,denied});
+  await qualifyRegistrationApproval({admin,auth,check,denied});
   log(`POSTGRES_QUALIFICATION PASS (${passed} scenarios)`);return {passed,schools};
  }catch(error){
   throw new Error(`POSTGRES_QUALIFICATION FAIL: ${phase}; ${error.code??'assertion'}`,{cause:error});
@@ -520,11 +522,13 @@ async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
   'database/auth/v3/01_inactive_school_auth_gate.sql',
   'database/setup/v4/01_registration_pending.sql',
   'database/auth/v4/01_auth_resolve_identity_preauth.sql',
+   'database/setup/v5/01_registration_approval.sql',
  ]);
  assert.equal(additions.size,plan.units.length-48,'Additions must cover the current plan beyond historical 48');
  assert.ok(additions.has('database/auth/v3/01_inactive_school_auth_gate.sql'),'auth v3 gate must be in additions');
  assert.ok(additions.has('database/setup/v4/01_registration_pending.sql'),'setup v4 registration must be in additions');
  assert.ok(additions.has('database/auth/v4/01_auth_resolve_identity_preauth.sql'),'auth v4 preauth must be in additions');
+ assert.ok(additions.has('database/setup/v5/01_registration_approval.sql'),'setup v5 approval must be in additions');
  let owner,migrator,created=false;
  try{
   fs.cpSync(path.join(repositoryRoot,'database'),path.join(root,'database'),{recursive:true});
@@ -613,5 +617,39 @@ export async function qualifyRegistrationPending({admin,auth,check,denied}){
   }
   const authAllowed=(await admin.query("select has_function_privilege('schoolsafe_auth','api.school_registration_prepare(jsonb,text)','EXECUTE') allowed")).rows[0].allowed;
   assert.equal(authAllowed,true);
+ });
+}
+
+export async function qualifyRegistrationApproval({admin,auth,check,denied}){
+ await check('approval RPCs exist with required signatures',async()=>{
+  const issue=(await admin.query("select pg_get_userbyid(proowner) owner,prosecdef,proconfig,pg_get_function_result(oid) result from pg_proc where oid='api.school_registration_issue_approval(uuid,text,timestamptz)'::regprocedure")).rows[0];
+  assert.ok(issue,'api.school_registration_issue_approval must exist');
+  assert.equal(issue.owner,'schoolsafe_owner');assert.equal(issue.prosecdef,true);
+  assert.deepEqual(issue.proconfig,['search_path=pg_catalog']);assert.equal(issue.result,'jsonb');
+  const review=(await admin.query("select pg_get_userbyid(proowner) owner,prosecdef,proconfig,pg_get_function_result(oid) result from pg_proc where oid='api.school_registration_review(text)'::regprocedure")).rows[0];
+  assert.ok(review,'api.school_registration_review must exist');
+  assert.equal(review.owner,'schoolsafe_owner');assert.equal(review.prosecdef,true);
+  assert.deepEqual(review.proconfig,['search_path=pg_catalog']);assert.equal(review.result,'jsonb');
+  const decide=(await admin.query("select pg_get_userbyid(proowner) owner,prosecdef,proconfig,pg_get_function_result(oid) result from pg_proc where oid='api.school_registration_decide(text,text)'::regprocedure")).rows[0];
+  assert.ok(decide,'api.school_registration_decide must exist');
+  assert.equal(decide.owner,'schoolsafe_owner');assert.equal(decide.prosecdef,true);
+  assert.deepEqual(decide.proconfig,['search_path=pg_catalog']);assert.equal(decide.result,'jsonb');
+ });
+ await check('approval columns exist on school_registration_requests',async()=>{
+  const cols=(await admin.query("select column_name from information_schema.columns where table_schema='auth' and table_name='school_registration_requests' and column_name in ('approval_token_hash','approval_expires_at','approval_token_consumed_at','approval_email_sent_at') order by column_name")).rows.map(r=>r.column_name);
+  assert.deepEqual(cols,['approval_email_sent_at','approval_expires_at','approval_token_consumed_at','approval_token_hash']);
+ });
+ await check('approval token hash constraint enforces format',async()=>{
+  await assert.rejects(admin.query("insert into auth.school_registration_requests(id,school_id,user_id,profile_id,identity_id,academic_year_id,status,approval_token_hash) values(gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),'pending','INVALID')"),/approval_token_hash_format|check_violation/i);
+ });
+ await check('only schoolsafe_auth can execute approval RPCs',async()=>{
+  for(const fn of ['api.school_registration_issue_approval(uuid,text,timestamptz)','api.school_registration_mark_email_sent(uuid,text)','api.school_registration_review(text)','api.school_registration_decide(text,text)']){
+   for(const role of ['schoolsafe_api','schoolsafe_worker','schoolsafe_migrator','schoolsafe_auditor']){
+    const allowed=(await admin.query(`select has_function_privilege($1,'${fn}','EXECUTE') allowed`,[role])).rows[0].allowed;
+    assert.equal(allowed,false,`${role} must not execute ${fn}`);
+   }
+   const authAllowed=(await admin.query(`select has_function_privilege('schoolsafe_auth','${fn}','EXECUTE') allowed`)).rows[0].allowed;
+   assert.equal(authAllowed,true,`schoolsafe_auth must execute ${fn}`);
+  }
  });
 }
