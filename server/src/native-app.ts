@@ -15,6 +15,8 @@ import { createLicenseNativeService } from "./licensenative/service.js";
 import { createControlLicenseClient } from "./licensenative/control-client.js";
 import { registerLicenseGate } from "./licensenative/gate.js";
 import { createSetupNativeService } from "./setup/service.js";
+import { createRegistrationService } from "./setup/registration-service.js";
+import { createRegistrationApprovalService } from "./setup/registration-approval-service.js";
 import { createFinanceNativeService } from "./financenative/service.js";
 import { createPedagogyNativeService } from "./pedagogynative/service.js";
 import { createControlPrintNativeService } from "./controlprintnative/service.js";
@@ -99,6 +101,16 @@ const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.
       expectedInstanceId: controlConfig.instanceId,
       // École résolue côté serveur uniquement — jamais depuis la requête.
       resolveContext: createMachineContextResolver(pools.businessPool),
+    } : undefined,
+    registration: env.SCHOOLSAFE_APPROVER_EMAIL && env.SCHOOLSAFE_APPROVAL_URL && env.BREVO_API_KEY && env.BREVO_SENDER_EMAIL ? {
+      registrationService: createRegistrationService(pools.authPool),
+      approvalService: createRegistrationApprovalService({
+        pool: pools.authPool,
+        email: createBrevoEmailService({ apiKey: env.BREVO_API_KEY, senderEmail: env.BREVO_SENDER_EMAIL }),
+        approverEmail: env.SCHOOLSAFE_APPROVER_EMAIL,
+        approvalUrl: new URL(env.SCHOOLSAFE_APPROVAL_URL).toString(),
+        ttlSeconds: env.SCHOOLSAFE_APPROVAL_TTL_SECONDS,
+      }),
     } : undefined,
   });
   registerLicenseGate(app, {authService: authService, licenseService, pilotSchoolId: env.PILOT_SCHOOL_ID});

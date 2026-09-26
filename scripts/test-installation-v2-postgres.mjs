@@ -249,6 +249,8 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
   });
   await qualifyRecovery({admin,auth,connect,check,denied,a,b,hash});
   await qualifySetupHttp({admin,auth,migrator,check});
+  await qualifyRegistrationPending({admin,auth,check,denied});
+  await qualifyRegistrationApproval({admin,auth,check,denied});
   log(`POSTGRES_QUALIFICATION PASS (${passed} scenarios)`);return {passed,schools};
  }catch(error){
   throw new Error(`POSTGRES_QUALIFICATION FAIL: ${phase}; ${error.code??'assertion'}`,{cause:error});
@@ -520,11 +522,13 @@ async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
   'database/auth/v3/01_inactive_school_auth_gate.sql',
   'database/setup/v4/01_registration_pending.sql',
   'database/auth/v4/01_auth_resolve_identity_preauth.sql',
+   'database/setup/v5/01_registration_approval.sql',
  ]);
  assert.equal(additions.size,plan.units.length-48,'Additions must cover the current plan beyond historical 48');
  assert.ok(additions.has('database/auth/v3/01_inactive_school_auth_gate.sql'),'auth v3 gate must be in additions');
  assert.ok(additions.has('database/setup/v4/01_registration_pending.sql'),'setup v4 registration must be in additions');
  assert.ok(additions.has('database/auth/v4/01_auth_resolve_identity_preauth.sql'),'auth v4 preauth must be in additions');
+ assert.ok(additions.has('database/setup/v5/01_registration_approval.sql'),'setup v5 approval must be in additions');
  let owner,migrator,created=false;
  try{
   fs.cpSync(path.join(repositoryRoot,'database'),path.join(root,'database'),{recursive:true});
