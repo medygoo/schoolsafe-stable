@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [production]
   push:
-    branches: [production, 'harness/**', 'codex/**']
+    branches: [production]
   workflow_dispatch:
 permissions:
   contents: read
