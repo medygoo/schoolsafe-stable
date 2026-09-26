@@ -22,7 +22,7 @@ export function createAccountRegistrationService(deps: {
       const {password, ...payload} = accountRegistrationSchema.parse(input);
       const passwordHash = await hashPassword(password);
       let requestId: string | undefined;
-      let deliveryConfirmed = false;
+      let deliveryStarted = false;
       try {
         const prepared = await deps.db.query<{result: AccountRegistrationResult}>(
           "select api.account_registration_prepare($1::jsonb,$2,$3::inet) result",
@@ -35,13 +35,14 @@ export function createAccountRegistrationService(deps: {
         const review = await createApprovalService(deps.db).review(token);
         const link = new URL(approvalUrl);
         link.hash = "account-approval=" + token;
+        deliveryStarted = true;
         await deps.delivery({first_name: review.first_name, last_name: review.last_name,
           email: review.email, phone: review.phone, approvalLink: link.toString()});
-        deliveryConfirmed = true;
         await deps.db.query("select api.account_registration_mark_email_sent($1)", [requestId]);
         return {request_id: requestId, status: "pending"};
       } catch (error) {
-        if (requestId && !deliveryConfirmed) {
+        if (requestId && deliveryStarted) return {request_id: requestId, status: "pending"};
+        if (requestId) {
           try {
             // The guarded RPC refuses deletion if approval won a race or delivery was marked.
             await deps.db.query("select api.account_registration_cancel_delivery_failure($1) result", [requestId]);
