@@ -46,7 +46,7 @@ function historicalLedger(){
 test('additive ledger preserves history and appends missing identities in current plan order',()=>{
  const installed=historicalLedger(),plan=loadInstallationPlan();
  const result=planAdditiveUpgrade(installed,plan);
- assert.equal(result.historical,true);assert.equal(result.missing.length,10);
+ assert.equal(result.historical,true);assert.equal(result.missing.length,plan.units.length-installed.length);
  const next=[...installed,...result.missing.map((u,i)=>({unit_order:49+i,file_name:u.file,sha256:u.sha256}))];
  assert.equal(planAdditiveUpgrade(next,plan).missing.length,0);
  assert.doesNotMatch(renderAdditiveUpgrade({installed:next}),/-- APPLY/);

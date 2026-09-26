@@ -1,0 +1,12 @@
+{
+ "schema": "schoolsafe-migrations-v4",
+ "name": "setup",
+ "version": 4,
+ "units": [
+ {
+ "order": 1,
+ "file": "01_registration_pending.sql",
+ "sha256": "a3739a3cec6a3a3ef8dc048e72a8f6089c7cc2d35fccc03c5deb6fa64cb29d2a"
+ }
+ ]
+}

@@ -109,6 +109,14 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "baseline",
+      "file": "database/baseline/v2/01_runtime_security.sql",
+      "manifest": "database/baseline/v2/manifest.json",
+      "orderInSet": 1,
+      "sha256": "6fb0a95db48f0c7142603f88ef747565fa756dc4e7fdb68cf0f7b8f95ae96d18",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "auth",
       "file": "database/auth/v1/01_auth_tables.sql",
       "manifest": "database/auth/v1/manifest.json",
@@ -122,6 +130,70 @@
       "manifest": "database/auth/v1/manifest.json",
       "orderInSet": 2,
       "sha256": "840130b333cf4452f6208006bd222b926d75041409806b8f5028d504e86b1e4b",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "auth",
+      "file": "database/auth/v2/01_auth_reset.sql",
+      "manifest": "database/auth/v2/manifest.json",
+      "orderInSet": 1,
+      "sha256": "f6771b3be729b460b36fced4f8c0fd1018c6b106539db30c89873db5d24fb764",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "auth",
+      "file": "database/auth/v2/02_identity_verification.sql",
+      "manifest": "database/auth/v2/manifest.json",
+      "orderInSet": 2,
+      "sha256": "92fb6aa05df05ff8cd1070212f0b73523bfe328822c653a8a817c48b2a9576ea",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "auth",
+      "file": "database/auth/v2/03_webauthn_credentials.sql",
+      "manifest": "database/auth/v2/manifest.json",
+      "orderInSet": 3,
+      "sha256": "3c97dbf7f9ce082c8abdb1a97533516785d6bc6294f5bd8820b1f4b2527586fe",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "auth",
+      "file": "database/auth/v2/04_admin_recovery.sql",
+      "manifest": "database/auth/v2/manifest.json",
+      "orderInSet": 4,
+      "sha256": "fe114d0502ffe7445bf7c9f2597b38f49cfe6046db145594774006e5321df789",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "auth",
+      "file": "database/auth/v2/05_parent_recovery.sql",
+      "manifest": "database/auth/v2/manifest.json",
+      "orderInSet": 5,
+      "sha256": "a1e95363e4492cc21ae1185c4cc2ef0d4b463178f269328825ba73c1b24f34c1",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "auth",
+      "file": "database/auth/v2/06_admin_assisted_recovery.sql",
+      "manifest": "database/auth/v2/manifest.json",
+      "orderInSet": 6,
+      "sha256": "5102370ad7821dedda591fb17d9f9869b28b9f76044d09c041bc1050307cf34c",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "auth",
+      "file": "database/auth/v3/01_inactive_school_auth_gate.sql",
+      "manifest": "database/auth/v3/manifest.json",
+      "orderInSet": 1,
+      "sha256": "b755367ce6863d03ecb019c130ff0be145f3befe854a9e003909779444a93461",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "auth",
+      "file": "database/auth/v4/01_auth_resolve_identity_preauth.sql",
+      "manifest": "database/auth/v4/manifest.json",
+      "orderInSet": 1,
+      "sha256": "dee10364a89cc63a06bb7a3e462b483e37e9c00e749d5198e0d114079196a0aa",
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
@@ -178,6 +250,14 @@
       "manifest": "database/finance/v1/manifest.json",
       "orderInSet": 2,
       "sha256": "5ae9388202abc58bc1f546d5aaeaab9fb7551d82534e540e11f43a58f36a23b2",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "finance",
+      "file": "database/finance/v2/01_finance_full.sql",
+      "manifest": "database/finance/v2/manifest.json",
+      "orderInSet": 1,
+      "sha256": "868ebf90c455f5c340e2b8cf4d5b01917a927b73e0571be1c932e0fbec598136",
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
@@ -269,6 +349,30 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "devicehub",
+      "file": "database/devicehub/v2/01_devicehub_core.sql",
+      "manifest": "database/devicehub/v2/manifest.json",
+      "orderInSet": 1,
+      "sha256": "3c882a5216dbb2aae7a601bc05ca57e0c545bd17c69914ca209d016409b48673",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "devicehub",
+      "file": "database/devicehub/v2/02_devicehub_rpc.sql",
+      "manifest": "database/devicehub/v2/manifest.json",
+      "orderInSet": 2,
+      "sha256": "e47a359ff51a5779baf48c4a454606dd252c8891d510ddddec6a6ba6b1652727",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "devicehub",
+      "file": "database/devicehub/v2/03_machine_bindings.sql",
+      "manifest": "database/devicehub/v2/manifest.json",
+      "orderInSet": 3,
+      "sha256": "e2c3c8056cc65e17bcbfbeded4159dbb14156bc645badab31bb64b67dbd4cdab",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "dashboard",
       "file": "database/dashboard/v1/01_dashboard.sql",
       "manifest": "database/dashboard/v1/manifest.json",
@@ -349,6 +453,14 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "projections",
+      "file": "database/projections/v2/01_student_list.sql",
+      "manifest": "database/projections/v2/manifest.json",
+      "orderInSet": 1,
+      "sha256": "be296b495d703929d7525364dc3fd6c021ed8f2ffa8353d567814d3f739012c0",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "documents",
       "file": "database/documents/v1/01_document_sequences.sql",
       "manifest": "database/documents/v1/manifest.json",
@@ -370,6 +482,38 @@
       "manifest": "database/documents/v1/manifest.json",
       "orderInSet": 3,
       "sha256": "ef7f7b290f507fa00290298a1cb5dff5af3f55ffbc9a21fb094a70539557fb94",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "setup",
+      "file": "database/setup/v2/01_setup_native.sql",
+      "manifest": "database/setup/v2/manifest.json",
+      "orderInSet": 1,
+      "sha256": "f80ee95787fb9ce5abfc98ebf29f5acfeb4288311b3b553f9e87e5ca96d85d71",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "setup",
+      "file": "database/setup/v3/01_resolve_setup_authorization.sql",
+      "manifest": "database/setup/v3/manifest.json",
+      "orderInSet": 1,
+      "sha256": "227830a257d3340f8f6758d8001257f85a5f2c12829161c1e844e148f7a3431d",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "setup",
+      "file": "database/setup/v3/02_bind_setup_resolver.sql",
+      "manifest": "database/setup/v3/manifest.json",
+      "orderInSet": 2,
+      "sha256": "0d6d25259d3b4f681435b51d1e5ab32bb17c87b2447da10f6210240a28e8903a",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "setup",
+      "file": "database/setup/v4/01_registration_pending.sql",
+      "manifest": "database/setup/v4/manifest.json",
+      "orderInSet": 1,
+      "sha256": "a3739a3cec6a3a3ef8dc048e72a8f6089c7cc2d35fccc03c5deb6fa64cb29d2a",
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
