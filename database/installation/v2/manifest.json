@@ -301,6 +301,11 @@
       "order": 60,
       "file": "database/setup/v4/01_registration_pending.sql",
       "sha256": "a3739a3cec6a3a3ef8dc048e72a8f6089c7cc2d35fccc03c5deb6fa64cb29d2a"
+    },
+    {
+      "order": 61,
+      "file": "database/auth/v4/01_auth_resolve_identity_preauth.sql",
+      "sha256": "dee10364a89cc63a06bb7a3e462b483e37e9c00e749d5198e0d114079196a0aa"
     }
   ],
   "superseded": [

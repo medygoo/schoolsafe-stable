@@ -115,6 +115,38 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
    });
   }
   const [a,b]=schools;
+  await check('active identity resolves and preauth remains transaction-local',async()=>{
+   const setting=async()=> (await auth.query("select coalesce(current_setting('schoolsafe.preauth',true),'') value")).rows[0].value;
+   const before=await setting();assert.notEqual(before,'on');
+   await auth.query('begin');
+   try {
+    const identities=(await auth.query('select * from api.auth_resolve_identity($1)',[a.email])).rows;
+    assert.equal(identities.length,1);assert.equal(identities[0].user_id,a.user_id);
+    assert.equal(identities[0].status,'active');assert.equal(await setting(),'on');
+   } finally {await auth.query('rollback');}
+   assert.equal(await setting(),before);
+   await auth.query('begin');
+   try {
+    assert.equal((await auth.query('select * from api.auth_resolve_identity($1)',[a.email])).rowCount,1);
+    await auth.query('commit');
+   } catch(error) {await auth.query('rollback');throw error;}
+   assert.equal(await setting(),before);
+  });
+  await check('pending school denies identity and session despite active user and profile',async()=>{
+   const identity=(await admin.query('select id from auth.identities where user_id=$1',[b.user_id])).rows[0];
+   const before=(await admin.query('select count(*)::int n from auth.sessions where identity_id=$1',[identity.id])).rows[0].n;
+   assert.equal((await admin.query('select is_active from iam.users where id=$1',[b.user_id])).rows[0].is_active,true);
+   assert.equal((await admin.query('select is_active from iam.profiles where id=$1',[b.profile_id])).rows[0].is_active,true);
+   await admin.query('update app.schools set is_active=false where id=$1',[b.school_id]);
+   try {
+    assert.equal((await auth.query('select * from api.auth_resolve_identity($1)',[b.email])).rowCount,0);
+    assert.equal((await auth.query('select * from api.auth_list_profiles($1)',[identity.id])).rowCount,0);
+    await assert.rejects(auth.query('select * from api.auth_create_session($1,$2,$3,$4,$5,$6)',
+     [identity.id,b.profile_id,digest(randomBytes(32)),3600,null,null]),e=>e.code==='42501'&&e.message==='School is not active');
+    assert.equal((await admin.query('select count(*)::int n from auth.sessions where identity_id=$1',[identity.id])).rows[0].n,before);
+   } finally {await admin.query('update app.schools set is_active=true where id=$1',[b.school_id]);}
+   assert.equal((await auth.query('select * from api.auth_resolve_identity($1)',[b.email])).rowCount,1);
+  });
   await check('invalid setup token rejected',()=>denied(auth.query('select api.setup_stage_school($1,$2)',[digest(randomBytes(32)),{}])));
   await check('runtime roles cannot issue capabilities',()=>denied(auth.query('select ops.authorize_school_setup($1,$2)',[digest(randomBytes(32)),3600])));
   await check('cross-school context rejected',()=>context(api,{...a,school_id:b.school_id},async()=>{}).then(()=>assert.fail('Forged context accepted'),e=>assert.equal(e.code,'42501')));
@@ -473,10 +505,26 @@ async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
  assert.match(name,/^schoolsafe_test_[a-z0-9_]+$/);
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'schoolsafe-additive-test-'));
  const plan=loadInstallationPlan();
- const additions=new Set(plan.units.slice(48).map(unit=>unit.file));
- assert.equal(additions.size,12,'Expected 12 additive units beyond historical 48');
+ // Historical units are identified by file, not by position in the current plan.
+ const additions=new Set([
+  'database/auth/v2/02_identity_verification.sql',
+  'database/auth/v2/03_webauthn_credentials.sql',
+  'database/auth/v2/04_admin_recovery.sql',
+  'database/documents/v1/01_document_sequences.sql',
+  'database/documents/v1/02_documents.sql',
+  'database/documents/v1/03_document_access.sql',
+  'database/auth/v2/05_parent_recovery.sql',
+  'database/auth/v2/06_admin_assisted_recovery.sql',
+  'database/setup/v3/01_resolve_setup_authorization.sql',
+  'database/setup/v3/02_bind_setup_resolver.sql',
+  'database/auth/v3/01_inactive_school_auth_gate.sql',
+  'database/setup/v4/01_registration_pending.sql',
+  'database/auth/v4/01_auth_resolve_identity_preauth.sql',
+ ]);
+ assert.equal(additions.size,plan.units.length-48,'Additions must cover the current plan beyond historical 48');
  assert.ok(additions.has('database/auth/v3/01_inactive_school_auth_gate.sql'),'auth v3 gate must be in additions');
  assert.ok(additions.has('database/setup/v4/01_registration_pending.sql'),'setup v4 registration must be in additions');
+ assert.ok(additions.has('database/auth/v4/01_auth_resolve_identity_preauth.sql'),'auth v4 preauth must be in additions');
  let owner,migrator,created=false;
  try{
   fs.cpSync(path.join(repositoryRoot,'database'),path.join(root,'database'),{recursive:true});
@@ -522,7 +570,7 @@ async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
   await check('additive SQL upgrades historical 48 to current plan with immutable append-only rows',async()=>{
    await migrator.query(sql);const after=await ledger();
    assert.equal(after.length,plan.units.length);assert.deepEqual(after.slice(0,48),initial);
-   assert.deepEqual(after.slice(48).map(u=>u.file_name),plan.units.slice(48).map(u=>u.file));
+   assert.deepEqual(after.slice(48).map(u=>u.file_name),plan.units.filter(u=>additions.has(u.file)).map(u=>u.file));
   });
   await check('additive SQL second upgrade is idempotent including timestamps',async()=>{
    const before=(await owner.query('select * from ops.installation_units order by unit_order')).rows;

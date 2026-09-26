@@ -189,6 +189,14 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "auth",
+      "file": "database/auth/v4/01_auth_resolve_identity_preauth.sql",
+      "manifest": "database/auth/v4/manifest.json",
+      "orderInSet": 1,
+      "sha256": "dee10364a89cc63a06bb7a3e462b483e37e9c00e749d5198e0d114079196a0aa",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "access",
       "file": "database/access/v1/01_role_templates.sql",
       "manifest": "database/access/v1/manifest.json",
