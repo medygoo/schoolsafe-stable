@@ -35,7 +35,7 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
     assert.equal((await admin.query("select has_table_privilege($1,'ops.installation_units','SELECT,INSERT,UPDATE,DELETE') allowed",[role])).rows[0].allowed,false);
    await denied(migrator.query('select count(*) from ops.installation_units'));
    await migrator.query('begin');
-   try {await migrator.query('set local role schoolsafe_owner');assert.equal((await migrator.query('select count(*)::int n from ops.installation_units')).rows[0].n,58);}
+   try {await migrator.query('set local role schoolsafe_owner');assert.equal((await migrator.query('select count(*)::int n from ops.installation_units')).rows[0].n,loadInstallationPlan().units.length);}
    finally {await migrator.query('rollback');}
   });
   await qualifyAdditiveUpgrade({admin,connectionString,passwords,check});

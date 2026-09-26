@@ -20,7 +20,7 @@ export function installationInventory(root) {
       .sort((a, b) => parseInt(a.slice(1), 10) - parseInt(b.slice(1), 10));
 
     for (const version of versions) {
-      const manifestPath = path.join('database', set, version, 'manifest.json');
+      const manifestPath = path.posix.join('database', set, version, 'manifest.json');
       const manifestAbs = path.join(root, manifestPath);
       if (!fs.existsSync(manifestAbs)) continue;
 
@@ -28,7 +28,7 @@ export function installationInventory(root) {
       if (!Array.isArray(manifest.units)) continue;
 
       for (const unit of manifest.units) {
-        const file = path.join('database', set, version, unit.file);
+        const file = path.posix.join('database', set, version, unit.file);
         const absFile = path.join(root, file);
         assert.ok(fs.existsSync(absFile), `Missing SQL file ${file} declared in ${manifestPath}`);
         assert.equal(sha256Sql(fs.readFileSync(absFile)), unit.sha256, `SHA256 mismatch for ${file}`);
