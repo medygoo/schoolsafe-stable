@@ -205,6 +205,14 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "auth",
+      "file": "database/auth/v6/01_direct_school_activation.sql",
+      "manifest": "database/auth/v6/manifest.json",
+      "orderInSet": 1,
+      "sha256": "de404df6bf06997724b4bb38ebac7164a255997a1098c04e7fb3ccaf86e542c0",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "access",
       "file": "database/access/v1/01_role_templates.sql",
       "manifest": "database/access/v1/manifest.json",

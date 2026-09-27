@@ -1,0 +1,12 @@
+{
+  "schema": "schoolsafe-migrations-v6",
+  "name": "auth",
+  "version": 6,
+  "units": [
+    {
+      "order": 1,
+      "file": "01_direct_school_activation.sql",
+      "sha256": "de404df6bf06997724b4bb38ebac7164a255997a1098c04e7fb3ccaf86e542c0"
+    }
+  ]
+}

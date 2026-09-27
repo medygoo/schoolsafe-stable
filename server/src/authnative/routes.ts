@@ -29,6 +29,16 @@ export function registerAuthNativeRoutes(
   const { service, cookieSecure } = dependencies;
 
   app.post("/auth/native/login", async (request, reply) => {
+    if (request.headers["sec-fetch-site"] === "cross-site") {
+      throw new SchoolSafeError(403, "ACCESS_DENIED", "Accès refusé", false);
+    }
+    const origin = request.headers.origin;
+    if (origin) {
+      const developmentOrigins = ["http://127.0.0.1:4175", "http://localhost:4175", "http://127.0.0.1:4176", "http://localhost:4176", "http://127.0.0.1:4290", "http://localhost:4290"];
+      let allowed = false;
+      try { const url = new URL(origin); allowed = url.origin === origin && url.host === request.headers.host && url.protocol === (cookieSecure ? "https:" : "http:"); } catch { /* deny malformed origin */ }
+      if (!allowed && !(!cookieSecure && developmentOrigins.includes(origin))) throw new SchoolSafeError(403, "ACCESS_DENIED", "Accès refusé", false);
+    }
     const body = loginSchema.parse(request.body);
     const remember = body.remember === true;
     const result = await service.loginWithPassword(

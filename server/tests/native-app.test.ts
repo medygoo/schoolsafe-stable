@@ -98,7 +98,7 @@ describe("legacy public entry points", () => {
 
       const config = await app.inject({ method: "GET", url: "/config" });
       expect(config.statusCode).toBe(200);
-      expect(config.json()).toMatchObject({ auth_mode: "native", setup_available: false, account_registration_available: true });
+      expect(config.json()).toMatchObject({ auth_mode: "native", setup_available: false, account_registration_available: false });
 
       const canonicalResponses = await Promise.all([
         app.inject({ method: "POST", url: "/auth/registrations", payload: {} }),
@@ -108,7 +108,7 @@ describe("legacy public entry points", () => {
         app.inject({ method: "POST", url: "/auth/onboarding/school", payload: {} }),
         app.inject({ method: "POST", url: "/auth/native/login", payload: {} }),
       ]);
-      expect(canonicalResponses.map(response => response.statusCode)).toEqual([400, 403, 403, 401, 401, 400]);
+      expect(canonicalResponses.map(response => response.statusCode)).toEqual([404, 404, 404, 401, 401, 400]);
     } finally { await app.close(); }
   });
 });

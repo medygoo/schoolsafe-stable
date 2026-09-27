@@ -2,14 +2,6 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <script>
-    // Capture the approval capability before loading application resources.
-    (function () {
-      if (location.hash.indexOf("#account-approval=") !== 0) return;
-      window.schoolSafeAccountApproval = location.hash.slice("#account-approval=".length);
-      history.replaceState(history.state, "", location.pathname + location.search);
-    })();
-  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#071a3d">
   <!-- Repli pour les hébergements statiques. Les protections frame-ancestors
@@ -193,22 +185,11 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
             <span class="auth-panel-logo" aria-hidden="true"><span class="auth-shield" aria-hidden="true"><img src="./schoolsafe-logo.png" alt=""></span><span class="auth-wordmark">School<strong>Safe</strong></span></span>
             <div><b>Connexion</b><span>Accédez à votre établissement</span></div>
           </div>
-          <div class="login-method" role="group" aria-label="Mode de connexion">
-            <button class="selected" type="button" data-login-mode="email" aria-pressed="true"><i data-lucide="mail"></i> E-mail</button>
-            <button type="button" data-login-mode="phone" aria-pressed="false"><i data-lucide="phone"></i> Téléphone</button>
-          </div>
           <div class="ss-field" id="emailIdentity">
-            <label class="ss-label" for="emailIdentifier">Adresse e-mail</label>
+            <label class="ss-label" for="emailIdentifier">E-mail ou téléphone</label>
             <div class="ss-input-shell">
               <i data-lucide="mail"></i>
-              <input class="ss-input" id="emailIdentifier" name="emailIdentifier" type="email" autocomplete="username" placeholder="nom@ecole.cd">
-            </div>
-          </div>
-          <div class="ss-field hidden" id="phoneIdentity">
-            <label class="ss-label" for="phoneIdentifier">Numéro de téléphone</label>
-            <div class="ss-input-shell phone-shell">
-              <span class="dial-code">+243</span>
-              <input class="ss-input" id="phoneIdentifier" name="phoneIdentifier" type="tel" inputmode="tel" autocomplete="tel" placeholder="81 000 00 00">
+              <input class="ss-input" id="emailIdentifier" name="emailIdentifier" type="text" autocomplete="username" placeholder="nom@ecole.cd ou +243…">
             </div>
           </div>
           <div class="label-row">
@@ -230,7 +211,8 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
               <input class="ss-input" id="otpIdentifier" name="otpIdentifier" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="6">
             </div>
           </div>
-          <button class="ss-button ss-button--primary login-button" type="submit">Se connecter <i data-lucide="arrow-right"></i></button>
+          <p class="ss-help-text">Première visite ? Votre compte sera créé avec ces identifiants. Choisissez un mot de passe d’au moins 8 caractères.</p>
+          <button class="ss-button ss-button--primary login-button" type="submit">Continuer <i data-lucide="arrow-right"></i></button>
           <button class="demo-access demo-access--button" type="button" id="demoEntry"><i data-lucide="flask-conical"></i><span>Accéder à la démonstration (données fictives)</span></button>
           <div class="ss-field demo-role-field">
             <label class="ss-label" for="demoRole">Profil à prévisualiser</label>
@@ -252,13 +234,6 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
               <option value="parent">Parent ou responsable légal</option>
             </select>
           </div>
-          <details class="auth-other-access">
-            <summary>Autres accès</summary>
-          <div class="first-install">
-            <span>Nouveau compte SchoolSafe</span>
-            <button class="ss-button ss-button--secondary" id="createAccount" type="button">Créer un compte</button>
-          </div>
-          </details>
         </form>
       </div>
       <footer class="auth-footer">

@@ -71,95 +71,55 @@ async function openUI(t, viewport, options = {}) {
   const calls = [];
   await page.route('**/config', r => options.configError ? r.abort() : r.fulfill({json:{auth_mode:'native',account_registration_available:options.available !== false}}));
   await page.route('**/auth/native/me', r => r.fulfill({status:401,json:{message:'Session required'}}));
-  await page.route('**/auth/onboarding/me', r => r.fulfill(options.resume ? {json:{...applicant,status:'approved'}} : {status:401,json:{message:'Session required'}}));
+  await page.route('**/auth/onboarding/me', r => r.fulfill(options.resume ? {json:{...applicant,status:'onboarding'}} : {status:401,json:{message:'Session required'}}));
   page.on('request', r => { if (r.url().includes(':8787')) calls.push({url:r.url(),method:r.method()}); });
   if (options.prepare) await options.prepare(page);
   await page.goto(uiURL + (options.fragment || ''), {waitUntil:'networkidle'});
   return {page,context,calls};
 }
-async function registration(t, viewport, options) {
-  const result = await openUI(t,viewport,options);
-  await result.page.locator('#enterSplash').click();
-  await result.page.locator('.auth-other-access summary').click();
-  await result.page.locator('#createAccount').click();
-  const modal=result.page.locator('.ss-modal-overlay.is-open');
-  await expect(modal).toBeVisible();
-  return {...result,modal,form:modal.locator('#accountRegistrationForm')};
-}
-async function fillAccount(form) {
-  for (const [key,value] of Object.entries({...applicant,password:'synthetic-password-123',confirmation:'synthetic-password-123'})) await form.locator('[name="'+key+'"]').fill(value);
-}
 async function noSensitiveStorage(page) {
   const stored=await page.evaluate(()=>JSON.stringify([Object.entries(localStorage),Object.entries(sessionStorage)]));
   for(const forbidden of [syntheticToken,'synthetic-password-123','legacy-secret','data:image','officialLogoData','adminPassword']) assert.ok(!stored.includes(forbidden),'Sensitive storage: '+forbidden);
 }
-for(const viewport of [{width:1440,height:1000},{width:390,height:844}]) {
- const size=viewport.width===390?'mobile':'desktop';
- test(size+': account registration validates, waits and creates only pending account',async t=>{
-  const {page,modal,form,calls}=await registration(t,viewport);
-  let sent=[],release;const gate=new Promise(r=>release=r);t.after(()=>release());
-  await page.route('**/auth/registrations',async r=>{sent.push(r.request().postDataJSON());assert.equal(r.request().method(),'POST');await gate;r.fulfill({status:202,json:{request_id:'request',status:'pending'}});});
-  const submit=modal.locator('[type=submit]');
-  await submit.click();assert.equal(sent.length,0);
-  await fillAccount(form);await form.locator('[name=confirmation]').fill('different-password');await submit.click();
-  await expect(modal.locator('.ss-modal__error')).toContainText('correspondent');assert.equal(sent.length,0);
-  await form.locator('[name=confirmation]').fill('synthetic-password-123');await form.locator('[name=phone]').fill('123');await submit.click();assert.equal(sent.length,0);
-  await form.locator('[name=phone]').fill('0812345678');await submit.click();await expect(submit).toBeDisabled();
-  await page.keyboard.press('Escape');await expect(modal).toBeVisible();
-  await expect.poll(()=>sent.length).toBe(1); assert.deepEqual(sent,[{...applicant,password:'synthetic-password-123'}]);release();
-  await expect(modal).toContainText('Votre demande a été envoyée.');await expect(modal).toContainText('Votre compte reste verrouillé jusqu’à validation SchoolSafe.');
-  await expect(page.locator('#setup')).not.toHaveClass(/active/);await expect(modal.locator('input[type=password]')).toHaveCount(0);
-  assert.ok(!calls.some(c=>c.url.includes('/setup/')));await noSensitiveStorage(page);
- });
- for(const scenario of ['duplicate','delivery failure','network failure','config unavailable','disabled']) test(size+': registration '+scenario+' stays visible',async t=>{
-  const {page,modal,form}=await registration(t,viewport,{configError:scenario==='config unavailable',available:scenario!=='disabled'});
-  let submissions=0;await page.route('**/auth/registrations',r=>{submissions++;return scenario==='network failure'?r.abort():r.fulfill({status:scenario==='duplicate'?409:503,json:{message:'Inscription indisponible'}});});
-  await fillAccount(form);await modal.locator('[type=submit]').click();await expect(modal.locator('.ss-modal__error')).toBeVisible();
-  await expect(modal.locator('[type=submit]')).toBeEnabled();await expect(page.locator('#setup')).not.toHaveClass(/active/);
-  if(['disabled','config unavailable'].includes(scenario))assert.equal(submissions,0);await noSensitiveStorage(page);
- });
- for(const decision of ['approve','reject'])test(size+': fragment approval '+decision+' is scrubbed and requires explicit POST',async t=>{
-  let reviews=0,decisions=0,release;const gate=new Promise(r=>release=r);t.after(()=>release());
-  const {page}=await openUI(t,viewport,{fragment:'#account-approval='+syntheticToken,prepare:async page=>{
-   await page.route('**/auth/registrations/review',async r=>{reviews++;assert.equal(new URL(page.url()).hash,'');assert.equal(r.request().method(),'POST');assert.deepEqual(r.request().postDataJSON(),{token:syntheticToken});await r.fulfill({json:{...applicant,first_name:'<img src=x onerror=alert(1)>',request_id:'request',status:'pending'}});});
-   await page.route('**/auth/registrations/decision',async r=>{decisions++;assert.equal(r.request().method(),'POST');assert.deepEqual(r.request().postDataJSON(),{token:syntheticToken,decision});await gate;await r.fulfill({json:{request_id:'request',status:decision==='approve'?'approved':'rejected'}});});
-  }});
-  const modal=page.locator('.ss-modal-overlay.is-open');await expect(modal).toContainText(applicant.email);assert.equal(reviews,1);assert.equal(decisions,0);
-  await expect(modal.locator('img')).toHaveCount(0);assert.equal(new URL(page.url()).hash,'');
-  await modal.getByRole('button',{name:decision==='approve'?'APPROUVER':'REFUSER',exact:true}).click();
-  await expect(modal.getByRole('button',{name:'APPROUVER',exact:true})).toBeDisabled();await expect(modal.getByRole('button',{name:'REFUSER',exact:true})).toBeDisabled();
-  await page.keyboard.press('Escape');await expect(modal).toBeVisible();assert.equal(decisions,1);release();
-  await expect(modal).toContainText(decision==='approve'?'Compte approuvé':'Compte refusé');await noSensitiveStorage(page);
- });
- for(const invalid of [false,true])test(size+': expired or malformed approval '+invalid+' reveals no account',async t=>{
-  let reviews=0;const {page}=await openUI(t,viewport,{fragment:'#account-approval='+(invalid?'invalid':syntheticToken),prepare:async page=>{
-   await page.route('**/auth/registrations/review',r=>{reviews++;return r.fulfill({status:403,json:{message:'Approval unavailable'}});});
-  }});
-  const modal=page.locator('.ss-modal-overlay.is-open');await expect(modal).toContainText('Lien invalide ou expiré.');await expect(modal).not.toContainText(applicant.email);
-  assert.equal(reviews,invalid?0:1);assert.equal(new URL(page.url()).hash,'');await noSensitiveStorage(page);
- });
- test(size+': approved login resumes seven steps, keeps administrator and submits one school',async t=>{
-  const {page,calls}=await openUI(t,viewport,{draft:{schoolName:'Brouillon',setupToken:'legacy-secret',adminPassword:'legacy-secret',officialLogoData:'data:image/png;base64,legacy-secret'}});
-  await noSensitiveStorage(page);
+for (const [size,viewport] of [['desktop',{width:1440,height:1000}],['mobile',{width:390,height:844}]]) {
+ test(size+': direct login, seven steps, activation refusal and retry',async t=>{
+  const {page,calls}=await openUI(t,viewport,{draft:{schoolName:'Brouillon',setupToken:'legacy-secret',adminPassword:'legacy-secret'}});
+  await noSensitiveStorage(page);await expect(page.locator('#createAccount')).toHaveCount(0);
   await page.route('**/auth/native/login',r=>r.fulfill({json:{code:'ONBOARDING_REQUIRED'}}));
-  await page.route('**/auth/onboarding/me',r=>r.fulfill({json:{...applicant,status:'approved'}}));
-  let submissions=[];await page.route('**/auth/onboarding/school',r=>{submissions.push(r.request().postDataJSON());return r.fulfill({status:201,json:{school_id:'school',profile_id:'profile',status:'completed'}});});
+  await page.route('**/auth/onboarding/me',r=>r.fulfill({json:{...applicant,status:'onboarding'}}));
+  let submissions=[];
+  await page.route('**/auth/onboarding/school',r=>{submissions.push(r.request().postDataJSON());return r.fulfill({status:403,json:{message:'Code d’activation incorrect.'}});});
   await page.locator('#enterSplash').click();await page.locator('#emailIdentifier').fill(applicant.email);await page.locator('#password').fill('synthetic-password-123');await page.locator('#loginForm button[type=submit]').click();
   await expect(page.locator('#setup.active')).toBeVisible();await expect(page.locator('#password')).toHaveValue('');
-  await expect(page.locator('#stepNav button')).toHaveCount(7);for(const button of await page.locator('#stepNav button').all())await expect(button).toBeVisible();
+  await expect(page.locator('#stepNav button')).toHaveCount(7);
+  await expect(page.locator('#stepNav button span:nth-child(2)')).toHaveText(['Identité','Cycles','Année scolaire','Coordonnées','Identité visuelle','Administrateur','Vérification']);
   await page.locator('#schoolName').fill('École Test');await page.locator('#nextStep').click();await page.locator('#nextStep').click();await page.locator('#nextStep').click();
   await page.locator('#email').fill('school@example.test');await page.locator('#phone').fill('+243812345678');await page.locator('#nextStep').click();await page.locator('#nextStep').click();
-  await expect(page.locator('#stepTitle')).toHaveText('Administrateur principal');await expect(page.locator('#stepContent')).toContainText('Ce compte deviendra l’Administrateur principal de cette école.');
-  for(const [id,key] of [['adminFirstName','first_name'],['adminLastName','last_name'],['adminEmail','email'],['adminPhone','phone']]){await expect(page.locator('#'+id)).toHaveValue(applicant[key]);await expect(page.locator('#'+id)).toHaveAttribute('readonly','');}
-  await expect(page.locator('#stepContent input[type=password]')).toHaveCount(0);await page.locator('#nextStep').click();await page.locator('#nextStep').click();
-  await expect(page.locator('#auth.active')).toBeVisible();assert.equal(submissions.length,1);
-  assert.deepEqual(Object.keys(submissions[0]).sort(),['identity','cycles','academic_year','contact','brand'].sort());assert.equal(submissions[0].identity.name_fr,'École Test');
-  assert.ok(!JSON.stringify(submissions[0]).includes('data:'));assert.ok(!JSON.stringify(submissions[0]).includes('admin'));assert.ok(!calls.some(c=>c.url.includes('/setup/')));
-  assert.equal(await page.evaluate(()=>localStorage.getItem('schoolsafe-v2-setup')),null);await noSensitiveStorage(page);
+  await expect(page.locator('#stepTitle')).toHaveText('Administrateur principal');
+  await page.locator('#adminFirstName').fill('Ada');await page.locator('#adminLastName').fill('Test');
+  await expect(page.locator('#adminEmail')).toHaveAttribute('readonly','');await page.locator('#nextStep').click();
+  await expect(page.locator('#stepTitle')).toHaveText('Vérification');
+  await expect(page.getByLabel('Code d’activation SchoolSafe')).toBeVisible();
+  await expect(page.locator('#nextStep')).toContainText('ACTIVER MON ÉCOLE');
+  await page.locator('#schoolActivationCode').fill(syntheticToken);await page.locator('#nextStep').click();
+  await expect(page.locator('#nextStep')).toBeEnabled();assert.equal(submissions.length,1);
+  await expect(page.getByText('Code d’activation incorrect.',{exact:true})).toBeVisible();
+  assert.equal(submissions[0].identity.name_fr,'École Test');assert.equal(submissions[0].activation_code,syntheticToken);
+  assert.deepEqual(submissions[0].admin,{first_name:'Ada',last_name:'Test'});
+  await expect(page.locator('#setup.active')).toBeVisible();await noSensitiveStorage(page);
+  assert.ok(!calls.some(c=>c.url.includes('/auth/registrations')));
+  const bootstrap={profile:{id:'profile',display_name:'Ada Test'},schoolId:'school',school:{id:'school',code:'SCH-TEST',name:'École Test'},roles:['admin'],permissions:['roles.manage'],scopes:[{permission:'roles.manage',type:'school',target:null}],deniedPermissions:[],deniedRules:[]};
+  await page.route('**/auth/native/me',r=>r.fulfill({json:{profile_id:'profile'}}));
+  await page.route('**/native/session/bootstrap',r=>r.fulfill({json:{data:bootstrap}}));
+  await page.route('**/auth/onboarding/school',r=>{submissions.push(r.request().postDataJSON());return r.fulfill({status:201,json:{school_id:'school',profile_id:'profile',status:'completed'}});});
+  await page.locator('#nextStep').click();await expect(page.locator('#workspace.active')).toBeVisible();
+  assert.equal(submissions.length,2);await noSensitiveStorage(page);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('schoolsafe-v2-setup')),null);
+  await page.reload();await expect(page.locator('#workspace.active')).toBeVisible();
  });
- test(size+': refresh resumes only validated onboarding and logout revokes cookie',async t=>{
+ test(size+': refresh resumes onboarding and logout revokes cookie',async t=>{
   const {page}=await openUI(t,viewport,{resume:true});await expect(page.locator('#setup.active')).toBeVisible();
-  let logout=0;await page.route('**/auth/onboarding/logout',r=>{logout++;assert.equal(r.request().method(),'POST');return r.fulfill({json:{status:'logged_out'}});});
+  let logout=0;await page.route('**/auth/onboarding/logout',r=>{logout++;return r.fulfill({json:{status:'logged_out'}});});
   await page.locator('#closeSetup').click();await expect(page.locator('#auth.active')).toBeVisible();assert.equal(logout,1);await noSensitiveStorage(page);
  });
 }
