@@ -533,6 +533,14 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "prodeli",
+      "file": "database/prodeli/v1/01_registrations_read.sql",
+      "manifest": "database/prodeli/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "984bb6aed1ba935709c5c0e4921d24d63160955a3e3ae9716afd98c8a643f649",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "projections",
       "file": "database/projections/v1/02_student_list.sql",
       "requires": [
