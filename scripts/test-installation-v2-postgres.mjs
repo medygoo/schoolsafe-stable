@@ -873,16 +873,28 @@ export async function qualifyAccountRegistrationOnboarding({admin,auth,api,conne
 }
 
 async function qualifyInstalled62Upgrade({admin,connectionString,passwords,check}) {
- const plan=loadInstallationPlan();const unit=plan.units.at(-1);
- assert.equal(unit.file,'database/auth/v5/01_account_registration_onboarding.sql');assert.equal(plan.units.length,63);
+ const plan=loadInstallationPlan();
+ assert.equal(plan.units.length,64,'Current installation plan must have 64 units');
+ const accountUnit=plan.units.find(u=>u.file==='database/auth/v5/01_account_registration_onboarding.sql');
+ const prodeliUnit=plan.units.find(u=>u.file==='database/prodeli/v1/01_registrations_read.sql');
+ assert.ok(accountUnit,'auth/v5 account registration unit must exist in plan');
+ assert.ok(prodeliUnit,'prodeli/v1 registrations read unit must exist in plan');
+ assert.equal(accountUnit.order,63,'auth/v5 must be unit 63');
+ assert.equal(prodeliUnit.order,64,'prodeli/v1 must be unit 64');
  const target=new URL(connectionString),name=decodeURIComponent(target.pathname.slice(1))+'_upgrade62';
  assert.match(name,/^schoolsafe_test_[a-z0-9_]+$/);
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'schoolsafe-account-upgrade-'));let created=false,owner,migrator,auth;
  try {
   fs.cpSync(path.join(repositoryRoot,'database'),path.join(root,'database'),{recursive:true});
-  fs.unlinkSync(path.join(root,unit.file));
+  // Remove both unit 63 and 64 from the temporary historical snapshot (62 units)
+  fs.unlinkSync(path.join(root,accountUnit.file));
+  fs.unlinkSync(path.join(root,prodeliUnit.file));
+  // Rewrite auth/v5 manifest to empty (historical state had no v5 units)
   fs.writeFileSync(path.join(root,'database/auth/v5/manifest.json'),JSON.stringify({schema:'schoolsafe-migrations-v5',name:'auth',version:5,units:[]}));
   fs.writeFileSync(path.join(root,'database/auth/v5/manifest.sha256'),'\n');
+  // Remove prodeli/v1 manifest entirely (set did not exist at 62 units)
+  fs.rmSync(path.join(root,'database/prodeli'),{recursive:true,force:true});
+  // Build historical plan with exactly 62 units
   const initialPlan={...plan,units:plan.units.slice(0,62)};delete initialPlan.digest;
   fs.writeFileSync(path.join(root,'database/installation/v2/manifest.json'),JSON.stringify(initialPlan));
   await admin.query('create database "'+name+'"');created=true;target.pathname='/'+name;
@@ -891,18 +903,34 @@ async function qualifyInstalled62Upgrade({admin,connectionString,passwords,check
   target.username='schoolsafe_migrator';target.password=passwords.migrator;migrator=new pg.Client({connectionString:target.toString()});await migrator.connect();
   target.username='schoolsafe_auth';target.password=passwords.auth;auth=new pg.Client({connectionString:target.toString()});await auth.connect();
   const ledger=async()=> (await owner.query('select unit_order,file_name,sha256 from ops.installation_units order by unit_order')).rows;
-  const initial=await ledger();assert.equal(initial.length,62);const sql=renderAdditiveUpgrade({installed:initial});
-  assert.equal((sql.match(/-- APPLY /g)??[]).length,1);
+  const initial=await ledger();assert.equal(initial.length,62,'Historical ledger must have exactly 62 units');
+  const sql=renderAdditiveUpgrade({installed:initial});
+  assert.equal((sql.match(/-- APPLY /g)??[]).length,2,'Upgrade from 62 must apply exactly 2 units (63+64)');
   await check('account-first upgrade 62 rollback leaves all historical units and no new tables',async()=>{
    const faulty=sql.replace(/^commit;$/im,'select 1/0;\ncommit;');assert.ok(faulty!==sql,'Upgrade commit marker required');
    await assert.rejects(migrator.query(faulty),e=>e.code==='22012');await migrator.query('rollback');
-   assert.deepEqual(await ledger(),initial);assert.equal((await owner.query("select to_regclass('auth.account_registration_requests') object")).rows[0].object,null);
+   assert.deepEqual(await ledger(),initial);
+   assert.equal((await owner.query("select to_regclass('auth.account_registration_requests') object")).rows[0].object,null);
+   assert.equal((await owner.query("select to_regprocedure('api.prodeli_list_registrations(text,integer)') rpc")).rows[0].rpc,null);
   });
-  await check('account-first upgrade 62 to 63 appends exactly one immutable ledger unit',async()=>{
-   await migrator.query(sql);const after=await ledger();assert.equal(after.length,63);assert.deepEqual(after.slice(0,62),initial);assert.equal(after[62].file_name,unit.file);assert.equal(after[62].sha256,unit.sha256);
-   const before=(await owner.query('select * from ops.installation_units order by unit_order')).rows;await migrator.query(renderAdditiveUpgrade({installed:after}));assert.deepEqual((await owner.query('select * from ops.installation_units order by unit_order')).rows,before);
+  await check('account-first upgrade 62 to 64 appends exactly two immutable ledger units',async()=>{
+   await migrator.query(sql);const after=await ledger();
+   assert.equal(after.length,64,'Upgraded ledger must have 64 units');
+   assert.deepEqual(after.slice(0,62),initial,'First 62 units must be unchanged');
+   assert.equal(after[62].file_name,accountUnit.file);assert.equal(after[62].sha256,accountUnit.sha256);
+   assert.equal(after[63].file_name,prodeliUnit.file);assert.equal(after[63].sha256,prodeliUnit.sha256);
+   // Idempotency: second upgrade must produce zero APPLY statements and change nothing
+   const before=(await owner.query('select * from ops.installation_units order by unit_order')).rows;
+   const secondSql=renderAdditiveUpgrade({installed:after});
+   assert.ok(!secondSql.includes('-- APPLY'),'Second upgrade must contain no APPLY markers');
+   await migrator.query(secondSql);
+   assert.deepEqual((await owner.query('select * from ops.installation_units order by unit_order')).rows,before);
+   // Functional proof: auth/v5 RPC works
    const hash=await argonHash(randomBytes(32).toString('hex'),{memoryCost:19456,timeCost:2,parallelism:1});
    const result=(await auth.query('select api.account_registration_prepare($1,$2,$3) r',[{first_name:'Upgrade',last_name:'Proof',email:'upgrade-'+randomUUID()+'@example.test',phone:'+243899999999'},hash,'198.19.0.1'])).rows[0].r;assert.equal(result.status,'pending');
+   // Functional proof: prodeli RPC exists
+   const rpcExists=(await owner.query("select to_regprocedure('api.prodeli_list_registrations(text,integer)') rpc")).rows[0].rpc;
+   assert.ok(rpcExists,'api.prodeli_list_registrations(text,integer) must exist after upgrade');
   });
  } finally {
   await Promise.allSettled([auth?.end(),migrator?.end(),owner?.end()]);if(created)await admin.query('drop database "'+name+'"');
