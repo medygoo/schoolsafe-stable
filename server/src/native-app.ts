@@ -88,6 +88,8 @@ const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.
     },
     cardsNative: {
       authService: authService,
+      // CARD_HMAC_SECRET : la signature du credential QR est calculée côté
+      // serveur uniquement ; le navigateur ne la connaît jamais.
       service: createCardsNativeService(pools.businessPool, env.R2_ENDPOINT ? {
         endpoint: env.R2_ENDPOINT,
         accessKeyId: env.R2_ACCESS_KEY_ID!,

@@ -506,6 +506,15 @@
           formField("planned_class_id", "Classe prévue", "select", "", { required: true, options: classes.map(function (item) { return { value: item.id, label: item.name }; }) }) +
           formField("enrollment_starts_on", "Début prévu", "date", today, { required: true }) +
           formField("guardian_type", "Lien avec l’élève", "select", "mere", { required: true, options: [{ value: "mere", label: "Mère" }, { value: "pere", label: "Père" }, { value: "tuteur", label: "Tuteur" }, { value: "autre", label: "Autre" }] }) +
+          '<div class="student-photo-field ss-field--wide">' +
+            '<span class="ss-label">Photo de l’élève</span>' +
+            '<div class="student-photo-controls">' +
+              '<button type="button" class="ss-button ss-button--secondary" id="studentPhotoEditorBtn"><i data-lucide="image-plus"></i> Choisir / recadrer la photo</button>' +
+              '<span id="studentPhotoPreview" class="student-photo-preview" aria-live="polite">Aucune photo sélectionnée</span>' +
+              '<button type="button" class="text-button" id="studentPhotoReset" hidden>Retirer</button>' +
+            '</div>' +
+            '<input type="hidden" name="student_photo_dataurl" id="studentPhotoDataUrl">' +
+          '</div>' +
           '<fieldset class="student-parent-choice ss-field--wide"><legend>Parent principal obligatoire</legend>' +
             '<label for="studentParentExisting"><input id="studentParentExisting" type="radio" name="parent_mode" value="existing" checked> Parent existant</label>' +
             '<label for="studentParentInvite"><input id="studentParentInvite" type="radio" name="parent_mode" value="invite"> Inviter un nouveau Parent</label>' +
@@ -528,6 +537,36 @@
     var form = modal.content.querySelector("#studentDraftForm");
     var existingFields = form.querySelector("#existingParentFields");
     var inviteFields = form.querySelector("#invitedParentFields");
+
+    // ————— Photo de l'élève : SchoolSafePhotoEditor (recadrage réel) —————
+    var photoDataUrlInput = form.querySelector("#studentPhotoDataUrl");
+    var photoPreview = form.querySelector("#studentPhotoPreview");
+    var photoResetBtn = form.querySelector("#studentPhotoReset");
+    form.querySelector("#studentPhotoEditorBtn").addEventListener("click", function () {
+      if (!window.SchoolSafePhotoEditor) {
+        notify("Éditeur de photo indisponible.");
+        return;
+      }
+      window.SchoolSafePhotoEditor.open({
+        title: "Photo de l’élève",
+        onCancel: function () { /* aucun changement */ },
+        onValidate: function (result) {
+          photoDataUrlInput.value = result.dataUrl;
+          photoPreview.innerHTML = '';
+          var img = document.createElement("img");
+          img.src = result.dataUrl;
+          img.alt = "Photo de l'élève recadrée";
+          img.className = "student-photo-thumbnail";
+          photoPreview.appendChild(img);
+          photoResetBtn.hidden = false;
+        },
+      });
+    });
+    photoResetBtn.addEventListener("click", function () {
+      photoDataUrlInput.value = "";
+      photoPreview.textContent = "Aucune photo sélectionnée";
+      photoResetBtn.hidden = true;
+    });
     function updateParentMode() {
       var invited = form.parent_mode.value === "invite";
       existingFields.hidden = invited;
@@ -575,6 +614,8 @@
           academic_year_id: form.academic_year_id.value,
           planned_class_id: form.planned_class_id.value,
           enrollment_starts_on: form.enrollment_starts_on.value,
+          // Photo recadrée validée (PNG dataURL) — utilisée par le dossier et la carte.
+          photo_dataurl: form.querySelector("#studentPhotoDataUrl").value || undefined,
           primary_parent: invited ? {
             mode: "invite", email: form.parent_email.value, first_name: form.parent_first_name.value,
             last_name: form.parent_last_name.value, phone: form.parent_phone.value || undefined,

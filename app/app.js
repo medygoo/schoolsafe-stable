@@ -2540,7 +2540,15 @@
           notify("Service à venir — roadmap SchoolSafe.");
           return;
         }
-        if (eco === "security" || eco === "guardian" || eco === "cards") {
+        if (eco === "cards") {
+          // Le clic « Cartes élèves » ouvre le studio Cartes (#cardsStudio),
+          // jamais le module Sécurité.
+          if (window.SchoolSafeCards && typeof window.SchoolSafeCards.open === "function") {
+            window.SchoolSafeCards.open();
+          }
+          return;
+        }
+        if (eco === "security" || eco === "guardian") {
           openModuleByBranch("security");
           return;
         }

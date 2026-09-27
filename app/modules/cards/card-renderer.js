@@ -83,12 +83,15 @@ export function ssGenQR(elId, data, size) {
   const el = document.getElementById(elId);
   if (!el || typeof window.QRCode !== 'function') return;
   el.innerHTML = '';
+  // Le payload officiel est posé sur l'élément (vérifiable sans décodage,
+  // sans jamais exposer de secret : c'est le credential public de la carte).
+  el.setAttribute('data-qr-payload', String(data));
   try {
     new window.QRCode(el, { text: data, width: size || 76, height: size || 76, colorDark: '#17203a', colorLight: '#ffffff' });
   } catch (e) {}
 }
 
-export function ssBuildBadge(s, cl, teacher, year, patB, patStyle, schoolInfo, logo) {
+export function ssBuildBadge(s, cl, teacher, year, patB, patStyle, schoolInfo, logo, qrPayload) {
   const showFond = patStyle === 'fond' || patStyle === 'both';
   const showVig = patStyle === 'vignette' || patStyle === 'both';
   const sc = schoolInfo || {}, logoSrc = logo || '';
@@ -102,6 +105,10 @@ export function ssBuildBadge(s, cl, teacher, year, patB, patStyle, schoolInfo, l
   const mat = s.mat || s.matricule || s.id || '000';
   const pts = (s.name || '').trim().split(/\s+/);
   const n1 = pts[0] || '—', n2 = pts[1] || '', n3 = pts.slice(2).join(' ') || '';
+  // Personnes autorisées au retrait : jusqu'à 3, depuis la projection réelle.
+  const authorizedList = Array.isArray(s.authorized_persons) && s.authorized_persons.length
+    ? s.authorized_persons.slice(0, 3)
+    : (apNm && apNm !== '—' ? [{ full_name: apNm, guardian_type: '', phone: apPh }] : []);
   const sz = snm.length > 32 ? '11px' : snm.length > 22 ? '13px' : '15.5px';
   const logoH = logoSrc
     ? `<div class="logo-slot" style="border:none;background:transparent;padding:0"><img src="${logoSrc}" alt=""></div>`
@@ -158,8 +165,8 @@ export function ssBuildBadge(s, cl, teacher, year, patB, patStyle, schoolInfo, l
     <div class="qr-big" id="ss-qr-bv"></div>
     <div class="qr-cap">Scan entrée / sortie · Matricule <b>${esc(mat)}</b></div>
     <div class="rows">
-      <div class="rw"><div class="ic" style="background:#d5f2f5;color:#0f7f8f">👨‍👩‍👧</div><div class="grow"><div class="k">Parent / Tuteur</div><div class="v">${esc(parNm)}</div></div><div style="flex:none"><div class="k">Téléphone</div><div class="v">${esc(parPh)}</div></div></div>
-      <div class="rw"><div class="ic" style="background:#ece5fb;color:#7b5cd6">🛡️</div><div class="grow"><div class="k">Personne autorisée</div><div class="v">${esc(apNm)}</div></div><div style="flex:none"><div class="k">Téléphone</div><div class="v">${esc(apPh)}</div></div></div>
+      <div class="rw"><div class="ic" style="background:#d5f2f5;color:#0f7f8f">👨‍👩‍👧</div><div class="grow"><div class="k">Parent / Tuteur</div><div class="v">${esc(parNm)}${parNm && parNm !== '—' && s.primary_guardian_type ? ' <span style="font-weight:700;font-size:8px;color:#5d6784">(' + esc(s.primary_guardian_type) + ')</span>' : ''}</div></div><div style="flex:none"><div class="k">Téléphone</div><div class="v">${esc(parPh)}</div></div></div>
+      ${authorizedList.map((person, idx) => `<div class="rw"><div class="ic" style="background:#ece5fb;color:#7b5cd6">🛡️</div><div class="grow"><div class="k">${idx === 0 ? 'Personnes autorisées' : 'Autorisée ' + (idx + 1)}</div><div class="v">${esc(person.full_name)}${person.guardian_type ? ' <span style="font-weight:700;font-size:8px;color:#5d6784">(' + esc(person.guardian_type) + ')</span>' : ''}</div></div><div style="flex:none"><div class="k">Tél</div><div class="v">${esc(person.phone || '—')}</div></div></div>`).join('')}
       <div class="rw ecole"><div class="ic" style="background:#dbe7fb;color:#1446aa">🏫</div><div class="grow">
         <div class="k">Contacter l'école</div>
         ${addr ? `<div class="v">${esc(addr)}</div>` : ''}
@@ -174,10 +181,10 @@ export function ssBuildBadge(s, cl, teacher, year, patB, patStyle, schoolInfo, l
     <div class="foot" style="margin:auto -18px -8px"><div style="height:22px;display:flex;align-items:center;padding:0 4px">${ssLogoBadge}</div><div><div class="t1">Sécurisé par SchoolSafe</div><div class="t2">un enfant protégé, un parent informé</div></div></div>
   </div>
 </div>`;
-  return { recto, verso, qr: 'schoolsafe://student/' + mat };
+  return { recto, verso, qr: qrPayload || ('schoolsafe://card/' + mat) };
 }
 
-export function ssBuildCarte(s, cl, teacher, year, patC, patStyle, schoolInfo, logo) {
+export function ssBuildCarte(s, cl, teacher, year, patC, patStyle, schoolInfo, logo, qrPayload) {
   const showFond = patStyle === 'fond' || patStyle === 'both';
   const showVig = patStyle === 'vignette' || patStyle === 'both';
   const sc = schoolInfo || {}, logoSrc = logo || '';
@@ -188,6 +195,9 @@ export function ssBuildCarte(s, cl, teacher, year, patC, patStyle, schoolInfo, l
   const parNm = s.parent_name || s.nom_papa || s.nom_maman || '—';
   const parPh = s.parent_phone || '—';
   const apNm = s.authorized_name || '—', apPh = s.authorized_phone || '—';
+  const authorizedList = Array.isArray(s.authorized_persons) && s.authorized_persons.length
+    ? s.authorized_persons.slice(0, 3)
+    : (apNm && apNm !== '—' ? [{ full_name: apNm, guardian_type: '', phone: apPh }] : []);
   const pts = (s.name || '').trim().split(/\s+/);
   const dispNm = pts.slice(0, 2).join(' '), fn = pts.slice(2).join(' ') || '';
   const sz = snm.length > 32 ? '11px' : snm.length > 22 ? '13px' : '17px';
@@ -229,8 +239,8 @@ export function ssBuildCarte(s, cl, teacher, year, patC, patStyle, schoolInfo, l
     ${showFond ? ssVeil(patC, true) : ''}
     <div class="vleft">
       <div class="mini-rows">
-        <div class="mrw"><div class="ic">👨‍👩‍👧</div><div style="flex:1"><div class="k">Parent / Tuteur</div><div class="v">${esc(parNm)}</div></div><div><div class="k">Tél</div><div class="v">${esc(parPh)}</div></div></div>
-        <div class="mrw"><div class="ic">🛡️</div><div style="flex:1"><div class="k">Personne autorisée</div><div class="v">${esc(apNm)}</div></div><div><div class="k">Tél</div><div class="v">${esc(apPh)}</div></div></div>
+        <div class="mrw"><div class="ic">👨‍👩‍👧</div><div style="flex:1"><div class="k">Parent / Tuteur</div><div class="v">${esc(parNm)}${parNm && parNm !== '—' && s.primary_guardian_type ? ' <span style="font-weight:700;font-size:8px;color:#5d6784">(' + esc(s.primary_guardian_type) + ')</span>' : ''}</div></div><div><div class="k">Tél</div><div class="v">${esc(parPh)}</div></div></div>
+        ${authorizedList.map((person, idx) => `<div class="mrw"><div class="ic">🛡️</div><div style="flex:1"><div class="k">${idx === 0 ? 'Personnes autorisées' : 'Autorisée ' + (idx + 1)}</div><div class="v">${esc(person.full_name)}${person.guardian_type ? ' <span style="font-weight:700;font-size:8px;color:#5d6784">(' + esc(person.guardian_type) + ')</span>' : ''}</div></div><div><div class="k">Tél</div><div class="v">${esc(person.phone || '—')}</div></div></div>`).join('')}
         <div class="mrw ecole"><div class="ic">🏫</div><div style="flex:1;min-width:0">
           <div class="k">Contacter l'école</div>
           <div class="v">${esc(phone)}</div>
@@ -249,10 +259,10 @@ export function ssBuildCarte(s, cl, teacher, year, patC, patStyle, schoolInfo, l
   </div>
   <div class="foot"><div style="height:20px;display:flex;align-items:center;padding:0 4px">${ssLogoCarte}</div><div><div class="t1">SchoolSafe</div><div class="t2">${site ? esc(site) : 'www.schoolsafe.cd'}</div></div><div class="val">N° ${esc(mat)}</div></div>
 </div>`;
-  return { recto, verso, qr: 'schoolsafe://student/' + mat };
+  return { recto, verso, qr: qrPayload || ('schoolsafe://card/' + mat) };
 }
 
-export function renderCardPreview(container, student, classData, teacher, year, schoolInfo, logo, patStyle = 'both') {
+export function renderCardPreview(container, student, classData, teacher, year, schoolInfo, logo, patStyle = 'both', qrPayload) {
   const { type, colorIdx, col } = ssClassType(classData);
   const palette = col || _ssCARDS.CCOLS[colorIdx] || _ssCARDS.CCOLS[3];
   container.setAttribute('data-fam', classData?.card_family || 'A');
@@ -263,22 +273,45 @@ export function renderCardPreview(container, student, classData, teacher, year, 
   let recto, verso, qr;
   if (type === 'badge') {
     const patB = ssGetClassPat(classData, 'badge');
-    ({ recto, verso, qr } = ssBuildBadge(student, classData, teacher, year, patB, patStyle, schoolInfo, logo));
+    ({ recto, verso, qr } = ssBuildBadge(student, classData, teacher, year, patB, patStyle, schoolInfo, logo, qrPayload));
     container.innerHTML = `<div class="ss-badge-wrap">${recto}</div><div class="ss-badge-wrap">${verso}</div>`;
     setTimeout(() => { ssGenQR('ss-qr-br', qr, 76); ssGenQR('ss-qr-bv', qr, 76); }, 40);
   } else {
     const patC = ssGetClassPat(classData, 'carte');
-    ({ recto, verso, qr } = ssBuildCarte(student, classData, teacher, year, patC, patStyle, schoolInfo, logo));
+    ({ recto, verso, qr } = ssBuildCarte(student, classData, teacher, year, patC, patStyle, schoolInfo, logo, qrPayload));
     container.innerHTML = `<div class="ss-carte-wrap">${recto}</div><div class="ss-carte-wrap">${verso}</div>`;
     setTimeout(() => { ssGenQR('ss-qr-cr', qr, 76); ssGenQR('ss-qr-cv', qr, 92); }, 40);
   }
-  return { type };
+  return { type, qr };
 }
 
 export async function captureCardPng(container, selector) {
   const target = container.querySelector(selector);
   if (!target) throw new Error('Aucune carte à capturer');
   if (typeof window.html2canvas !== 'function') throw new Error('html2canvas non chargé');
-  const canvas = await window.html2canvas(target, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
-  return canvas.toDataURL('image/png');
+  // 1. html2canvas ne sait pas interpoler un angle fourni via var() CSS
+  // (--ss-holo-angle de la bande holographique) : addColorStop reçoit NaN
+  // et lève « non-finite ». On masque le ::after pendant la capture, puis
+  // on restaure l'effet holographique à l'écran.
+  const style = document.createElement('style');
+  style.textContent = '.ss-card-studio .art.ss-capture-holo-off::after{display:none!important}';
+  document.head.appendChild(style);
+  const arts = container.querySelectorAll('.art');
+  arts.forEach(art => art.classList.add('ss-capture-holo-off'));
+  try {
+    // 2. html2canvas clone TOUT le document ; sur le workspace complet
+    // (DOM massif + 44 feuilles de style) ce clonage coûte ~18 s par capture.
+    // On élagne le clone à la cible et ses ancêtres uniquement : ~1 s.
+    const keepChain = (el) => {
+      if (el.nodeType !== 1) return false;
+      if (el === document.documentElement || el === document.body || el === document.head) return false;
+      if (el === target || target.contains(el) || el.contains(target)) return false;
+      return true;
+    };
+    const canvas = await window.html2canvas(target, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', imageTimeout: 5000, ignoreElements: keepChain });
+    return canvas.toDataURL('image/png');
+  } finally {
+    arts.forEach(art => art.classList.remove('ss-capture-holo-off'));
+    style.remove();
+  }
 }

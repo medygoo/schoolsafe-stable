@@ -1,7 +1,10 @@
 // SchoolSafe V2 — Cartes Native API client
-// Remplace l'ancien appel Supabase + /cards/request-print
+// Session cookie (credentials:include) — le navigateur ne transporte jamais
+// de secret carte ; les credentials QR sont émis et signés côté serveur.
 (function (root) {
   "use strict";
+
+  var lastPackageFilename = null;
 
   function apiBase() {
     return window.schoolSafeApiBase || (window.schoolSafeBackendConfig ? window.schoolSafeBackendConfig.api_base : "http://127.0.0.1:8787");
@@ -27,6 +30,9 @@
   }
 
   root.SchoolSafeCardsNativeAPI = {
+    /** Nom de fichier du dernier package ZIP reçu (Content-Disposition). */
+    get lastPackageFilename() { return lastPackageFilename; },
+
     /** Envoyer une demande d'impression complète (recto + verso base64) */
     submitPrintRequest: function (input) {
       return apiRequest("/native/cards/print-request", {
@@ -54,6 +60,47 @@
       });
     },
 
+    /**
+     * Projection carte complète d'un élève (source de vérité serveur) :
+     * student/school/class/academic_year/teacher/primary_guardian/
+     * authorized_persons/active_card + readiness.
+     */
+    getCardProjection: function (studentId) {
+      return apiRequest("/native/cards/students/" + encodeURIComponent(studentId) + "/card-projection");
+    },
+
+    /**
+     * Télécharge le package ZIP individuel (recto.png, verso.png, manifest.json)
+     * et renvoie un Blob prêt pour <a download>. Nom de fichier mémorisé depuis
+     * Content-Disposition. En cas de CARD_NOT_READY (409), l'erreur expose
+     * error.missing pour un affichage clair.
+     */
+    downloadCardPackage: async function (studentId, input) {
+      var url = apiBase() + "/native/cards/students/" + encodeURIComponent(studentId) + "/card-package";
+      var res = await fetch(url, {
+        method: "POST",
+        headers: { "Accept": "application/zip, application/json", "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          recto_png_base64: input.recto_png_base64,
+          verso_png_base64: input.verso_png_base64,
+        }),
+      });
+      if (!res.ok) {
+        var payload = null;
+        try { payload = await res.json(); } catch (e) {}
+        var message = payload && payload.error && payload.error.message ? payload.error.message : "Erreur " + res.status;
+        var error = new Error(message);
+        error.status = res.status;
+        if (payload && payload.error) error.missing = payload.error.missing;
+        throw error;
+      }
+      var disposition = res.headers.get("Content-Disposition") || "";
+      var match = disposition.match(/filename="?([^";]+)"?/);
+      lastPackageFilename = match ? match[1] : null;
+      return await res.blob();
+    },
+
     /** Liste des demandes d'impression */
     listPrintRequests: function (opts) {
       var params = new URLSearchParams();
@@ -69,7 +116,7 @@
       return apiRequest("/native/cards/print-requests/counts");
     },
 
-    /** Lot 1 : construire un lot ZIP (manifeste + PNG) pour Control */
+    /** Lot de classe : ZIP Cartes_<CLASSE>_<ANNEE>.zip (élèves prêts uniquement) */
     buildBatch: function (opts) {
       return apiRequest("/native/cards/batches", {
         method: "POST",
@@ -80,7 +127,7 @@
       });
     },
 
-    /** Lot 2 : signaler une perte/vol (suspension immédiate de la carte active) */
+    /** Cycle de vie : signaler une perte/vol (suspension immédiate de la carte active) */
     lossReport: function (input) {
       return apiRequest("/native/cards/loss-report", {
         method: "POST",
@@ -93,7 +140,7 @@
       });
     },
 
-    /** Lot 2 : remplacer une carte (révoque l'ancienne, nouveau QR) */
+    /** Cycle de vie : remplacer une carte (révoque l'ancienne, nouveau QR serveur) */
     replaceCard: function (input) {
       return apiRequest("/native/cards/replace", {
         method: "POST",
@@ -105,7 +152,7 @@
       });
     },
 
-    /** Lot 2 : autoriser une réimpression contrôlée (même credential) */
+    /** Cycle de vie : autoriser une réimpression contrôlée (même credential) */
     reprintAuthorize: function (input) {
       return apiRequest("/native/cards/reprint", {
         method: "POST",
@@ -116,7 +163,7 @@
       });
     },
 
-    /** Lot 2 : confirmer la distribution de la carte à l'élève (admin) */
+    /** Cycle de vie : confirmer la distribution de la carte à l'élève (admin) */
     markDistributed: function (input) {
       return apiRequest("/native/cards/distribute", {
         method: "POST",
@@ -124,23 +171,6 @@
           card_id: input.card_id,
         },
       });
-    },
-
-    /** Ajouter une demande Control App (depuis LOT-10/11) */
-    submitControlPrintRequest: function (input) {
-      return apiRequest("/native/control/print-request", {
-        method: "POST",
-        body: input,
-      });
-    },
-
-    /** Liste des demandes Control App */
-    listControlPrintRequests: function (opts) {
-      var params = new URLSearchParams();
-      if (opts && opts.limit) params.set("limit", opts.limit);
-      if (opts && opts.offset) params.set("offset", opts.offset);
-      var qs = params.toString();
-      return apiRequest("/native/control/print-requests" + (qs ? "?" + qs : ""));
     },
   };
 })(window);

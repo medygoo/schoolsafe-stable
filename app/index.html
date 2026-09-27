@@ -44,6 +44,7 @@
   <link rel="stylesheet" href="./styles/modules/academic-structure.css">
   <link rel="stylesheet" href="./styles/modules/student-dossier.css">
   <link rel="stylesheet" href="./styles/modules/student-card-preparation.css">
+  <link rel="stylesheet" href="./styles/modules/photo-editor.css">
   <link rel="stylesheet" href="./styles/modules/parent-portal.css">
   <link rel="stylesheet" href="./styles/modules/teacher-pedagogy.css">
   <link rel="stylesheet" href="./styles/modules/guard-security.css">
@@ -80,6 +81,7 @@
   <script src="./offline-sync.js" defer></script>
   <script src="./modules/authnative/auth-native.js" defer></script>
   <script src="./sw-register.js" defer></script>
+    <script src="./modules/core/photo-editor.js" defer></script>
   <script type="module" src="./modules/cards/cards-module.js"></script>
   <script src="./modules/finance/finance-api.js" defer></script>
   <script src="./modules/finance/finance-module.js" defer></script>
@@ -847,8 +849,9 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
                 </select>
                 <div class="cards-actions">
                   <button class="ss-button" id="cardsRenderBtn" type="button" disabled><i data-lucide="eye"></i> Générer l'aperçu</button>
+                  <button class="ss-button" id="cardsDownloadBtn" type="button" disabled><i data-lucide="download"></i> Télécharger la carte</button>
                   <button class="ss-button" id="cardsRequestPrintBtn" type="button" disabled><i data-lucide="send"></i> Envoyer la sélection</button>
-                  <button class="ss-button ss-button--secondary" id="cardsBuildBatchBtn" type="button"><i data-lucide="package"></i> Préparer le lot ZIP</button>
+                  <button class="ss-button ss-button--secondary" id="cardsBuildBatchBtn" type="button"><i data-lucide="package"></i> Préparer le lot de la classe</button>
                   <button class="ss-button ss-button--secondary" id="cardsLossReportBtn" type="button" disabled><i data-lucide="circle-alert"></i> Signaler perte/vol</button>
                   <button class="ss-button ss-button--secondary" id="cardsReplaceBtn" type="button" disabled><i data-lucide="refresh-cw"></i> Remplacer la carte</button>
                   <button class="ss-button ss-button--secondary" id="cardsReprintBtn" type="button" disabled><i data-lucide="printer"></i> Réimprimer</button>

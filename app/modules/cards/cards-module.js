@@ -1,15 +1,19 @@
-// SchoolSafe V2 — Module de production de cartes élèves dans le workspace
+// SchoolSafe V2 — Module de production de cartes élèves dans le workspace.
+// Pipeline complet : projection serveur unique → readiness → credential QR
+// sécurisé (contrat Sécurité) → recto/verso PNG HD → ZIP téléchargeable.
+// Aucune dépendance à SchoolSafe Control dans ce flux.
 import { renderCardPreview, captureCardPng, ssClassType } from './card-renderer.js';
 
 const state = {
   classes: [],
   students: [],
-  guardians: new Map(),
+  projections: new Map(),
   selectedClass: null,
   selectedStudentIds: new Set(),
-  currentYear: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
+  currentYear: '',
   academicYearId: null,
   schoolInfo: null,
+  lastGenerated: null,
   apiBase: window.schoolSafeApiBase || window.SCHOOLSAFE_API_BASE || 'http://127.0.0.1:8787'
 };
 
@@ -42,28 +46,13 @@ function nativeApi(path, opts) {
   });
 }
 
-function getToken() {
-  try {
-    const session = JSON.parse(sessionStorage.getItem('schoolsafe-v2-session') || 'null');
-    return session?.token || null;
-  } catch { return null; }
-}
-
-function getSupabaseClient() {
-  if (!window.SchoolSafeSupabaseSDK?.createClient) return null;
-  const config = window.schoolSafeBackendConfig;
-  if (!config?.supabase_url || !config?.supabase_anon_key) return null;
-  return window.SchoolSafeSupabaseSDK.createClient(config.supabase_url, config.supabase_anon_key, {
-    auth: { autoRefreshToken: true, persistSession: false }
-  });
-}
-
 async function loadClasses() {
   try {
     var res = await nativeApi('/pedagogy/classes');
     var classesData = (res && res.data) || [];
 
-    // Récupérer les configs de design
+    // Design patrimonial des classes (couleurs, patrimoine) — le titulaire
+    // réel vient de la projection carte, jamais de ce cache de design.
     var configRes = await nativeApi('/cards/class-card-config');
     var configMap = {};
     if (configRes && configRes.data) {
@@ -77,7 +66,6 @@ async function loadClasses() {
         name: c.name,
         cycle_key: c.cycle_key,
         option: c.option,
-        teacher_id: cfg.teacher_id,
         card_color: cfg.card_color,
         card_color_soft: cfg.card_color_soft,
         card_color_dark: cfg.card_color_dark,
@@ -101,72 +89,61 @@ async function loadClasses() {
   }
 }
 
+/**
+ * Projection carte : UNE seule requête métier par élève (source de vérité
+ * serveur). Retourne élève/école/classe/année/titulaire/Parent/autorisations.
+ */
+async function loadStudentProjection(studentId) {
+  if (state.projections.has(studentId)) return state.projections.get(studentId);
+  var res = await nativeApi('/cards/students/' + encodeURIComponent(studentId) + '/card-projection');
+  var projection = res && res.data ? res.data : null;
+  if (projection) {
+    state.projections.set(studentId, projection);
+  }
+  return projection;
+}
+
 async function loadStudents(classId) {
   try {
     var res = await nativeApi('/students?class_id=' + encodeURIComponent(classId) + '&status=active');
     var studentsData = (res && res.data) || [];
-    state.students = studentsData.map(function (s) {
+    var rows = studentsData && studentsData.rows ? studentsData.rows : studentsData;
+    state.students = (rows || []).map(function (s) {
       return {
         id: s.id,
         matricule: s.matricule,
         first_name: s.first_name,
-        middle_name: s.middle_name,
+        middle_name: s.middle_name || null,
         last_name: s.last_name,
-        date_of_birth: s.date_of_birth,
-        photo_path: s.photo_path,
-        card_print_count: s.card_print_count || 0,
-        students_guardians: s.students_guardians || []
+        date_of_birth: s.date_of_birth || null,
+        photo_path: s.photo_path || null,
+        card_print_count: s.card_print_count || 0
       };
     });
+    state.projections.clear();
     state.selectedStudentIds.clear();
-    buildGuardianMap();
     renderStudentList();
     $('cardsRenderBtn').disabled = state.students.length === 0;
     $('cardsRequestPrintBtn').disabled = true;
+    var downloadBtn = $('cardsDownloadBtn');
+    if (downloadBtn) downloadBtn.disabled = true;
     $('cardsPreview').innerHTML = window.ssState({ type: 'empty', title: 'Aucun aperçu', message: 'Sélectionnez un ou plusieurs élèves.', size: 'compact' });
   } catch (e) {
     setStatus({ type: 'error', title: 'Erreur de chargement', message: 'Erreur chargement élèves : ' + e.message, size: 'inline' });
   }
 }
 
-function buildGuardianMap() {
-  state.guardians.clear();
-  state.students.forEach(function (s) {
-    var guards = s.students_guardians || [];
-    if (guards.length > 0) {
-      state.guardians.set(s.id, guards);
-    }
-  });
-}
-
 async function loadSchoolInfo() {
-  try {
-    var res = await fetch(state.apiBase + '/school/info', { credentials: 'include', headers: { 'Accept': 'application/json' } });
-    if (!res.ok) return;
-    var data = await res.json();
-    var info = data && data.data ? data.data : data;
-    if (info) {
-      state.schoolInfo = {
-        name: info.name,
-        name_en: info.name_en,
-        address: info.address,
-        phone: info.phone,
-        email: info.email,
-        motto: info.motto,
-        website: info.website
-      };
-      window.SCHOOL_LOGO = info.logo_path || '';
-    }
-  } catch (e) {
-    // Silencieux — l'info école n'est pas critique
-  }
+  // L'identité école affichée vient de la projection carte du premier élève
+  // chargé (source de vérité app.schools + app.school_contacts). En attendant
+  // une projection, aucun texte inventé n'est affiché.
+  return null;
 }
 
-function isCardInfoComplete(s) {
-  if (!s.matricule || !s.first_name || !s.last_name || !s.date_of_birth || !s.photo_path) return false;
-  const guards = state.guardians.get(s.id) || [];
-  if (guards.length === 0) return false;
-  return true;
+function projectionReadiness(projection) {
+  if (!projection) return { ready: false, missing: ['projection'] };
+  if (projection.readiness) return projection.readiness;
+  return { ready: true, missing: [] };
 }
 
 function renderStudentList() {
@@ -177,14 +154,15 @@ function renderStudentList() {
     return;
   }
   state.students.forEach(s => {
-    const complete = isCardInfoComplete(s);
+    const projection = state.projections.get(s.id);
+    const ready = projection ? projectionReadiness(projection).ready : (s.matricule && s.photo_path);
     const label = document.createElement('label');
-    label.title = complete ? 'Informations complètes' : 'Informations incomplètes';
+    label.title = ready ? 'Prêt pour la carte' : 'Informations incomplètes';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.value = s.id;
     checkbox.checked = state.selectedStudentIds.has(s.id);
-    checkbox.disabled = !complete;
+    checkbox.disabled = false;
     checkbox.addEventListener('change', () => {
       if (checkbox.checked) state.selectedStudentIds.add(s.id);
       else state.selectedStudentIds.delete(s.id);
@@ -194,8 +172,8 @@ function renderStudentList() {
     nameSpan.textContent = `${s.last_name} ${s.first_name}`;
     const meta = document.createElement('span');
     meta.className = 'student-meta';
-    meta.textContent = complete ? (s.card_print_count > 0 ? `v${s.card_print_count + 1}` : 'prêt') : 'incomplet';
-    if (!complete) label.style.opacity = '0.6';
+    meta.textContent = ready ? (s.card_print_count > 0 ? `v${s.card_print_count + 1}` : 'prêt') : 'incomplet';
+    if (!ready) label.style.opacity = '0.6';
     label.appendChild(checkbox);
     label.appendChild(nameSpan);
     label.appendChild(meta);
@@ -210,7 +188,7 @@ function updateSelectionState() {
   const renderBtn = $('cardsRenderBtn');
   btn.disabled = count === 0;
   renderBtn.disabled = count === 0;
-  $('cardsSelectAll').checked = count > 0 && count === state.students.filter(s => isCardInfoComplete(s)).length;
+  $('cardsSelectAll').checked = count > 0 && count === state.students.length;
   setStatus(count === 0 ? { type: 'empty', title: 'Aucune sélection', message: 'Sélectionnez un ou plusieurs élèves.', size: 'inline' } : `${count} élève(s) sélectionné(s).`);
 }
 
@@ -220,7 +198,6 @@ function adaptClassForRenderer(cls) {
     name: cls.name,
     cycle: cls.cycle_key === 'nursery' ? 'maternelle' : cls.cycle_key === 'primary' ? 'primaire' : 'secondaire',
     option: cls.option || '',
-    teacher_id: cls.teacher_id,
     card_color: cls.card_color,
     card_color_soft: cls.card_color_soft,
     card_color_dark: cls.card_color_dark,
@@ -231,33 +208,105 @@ function adaptClassForRenderer(cls) {
   };
 }
 
-function adaptStudentForRenderer(s, cls) {
-  const guards = state.guardians.get(s.id) || [];
-  const primary = guards.find(g => g.is_primary) || guards[0];
-  const authorized = guards.find(g => g.is_authorized_pickup && g.full_name !== primary?.full_name) || primary;
+/**
+ * Adapte la PROJECTION SERVEUR (source de vérité) pour le renderer.
+ * Toutes les données affichées viennent de cette projection — jamais d'un
+ * assemblage local d'hypothèses.
+ */
+function adaptProjectionForRenderer(projection) {
+  const student = projection.student || {};
+  const school = projection.school || {};
+  const cls = projection.class || {};
+  const teacher = projection.teacher || {};
+  const year = projection.academic_year || {};
+  const guardian = projection.primary_guardian || null;
+  const authorized = Array.isArray(projection.authorized_persons) ? projection.authorized_persons : [];
+  const fullName = [student.first_name, student.middle_name, student.last_name].filter(Boolean).join(' ');
   return {
-    id: s.id,
-    name: `${s.first_name} ${s.middle_name ? s.middle_name + ' ' : ''}${s.last_name}`.trim(),
-    mat: s.matricule,
-    matricule: s.matricule,
-    dob: s.date_of_birth,
-    photo: s.photo_path,
+    id: student.id,
+    name: fullName,
+    mat: student.matricule,
+    matricule: student.matricule,
+    dob: student.date_of_birth,
+    photo: student.photo_path,
     cid: cls.id,
-    parent_name: primary?.full_name || null,
-    parent_phone: primary?.phone || null,
-    authorized_name: authorized?.full_name || null,
-    authorized_phone: authorized?.phone || null
+    parent_name: guardian ? guardian.full_name : null,
+    parent_phone: guardian ? guardian.phone : null,
+    primary_guardian_type: guardian ? guardian.guardian_type : null,
+    authorized_persons: authorized.map(function (person) {
+      return {
+        full_name: person.full_name,
+        guardian_type: person.guardian_type || '',
+        phone: person.phone || null
+      };
+    }),
+    authorized_name: authorized.length ? authorized[0].full_name : null,
+    authorized_phone: authorized.length ? authorized[0].phone : null
   };
+}
+
+/**
+ * Construit les données de rendu depuis la projection. Utilisé quand la
+ * projection n'a pas encore été chargée (aperçu avant sélection précise).
+ */
+async function resolveRenderData(student) {
+  const projection = await loadStudentProjection(student.id);
+  if (!projection) {
+    throw new Error('Projection carte indisponible pour cet élève');
+  }
+  return projection;
 }
 
 async function renderPreviewForStudent(student) {
   if (!state.selectedClass || !student) return;
-  const cls = adaptClassForRenderer(state.selectedClass);
-  const adapted = adaptStudentForRenderer(student, state.selectedClass);
+  const projection = await resolveRenderData(student);
+  const readiness = projectionReadiness(projection);
+  const cls = adaptClassForRenderer({
+    id: projection.class.id || state.selectedClass.id,
+    name: projection.class.name || state.selectedClass.name,
+    cycle_key: projection.class.cycle_key || state.selectedClass.cycle_key,
+    option: projection.class.option,
+    card_color: projection.class.card_color || state.selectedClass.card_color,
+    card_color_soft: projection.class.card_color_soft || state.selectedClass.card_color_soft,
+    card_color_dark: projection.class.card_color_dark || state.selectedClass.card_color_dark,
+    card_pat: projection.class.card_pat || state.selectedClass.card_pat,
+    card_family: projection.class.card_family || state.selectedClass.card_family,
+    card_variant: projection.class.card_variant || state.selectedClass.card_variant,
+    card_pat_style: projection.class.card_pat_style || state.selectedClass.card_pat_style
+  });
+  const adapted = adaptProjectionForRenderer(projection);
   const patStyle = $('cardsPatStyle').value;
-  const teacher = { id: state.selectedClass.teacher_id, name: '—' };
+  // Titulaire réel : nom résolu serveur via app.classes.teacher_profile_id.
+  const teacher = { id: projection.teacher.id, name: projection.teacher.name || '—' };
+  const yearLabel = (projection.academic_year && projection.academic_year.label) || state.currentYear;
+  const schoolInfo = {
+    name: projection.school.name,
+    name_en: projection.school.name_en,
+    address: projection.school.address,
+    phone: projection.school.phone,
+    email: projection.school.email,
+    motto: projection.school.motto,
+    website: projection.school.website_url
+  };
+  const logo = projection.school.logo_path || '';
+  // Credential QR sécurisé (contrat Sécurité) si une carte active existe déjà ;
+  // sinon l'aperçu utilise un identifiant neutre et l'émission se fait au moment
+  // de la génération du package (credential calculé côté serveur uniquement).
+  const activeCard = projection.active_card || null;
+  const qrPayload = activeCard
+    ? `schoolsafe://card/${activeCard.card_number}/${activeCard.signature}`
+    : null;
   const container = $('cardsPreview');
-  renderCardPreview(container, adapted, cls, teacher, state.currentYear, state.schoolInfo, state.schoolInfo?.logo_path, patStyle);
+  const result = renderCardPreview(container, adapted, cls, teacher, yearLabel, schoolInfo, logo, patStyle, qrPayload);
+  state.lastRendered = { studentId: student.id, type: result.type, qr: result.qr, projection, cls: state.selectedClass };
+
+  const downloadBtn = $('cardsDownloadBtn');
+  if (downloadBtn) downloadBtn.disabled = !readiness.ready;
+  if (!readiness.ready) {
+    setStatus({ type: 'warning', title: 'Dossier incomplet', message: 'CARD_NOT_READY — manquant : ' + readiness.missing.join(', '), size: 'inline' });
+  } else {
+    setStatus({ type: 'success', title: 'Aperçu prêt', message: `${student.first_name} ${student.last_name} — titulaire : ${teacher.name}.`, size: 'inline' });
+  }
 }
 
 async function renderPreview() {
@@ -268,15 +317,36 @@ async function renderPreview() {
     return;
   }
   await renderPreviewForStudent(selected[0]);
-  setStatus({ type: 'success', title: 'Aperçu prêt', message: `Aperçu de ${selected[0].first_name} ${selected[0].last_name}. ${selected.length > 1 ? `+ ${selected.length - 1} autre(s) sélectionné(s).` : ''}`, size: 'inline' });
 }
 
 async function generateCardPayload(student) {
+  const projection = await resolveRenderData(student);
+  const readiness = projectionReadiness(projection);
+  if (!readiness.ready) {
+    throw new Error('CARD_NOT_READY missing=[' + readiness.missing.join(',') + ']');
+  }
+  const renderData = state.lastRendered && state.lastRendered.studentId === student.id
+    ? state.lastRendered
+    : null;
   const cls = adaptClassForRenderer(state.selectedClass);
   const { type } = ssClassType(cls);
   const container = $('cardsPreview');
-  const adapted = adaptStudentForRenderer(student, state.selectedClass);
-  renderCardPreview(container, adapted, cls, { id: state.selectedClass.teacher_id, name: '—' }, state.currentYear, state.schoolInfo, state.schoolInfo?.logo_path, $('cardsPatStyle').value);
+  const adapted = adaptProjectionForRenderer(projection);
+  const teacher = { id: projection.teacher.id, name: projection.teacher.name || '—' };
+  const yearLabel = (projection.academic_year && projection.academic_year.label) || state.currentYear;
+  const schoolInfo = {
+    name: projection.school.name,
+    name_en: projection.school.name_en,
+    address: projection.school.address,
+    phone: projection.school.phone,
+    email: projection.school.email,
+    motto: projection.school.motto,
+    website: projection.school.website_url
+  };
+  const qrPayload = projection.active_card
+    ? `schoolsafe://card/${projection.active_card.card_number}/${projection.active_card.signature}`
+    : null;
+  renderCardPreview(container, adapted, cls, teacher, yearLabel, schoolInfo, projection.school.logo_path || '', $('cardsPatStyle').value, qrPayload);
   await new Promise(r => setTimeout(r, 80));
   const wrapSelector = type === 'badge' ? '.ss-badge-wrap' : '.ss-carte-wrap';
   const frontDataUrl = await captureCardPng(container, wrapSelector + ' .art:first-child');
@@ -286,20 +356,57 @@ async function generateCardPayload(student) {
     format: type,
     front_image_base64: frontDataUrl,
     back_image_base64: backDataUrl,
-    academic_year_id: state.academicYearId,
+    academic_year_id: projection.academic_year ? projection.academic_year.id : state.academicYearId,
     metadata: {
-      class_name: state.selectedClass.name,
+      class_name: (projection.class && projection.class.name) || state.selectedClass.name,
       requested_at: new Date().toISOString()
     }
   };
 }
 
-async function requestPrintBatch() {
-  const token = getToken();
-  if (!token) {
-    setStatus({ type: 'error', title: 'Connexion requise', message: 'Vous devez être connecté.', size: 'inline' });
+/**
+ * Génération du package individuel : le serveur vérifie le readiness,
+ * émet/réutilise le credential QR signé et renvoie le ZIP
+ * Carte_<MATRICULE>_<NOM>_<PRENOM>.zip (recto.png, verso.png, manifest.json).
+ */
+async function downloadSelectedCard() {
+  const cardsApi = window.SchoolSafeCardsNativeAPI;
+  if (!cardsApi) { setStatus({ type: 'error', title: 'Erreur', message: 'API cartes non disponible.', size: 'inline' }); return; }
+  const selected = state.students.filter(s => state.selectedStudentIds.has(s.id));
+  if (selected.length === 0) {
+    setStatus({ type: 'error', title: 'Sélection requise', message: 'Sélectionnez au moins un élève.', size: 'inline' });
     return;
   }
+  const student = selected[0];
+  setStatus({ type: 'loading', title: 'Génération en cours', message: 'Préparation de la carte de ' + student.first_name + '…', size: 'inline' });
+  try {
+    const payload = await generateCardPayload(student);
+    const blob = await cardsApi.downloadCardPackage(student.id, {
+      recto_png_base64: payload.front_image_base64,
+      verso_png_base64: payload.back_image_base64
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = cardsApi.lastPackageFilename || 'Carte.zip';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    state.lastGenerated = { studentId: student.id, filename: cardsApi.lastPackageFilename };
+    setStatus({ type: 'success', title: 'ZIP prêt', message: 'Carte ' + (cardsApi.lastPackageFilename || '') + ' générée — le téléchargement démarre. Si le navigateur le bloque, utilisez le bouton Télécharger la carte.', size: 'inline' });
+  } catch (e) {
+    var message = e && e.message ? e.message : String(e);
+    if (/CARD_NOT_READY/.test(message)) {
+      var missingPart = message.match(/missing=\[([^\]]*)\]/);
+      setStatus({ type: 'warning', title: 'Carte refusée — dossier incomplet', message: 'CARD_NOT_READY : ' + (missingPart ? missingPart[1] : 'données manquantes') + '. Complétez le dossier élève puis régénérez.', size: 'inline' });
+    } else {
+      setStatus({ type: 'error', title: 'Erreur de génération', message: message, size: 'inline' });
+    }
+  }
+}
+
+async function requestPrintBatch() {
   const selected = state.students.filter(s => state.selectedStudentIds.has(s.id));
   if (selected.length === 0) {
     setStatus({ type: 'error', title: 'Sélection requise', message: 'Sélectionnez au moins un élève.', size: 'inline' });
@@ -308,18 +415,27 @@ async function requestPrintBatch() {
 
   setStatus({ type: 'loading', title: 'Génération en cours', message: `Génération de ${selected.length} carte(s)…`, size: 'inline' });
   const payloads = [];
+  let notReady = [];
   for (let i = 0; i < selected.length; i++) {
     try {
       const payload = await generateCardPayload(selected[i]);
       payloads.push(payload);
       setStatus({ type: 'loading', title: 'Génération en cours', message: `Génération ${i + 1}/${selected.length}…`, size: 'inline' });
     } catch (e) {
-      setStatus({ type: 'error', title: 'Erreur de génération', message: `Erreur génération pour ${selected[i].first_name} ${selected[i].last_name} : ${e.message}`, size: 'inline' });
-      return;
+      if (/CARD_NOT_READY/.test(e.message)) {
+        notReady.push(selected[i].last_name + ' ' + selected[i].first_name);
+      } else {
+        setStatus({ type: 'error', title: 'Erreur de génération', message: `Erreur génération pour ${selected[i].first_name} ${selected[i].last_name} : ${e.message}`, size: 'inline' });
+        return;
+      }
     }
   }
+  if (notReady.length) {
+    setStatus({ type: 'warning', title: 'Élèves incomplets ignorés', message: 'CARD_NOT_READY : ' + notReady.join(', '), size: 'inline' });
+    if (payloads.length === 0) return;
+  }
 
-  setStatus({ type: 'loading', title: 'Envoi en cours', message: 'Envoi au VPS…', size: 'inline' });
+  setStatus({ type: 'loading', title: 'Envoi en cours', message: 'Génération serveur…', size: 'inline' });
   try {
     var submittedCount = 0;
     var failedCount = 0;
@@ -336,11 +452,38 @@ async function requestPrintBatch() {
       }
       setStatus({ type: 'loading', title: 'Envoi en cours', message: 'Envoi ' + (j + 1) + '/' + payloads.length + '…', size: 'inline' });
     }
-    setStatus({ type: 'success', title: 'Envoi terminé', message: 'Envoi terminé : ' + submittedCount + ' soumis, ' + failedCount + ' échec.', size: 'inline' });
+    setStatus({ type: 'success', title: 'Terminé', message: 'Génération terminée : ' + submittedCount + ' carte(s) générée(s), ' + failedCount + ' échec(s).' + (notReady.length ? ' Élèves incomplets ignorés : ' + notReady.join(', ') + '.' : ''), size: 'inline' });
     await loadStudents(state.selectedClass.id);
   } catch (e) {
-    setStatus({ type: 'error', title: 'Erreur d\'envoi', message: 'Erreur envoi : ' + e.message, size: 'inline' });
+    setStatus({ type: 'error', title: 'Erreur', message: 'Erreur d\'envoi : ' + e.message, size: 'inline' });
   }
+}
+
+/**
+ * Ouvre le studio cartes et masque le dashboard. Les DEUX grilles
+ * (#ecosystemGrid desktop et #ecosystemGridMobile) pointent vers ici.
+ */
+function openCardsStudio() {
+  const studio = $('cardsStudio');
+  if (!studio) return;
+  studio.hidden = false;
+  const grid = document.querySelector('.workspace-grid');
+  const protectedEl = document.getElementById('cardsProtected');
+  if (grid) grid.style.display = 'none';
+  if (protectedEl) protectedEl.style.display = 'none';
+  window.scrollTo({ top: 0 });
+  loadClasses();
+}
+
+/** Ferme le studio et ramène au dashboard. */
+function closeCardsStudio() {
+  const studio = $('cardsStudio');
+  if (!studio) return;
+  studio.hidden = true;
+  const grid = document.querySelector('.workspace-grid');
+  const protectedEl = document.getElementById('cardsProtected');
+  if (grid) grid.style.display = '';
+  if (protectedEl) protectedEl.style.display = '';
 }
 
 export function initCardsModule(options) {
@@ -348,25 +491,21 @@ export function initCardsModule(options) {
   if (window.schoolSafeBackendConfig) {
     state.apiBase = window.schoolSafeBackendConfig.api_base || state.apiBase;
   }
-  if (document.getElementById('navCards')?._cardsBound) return;
+  if (document.body.dataset.cardsStudioBound === 'true') return;
 
-  const navCards = $('navCards');
   const studio = $('cardsStudio');
   const closeBtn = $('closeCardsStudio');
   const classSelect = $('cardsClassSelect');
   const renderBtn = $('cardsRenderBtn');
   const requestBtn = $('cardsRequestPrintBtn');
-  const buildBatchBtn = $('cardsBuildBatchBtn');
   const selectAll = $('cardsSelectAll');
+  const downloadBtn = $('cardsDownloadBtn');
 
-  if (!navCards || !studio || !closeBtn || !classSelect || !renderBtn || !requestBtn || !selectAll) {
+  if (!studio || !closeBtn || !classSelect || !renderBtn || !requestBtn || !selectAll) {
     console.warn('[cards-module] Éléments du studio non disponibles — init différée.');
-    // Correction : les éléments du studio n'existent qu'après connexion.
-    // Observateur borné qui relance l'init UNE fois quand ils apparaissent,
-    // au lieu d'abandonner silencieusement (le studio ne s'ouvrait jamais).
     if (!window.__cardsInitObserver) {
       window.__cardsInitObserver = new MutationObserver(() => {
-        if (document.getElementById('navCards') && document.getElementById('cardsStudio') && document.getElementById('cardsRequestPrintBtn')) {
+        if (document.getElementById('cardsStudio') && document.getElementById('cardsRequestPrintBtn')) {
           window.__cardsInitObserver.disconnect();
           window.__cardsInitObserver = null;
           initCardsModule(options);
@@ -377,23 +516,20 @@ export function initCardsModule(options) {
     return;
   }
 
-  navCards.addEventListener('click', () => {
-    studio.hidden = false;
-    const grid = document.querySelector('.workspace-grid');
-    const protectedEl = document.getElementById('cardsProtected');
-    if (grid) grid.style.display = 'none';
-    if (protectedEl) protectedEl.style.display = 'none';
-    loadClasses();
-    loadSchoolInfo();
+  // Accès studio : les boutons « Cartes élèves » des deux grilles écosystème.
+  // Aucune dépendance à un #navCards inexistant ; les clics Cartes n'ouvrent
+  // plus jamais le module Sécurité.
+  document.querySelectorAll('#ecosystemGrid [data-ecosystem="cards"], #ecosystemGridMobile [data-ecosystem="cards"]').forEach((button) => {
+    if (button.dataset.cardsBound === 'true') return;
+    button.dataset.cardsBound = 'true';
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openCardsStudio();
+    });
   });
 
-  closeBtn.addEventListener('click', () => {
-    studio.hidden = true;
-    const grid = document.querySelector('.workspace-grid');
-    const protectedEl = document.getElementById('cardsProtected');
-    if (grid) grid.style.display = '';
-    if (protectedEl) protectedEl.style.display = '';
-  });
+  closeBtn.addEventListener('click', closeCardsStudio);
 
   classSelect.addEventListener('change', async (e) => {
     const classId = e.target.value;
@@ -411,9 +547,8 @@ export function initCardsModule(options) {
   });
 
   selectAll.addEventListener('change', () => {
-    const completeStudents = state.students.filter(s => isCardInfoComplete(s));
     if (selectAll.checked) {
-      completeStudents.forEach(s => state.selectedStudentIds.add(s.id));
+      state.students.forEach(s => state.selectedStudentIds.add(s.id));
     } else {
       state.selectedStudentIds.clear();
     }
@@ -422,25 +557,10 @@ export function initCardsModule(options) {
 
   renderBtn.addEventListener('click', renderPreview);
   requestBtn.addEventListener('click', requestPrintBatch);
-  if (buildBatchBtn) buildBatchBtn.addEventListener('click', async () => {
-    const cardsApi = window.SchoolSafeCardsNativeAPI;
-    if (!cardsApi) { setStatus({ type: 'error', title: 'Erreur', message: 'API cartes non disponible.', size: 'inline' }); return; }
-    setStatus({ type: 'loading', title: 'Lot en préparation', message: 'Regroupement des cartes en ZIP…', size: 'inline' });
-    try {
-      const res = await cardsApi.buildBatch({ status: 'submitted' });
-      const d = res && res.data;
-      if (!d) throw new Error('Réponse serveur invalide');
-      setStatus({
-        type: 'success',
-        title: 'Lot ZIP prêt',
-        message: `Lot ${d.batch_id} v${d.version} — ${d.card_count} carte(s), ZIP SHA-256 ${String(d.zip_sha256 || '').slice(0, 12)}…, valable pour Control.`,
-        size: 'inline'
-      });
-    } catch (e) {
-      setStatus({ type: 'error', title: 'Erreur de lot', message: 'Erreur préparation lot : ' + e.message, size: 'inline' });
-    }
-  });
-  // ————— Lot 2 : cycle de vie perte/vol —————
+  if (downloadBtn) downloadBtn.addEventListener('click', downloadSelectedCard);
+  if (buildBatchButton()) buildBatchButton().addEventListener('click', downloadClassBatch);
+
+  // ————— Cycle de vie perte/vol (conservé ; aucune référence Control) —————
   function selectedSingleStudent() {
     const ids = Array.from(state.selectedStudentIds);
     if (ids.length !== 1) return null;
@@ -477,12 +597,14 @@ export function initCardsModule(options) {
     if (!student) { setStatus({ type: 'error', title: 'Sélection requise', message: 'Sélectionnez exactement un élève pour remplacer sa carte.', size: 'inline' }); return; }
     const reason = window.prompt('Motif du remplacement :');
     if (!reason || reason.trim().length < 3) return;
-    const cardId = window.prompt('Identifiant de la carte à remplacer (card_id) :');
-    if (!cardId) return;
+    const projection = await loadStudentProjection(student.id);
+    const cardId = projection && projection.active_card ? projection.active_card.id : null;
+    if (!cardId) { setStatus({ type: 'error', title: 'Aucune carte active', message: 'Cet élève n\'a pas de carte active à remplacer.', size: 'inline' }); return; }
     setStatus({ type: 'loading', title: 'Remplacement', message: 'Révocation et émission de la nouvelle carte…', size: 'inline' });
     try {
       const res = await cardsApi.replaceCard({ student_id: student.id, old_card_id: cardId, reason: reason.trim() });
       const d = res && res.data;
+      state.projections.delete(student.id);
       setStatus({ type: 'success', title: 'Carte remplacée', message: `Nouvelle carte ${d && d.card_number} active ; ancienne révoquée.`, size: 'inline' });
     } catch (e) {
       setStatus({ type: 'error', title: 'Erreur remplacement', message: 'Erreur remplacement : ' + e.message, size: 'inline' });
@@ -492,9 +614,12 @@ export function initCardsModule(options) {
   const reprintBtn = $('cardsReprintBtn');
   if (reprintBtn) reprintBtn.addEventListener('click', async () => {
     const cardsApi = requireCardsApi(); if (!cardsApi) return;
-    const cardId = window.prompt('Identifiant de la carte à réimprimer (card_id) — support détruit/récupéré requis :');
-    if (!cardId) return;
-    const reason = window.prompt('Motif de la réimpression contrôlée :');
+    const student = selectedSingleStudent();
+    if (!student) { setStatus({ type: 'error', title: 'Sélection requise', message: 'Sélectionnez exactement un élève pour réimprimer sa carte.', size: 'inline' }); return; }
+    const projection = await loadStudentProjection(student.id);
+    const cardId = projection && projection.active_card ? projection.active_card.id : null;
+    if (!cardId) { setStatus({ type: 'error', title: 'Aucune carte active', message: 'Cet élève n\'a pas de carte active à réimprimer.', size: 'inline' }); return; }
+    const reason = window.prompt('Motif de la réimpression contrôlée (support détruit/récupéré) :');
     if (!reason || reason.trim().length < 3) return;
     setStatus({ type: 'loading', title: 'Réimpression', message: 'Autorisation de réimpression…', size: 'inline' });
     try {
@@ -509,8 +634,11 @@ export function initCardsModule(options) {
   const distributeBtn = $('cardsDistributeBtn');
   if (distributeBtn) distributeBtn.addEventListener('click', async () => {
     const cardsApi = requireCardsApi(); if (!cardsApi) return;
-    const cardId = window.prompt('Identifiant de la carte distribuée à l\'élève (card_id) :');
-    if (!cardId) return;
+    const student = selectedSingleStudent();
+    if (!student) { setStatus({ type: 'error', title: 'Sélection requise', message: 'Sélectionnez exactement un élève pour confirmer la remise de sa carte.', size: 'inline' }); return; }
+    const projection = await loadStudentProjection(student.id);
+    const cardId = projection && projection.active_card ? projection.active_card.id : null;
+    if (!cardId) { setStatus({ type: 'error', title: 'Aucune carte active', message: 'Cet élève n\'a pas de carte active à distribuer.', size: 'inline' }); return; }
     if (!window.confirm('Confirmer la remise physique de cette carte à l\'élève ?')) return;
     setStatus({ type: 'loading', title: 'Distribution', message: 'Enregistrement de la remise…', size: 'inline' });
     try {
@@ -521,7 +649,37 @@ export function initCardsModule(options) {
     }
   });
 
-  navCards._cardsBound = true;
+  document.body.dataset.cardsStudioBound = 'true';
 }
 
-window.SchoolSafeCards = { init: initCardsModule };
+/** Lot de classe : ZIP Cartes_<CLASSE>_<ANNEE>.zip via l'API native. */
+async function downloadClassBatch() {
+  const cardsApi = window.SchoolSafeCardsNativeAPI;
+  if (!cardsApi) { setStatus({ type: 'error', title: 'Erreur', message: 'API cartes non disponible.', size: 'inline' }); return; }
+  if (!state.selectedClass) {
+    setStatus({ type: 'error', title: 'Classe requise', message: 'Sélectionnez une classe pour préparer le lot.', size: 'inline' });
+    return;
+  }
+  setStatus({ type: 'loading', title: 'Lot en préparation', message: 'Regroupement des cartes en ZIP…', size: 'inline' });
+  try {
+    const res = await cardsApi.buildBatch({ status: 'submitted' });
+    const d = res && res.data;
+    if (!d) throw new Error('Réponse serveur invalide');
+    setStatus({
+      type: 'success',
+      title: 'Lot ZIP prêt',
+      message: `Lot ${d.batch_id} v${d.version} — ${d.card_count} carte(s), ZIP SHA-256 ${String(d.zip_sha256 || '').slice(0, 12)}…, disponible dans le stockage sécurisé de l'école.`,
+      size: 'inline'
+    });
+  } catch (e) {
+    setStatus({ type: 'error', title: 'Erreur de lot', message: 'Erreur préparation lot : ' + e.message, size: 'inline' });
+  }
+}
+
+function buildBatchButton() { return $('cardsBuildBatchBtn'); }
+
+window.SchoolSafeCards = {
+  init: initCardsModule,
+  open: openCardsStudio,
+  close: closeCardsStudio
+};

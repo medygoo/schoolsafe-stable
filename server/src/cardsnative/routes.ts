@@ -35,6 +35,65 @@ export function registerCardsNativeRoutes(
     };
   }
 
+  // ————— Pipeline carte : projection + readiness + package ZIP —————
+
+  // Projection complète d'un élève pour la fabrication de sa carte.
+  // L'école vient de la session serveur, JAMAIS d'un paramètre navigateur.
+  app.get("/native/cards/students/:studentId/card-projection", { preHandler: requireSession }, async (request) => {
+    const { studentId } = request.params as { studentId: string };
+    const projection = await dependencies.service.getCardProjection(contextFrom(request), studentId);
+    if (!projection) throw new SchoolSafeError(404, "NOT_FOUND", "Élève introuvable pour cette école", false);
+    return {
+      data: {
+        ...projection,
+        readiness: {
+          ready: dependencies.service.cardReadinessMissing(projection).length === 0,
+          missing: dependencies.service.cardReadinessMissing(projection),
+        },
+      },
+      request_id: newRequestId(),
+    };
+  });
+
+  // Demande d'impression complète d'une carte individuelle (projection → émission
+  // credential si besoin → package ZIP recto/verso/manifest) et téléchargement direct.
+  app.post("/native/cards/students/:studentId/card-package", { preHandler: requireSession }, async (request, reply) => {
+    const { studentId } = request.params as { studentId: string };
+    const body = z.object({
+      recto_png_base64: z.string().min(50),
+      verso_png_base64: z.string().min(50),
+      version: z.coerce.number().int().positive().optional(),
+    }).parse(request.body);
+    const context = contextFrom(request);
+
+    const projection = await dependencies.service.getCardProjection(context, studentId);
+    if (!projection) throw new SchoolSafeError(404, "NOT_FOUND", "Élève introuvable pour cette école", false);
+    const missing = dependencies.service.cardReadinessMissing(projection);
+    if (missing.length > 0) {
+      return reply.code(409).send({
+        error: { code: "CARD_NOT_READY", message: `CARD_NOT_READY missing=[${missing.join(",")}]`, missing },
+        request_id: newRequestId(),
+      });
+    }
+
+    const card = await dependencies.service.ensureActiveCard(context, projection);
+    if (!card) throw new SchoolSafeError(503, "DEPENDENCY_UNAVAILABLE", "CARD_HMAC_SECRET is not configured", false);
+
+    const pkg = await dependencies.service.buildCardPackage(context, {
+      projection,
+      card,
+      recto: Buffer.from(body.recto_png_base64.replace(/^data:image\/png;base64,/, ""), "base64"),
+      verso: Buffer.from(body.verso_png_base64.replace(/^data:image\/png;base64,/, ""), "base64"),
+      version: body.version,
+    });
+
+    reply.header("Content-Type", "application/zip");
+    reply.header("Content-Disposition", `attachment; filename="${pkg.filename}"`);
+    reply.header("X-Card-Number", card.card_number);
+    reply.header("Access-Control-Expose-Headers", "Content-Disposition, X-Card-Number");
+    return reply.send(pkg.zip);
+  });
+
   // Soumettre une demande d'impression complète (avec images base64)
   app.post("/native/cards/print-request", { preHandler: requireSession }, async (request) => {
     const body = z.object({

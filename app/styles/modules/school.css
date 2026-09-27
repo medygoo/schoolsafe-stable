@@ -499,3 +499,30 @@
   .student-detail-readonly dl { grid-template-columns: 1fr; }
   .student-parent-results button { flex-direction: column; }
 }
+
+/* ————— Photo élève (SchoolSafePhotoEditor) ————— */
+.student-photo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.student-photo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.student-photo-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--ss-ink-soft, #5d6784);
+}
+.student-photo-thumbnail {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px rgba(7, 26, 61, 0.12);
+}
