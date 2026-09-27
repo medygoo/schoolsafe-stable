@@ -54,8 +54,22 @@ begin
 end
 $schoolsafe$;
 
--- ACL : seul schoolsafe_api (utilisé par le serveur PRODELI) peut lire
-revoke all on function api.prodeli_list_registrations(text, integer) from public, schoolsafe_auth, schoolsafe_worker, schoolsafe_migrator, schoolsafe_auditor;
-grant execute on function api.prodeli_list_registrations(text, integer) to schoolsafe_api;
+-- ACL : seul schoolsafe_api (utilisé par le serveur PRODELI) peut lire.
+-- Wrapped in DO block for idempotency: avoids catalog timestamp changes on re-run.
+do $acl$
+begin
+  if not exists (
+    select 1 from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'api' and p.proname = 'prodeli_list_registrations'
+      and has_function_privilege('schoolsafe_api', p.oid, 'EXECUTE')
+  ) then
+    revoke all on function api.prodeli_list_registrations(text, integer)
+      from public, schoolsafe_auth, schoolsafe_worker, schoolsafe_migrator, schoolsafe_auditor;
+    grant execute on function api.prodeli_list_registrations(text, integer)
+      to schoolsafe_api;
+  end if;
+end
+$acl$;
 
 commit;
