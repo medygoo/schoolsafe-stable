@@ -456,7 +456,7 @@ async function qualifySetupResolverBinding({admin,auth,migrator,check,denied,has
 
 async function qualifySetupHttp({admin,auth,migrator,check}) {
  const {buildApp}=await tsImport('../server/src/app.ts',import.meta.url);
- const app=buildApp({});
+ const app=buildApp({setup:{service:{getConfig:()=>({setup_available:false,auth_mode:'native',account_registration_available:false})}}});
  const post=(url,payload)=>app.inject({method:'POST',url,payload});
  const get=(url)=>app.inject({method:'GET',url});
  try {
