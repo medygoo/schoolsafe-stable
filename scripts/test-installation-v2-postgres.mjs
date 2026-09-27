@@ -514,6 +514,7 @@ async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
   'database/auth/v4/01_auth_resolve_identity_preauth.sql',
    'database/setup/v5/01_registration_approval.sql',
    'database/auth/v5/01_account_registration_onboarding.sql',
+   'database/prodeli/v1/01_registrations_read.sql',
  ]);
  assert.equal(additions.size,plan.units.length-48,'Additions must cover the current plan beyond historical 48');
  assert.ok(additions.has('database/auth/v3/01_inactive_school_auth_gate.sql'),'auth v3 gate must be in additions');
