@@ -18,15 +18,27 @@ concurrency:
 jobs:
   deploy:
     if: >-
-      ${{ vars.SCHOOLSAFE_DEPLOY_ENABLED == 'true'
-          && (github.event_name == 'workflow_dispatch'
-              || (github.event.workflow_run.conclusion == 'success'
-                  && github.event.workflow_run.event == 'push'
-                  && github.event.workflow_run.head_branch == 'production')) }}
+      ${{ github.event_name == 'workflow_dispatch'
+          || (github.event.workflow_run.conclusion == 'success'
+              && github.event.workflow_run.event == 'push'
+              && github.event.workflow_run.head_branch == 'production') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
+      - name: Validate production deploy kill switch
+        shell: bash
+        env:
+          DEPLOY_ENABLED: ${{ vars.SCHOOLSAFE_DEPLOY_ENABLED }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$DEPLOY_ENABLED" != "true" ]]; then
+            echo "::error::SCHOOLSAFE_DEPLOY_ENABLED is not exactly true"
+            exit 1
+          fi
+
+          echo "Production deploy kill switch is enabled."
       - name: Checkout production history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
