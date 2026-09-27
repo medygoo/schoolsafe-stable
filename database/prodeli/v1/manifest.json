@@ -1,0 +1,12 @@
+{
+  "prodeli_version": "schoolsafe-prodeli-v1",
+  "requires_baseline": "schoolsafe-vps-v1",
+  "units": [
+    {
+      "order": 1,
+      "name": "registrations_read",
+      "file": "01_registrations_read.sql",
+      "sha256": "984bb6aed1ba935709c5c0e4921d24d63160955a3e3ae9716afd98c8a643f649"
+    }
+  ]
+}
