@@ -3,10 +3,10 @@ import { buildNativeApp } from "../src/native-app.js";
 import { parseEnv } from "../src/config/env.js";
 import type { VerifiedPools } from "../src/db/startpools.js";
 
-function fixture() {
+function fixture(extraEnv: NodeJS.ProcessEnv = {}) {
   const authPool = { query: vi.fn().mockResolvedValue({ rows: [{ ok: 1 }] }), end: vi.fn().mockResolvedValue(undefined) };
   const businessPool = { query: vi.fn().mockResolvedValue({ rows: [{ ok: 1 }] }), end: vi.fn().mockResolvedValue(undefined) };
-  const app = buildNativeApp(parseEnv({ NODE_ENV: "test" }), { authPool, businessPool } as unknown as VerifiedPools);
+  const app = buildNativeApp(parseEnv({ NODE_ENV: "test", ...extraEnv }), { authPool, businessPool } as unknown as VerifiedPools);
   return { app, authPool, businessPool };
 }
 
@@ -69,5 +69,46 @@ describe("application VPS native", () => {
     await app.close();
     expect(authPool.end).toHaveBeenCalledOnce();
     expect(businessPool.end).toHaveBeenCalledOnce();
+  });
+});
+
+
+describe("legacy public entry points", () => {
+  it("keeps only account-first public routes when all legacy environment variables are configured", async () => {
+    const { app } = fixture({
+      SETUP_TOKEN: "legacy-setup-token",
+      SCHOOLSAFE_APPROVER_EMAIL: "approver@example.test",
+      SCHOOLSAFE_APPROVAL_URL: "https://approval.example.test/",
+      BREVO_API_KEY: "synthetic-brevo-key",
+      BREVO_SENDER_EMAIL: "sender@example.test",
+      SCHOOLSAFE_GOOGLE_MAIL_URL: "https://google-mail.example.test/exec",
+      SCHOOLSAFE_GOOGLE_MAIL_SECRET: "synthetic-google-secret",
+    });
+
+    try {
+      const legacyResponses = await Promise.all([
+        app.inject({ method: "POST", url: "/setup/validate-token", payload: { token: "legacy-setup-token" } }),
+        app.inject({ method: "POST", url: "/setup/school", payload: {} }),
+        app.inject({ method: "POST", url: "/setup/admin", payload: {} }),
+        app.inject({ method: "POST", url: "/setup/registrations", payload: {} }),
+        app.inject({ method: "POST", url: "/setup/registrations/review", payload: {} }),
+        app.inject({ method: "POST", url: "/setup/registrations/decision", payload: {} }),
+      ]);
+      expect(legacyResponses.map(response => response.statusCode)).toEqual([404, 404, 404, 404, 404, 404]);
+
+      const config = await app.inject({ method: "GET", url: "/config" });
+      expect(config.statusCode).toBe(200);
+      expect(config.json()).toMatchObject({ auth_mode: "native", setup_available: false, account_registration_available: true });
+
+      const canonicalResponses = await Promise.all([
+        app.inject({ method: "POST", url: "/auth/registrations", payload: {} }),
+        app.inject({ method: "POST", url: "/auth/registrations/review", payload: {} }),
+        app.inject({ method: "POST", url: "/auth/registrations/decision", payload: {} }),
+        app.inject({ method: "GET", url: "/auth/onboarding/me" }),
+        app.inject({ method: "POST", url: "/auth/onboarding/school", payload: {} }),
+        app.inject({ method: "POST", url: "/auth/native/login", payload: {} }),
+      ]);
+      expect(canonicalResponses.map(response => response.statusCode)).toEqual([400, 403, 403, 401, 401, 400]);
+    } finally { await app.close(); }
   });
 });

@@ -5,7 +5,6 @@ const envSchema = z.object({
   HOST: z.string().min(1).default("127.0.0.1"),
   PORT: z.coerce.number().int().min(1).max(65535).default(8787),
   AUTH_RECOVERY_URL: z.string().url().refine(value => new URL(value).protocol === "https:", "HTTPS required").optional(),
-  SETUP_TOKEN: z.string().min(1).optional(),
   PILOT_SCHOOL_ID: z.string().uuid().optional(),
   R2_ENDPOINT: z.string().url().optional(),
   R2_ACCESS_KEY_ID: z.string().min(1).optional(),
@@ -52,7 +51,6 @@ const envSchema = z.object({
     return url.protocol === "https:" && !url.username && !url.password;
   }, "HTTPS required for Google mail URL").optional(),
   SCHOOLSAFE_GOOGLE_MAIL_SECRET: z.string().trim().min(1).optional(),
-  SCHOOLSAFE_APPROVER_EMAIL: z.string().email().optional(),
   SCHOOLSAFE_APPROVAL_URL: z.string().url().refine(value => new URL(value).protocol === "https:", "HTTPS required for approval URL").optional(),
   SCHOOLSAFE_APPROVAL_TTL_SECONDS: z.coerce.number().int().min(300).max(604800).default(172800),
 });

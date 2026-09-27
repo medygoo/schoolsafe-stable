@@ -17,7 +17,7 @@ export function createSetupNativeService(authPool: AuthPool, _businessPool: Busi
     return digest(token).toString("hex");
   }
   return {
-    getConfig: () => ({setup_available: Boolean(setupToken), auth_mode: "native", account_registration_available: accountRegistrationAvailable}),
+    getConfig: () => ({setup_available: false, auth_mode: "native", account_registration_available: accountRegistrationAvailable}),
     validateToken: allowed,
     async createSchool({token, ...payload}) {
       const result = await authPool.query<{result: SetupResult}>(

@@ -456,50 +456,38 @@ async function qualifySetupResolverBinding({admin,auth,migrator,check,denied,has
 
 async function qualifySetupHttp({admin,auth,migrator,check}) {
  const {buildApp}=await tsImport('../server/src/app.ts',import.meta.url);
- const {createSetupNativeService}=await tsImport('../server/src/setup/service.ts',import.meta.url);
- const token=randomBytes(32).toString('hex'), capability=digest(token);
- const payload={token,identity:{name_fr:'Synthetic HTTP setup'},cycles:['primary'],
-  academic_year:{label:'2026',starts_on:'2026-01-01',ends_on:'2026-12-31',periods:'Trimestres'},contact:{},brand:{}};
- const adminPayload={token,email:`http-setup-${randomUUID()}@example.test`,password:randomBytes(24).toString('hex'),first_name:'Synthetic',last_name:'Admin'};
- const app=buildApp({setup:{service:createSetupNativeService(auth,undefined,token)}});
+ const app=buildApp({setup:{service:{getConfig:()=>({setup_available:false,auth_mode:'native',account_registration_available:false})}}});
  const post=(url,payload)=>app.inject({method:'POST',url,payload});
+ const get=(url)=>app.inject({method:'GET',url});
  try {
-  await check('HTTP false setup token creates no school or administrator',async()=>{
-   const before=await setupSnapshot(admin,capability);
-   assert.deepEqual((await post('/setup/validate-token',{token:'synthetic-wrong-token'})).json(),{valid:false});
-   assert.equal((await post('/setup/school',{...payload,token:'synthetic-wrong-token'})).statusCode,403);
-   assert.equal((await post('/setup/admin',{...adminPayload,token:'synthetic-wrong-token'})).statusCode,403);
-   assert.deepEqual(await setupSnapshot(admin,capability),before);
+  await check('legacy setup validate-token route is removed (404)',async()=>{
+   const res=await post('/setup/validate-token',{token:'any-token'});
+   assert.equal(res.statusCode,404,'Legacy /setup/validate-token must be removed');
   });
-  await check('HTTP matching token without SQL authorization fails closed',async()=>{
-   const before=await setupSnapshot(admin,capability);
-   assert.ok((await post('/setup/school',payload)).statusCode>=400);
-   assert.ok((await post('/setup/admin',adminPayload)).statusCode>=400);
-   assert.deepEqual(await setupSnapshot(admin,capability),before);
+  await check('legacy setup school route is removed (404)',async()=>{
+   const res=await post('/setup/school',{token:'any-token',identity:{name_fr:'Test'}});
+   assert.equal(res.statusCode,404,'Legacy /setup/school must be removed');
   });
-  await migrator.query('select ops.authorize_school_setup($1,$2)',[capability,3600]);
-  const resolved=(await migrator.query('select ops.resolve_school_setup_authorization($1) school_id',[capability])).rows[0].school_id;
-  await check('HTTP setup creates exactly the resolver school and its administrator',async()=>{
-   assert.ok(resolved);
-   const validation=await post('/setup/validate-token',{token});
-   assert.equal(validation.statusCode,200);assert.deepEqual(validation.json(),{valid:true});
-   const staged=await post('/setup/school',payload);
-   assert.equal(staged.statusCode,201);assert.equal(staged.json().school_id,resolved);
-   const before=await setupSnapshot(admin,capability);
-   const created=await post('/setup/admin',adminPayload);
-   assert.equal(created.statusCode,201);
-   assert.equal((await admin.query('select id from app.schools where id=$1',[resolved])).rows[0].id,resolved);
-   assert.equal((await admin.query('select school_id from iam.profiles where id=$1',[created.json().profile_id])).rows[0].school_id,resolved);
-   const after=await setupSnapshot(admin,capability);
-   assert.equal(after.counts.schools,before.counts.schools+1);assert.equal(after.counts.identities,before.counts.identities+1);
-   assert.ok(after.authorization.consumed_at);
+  await check('legacy setup admin route is removed (404)',async()=>{
+   const res=await post('/setup/admin',{token:'any-token',email:'test@example.test',password:'x',first_name:'A',last_name:'B'});
+   assert.equal(res.statusCode,404,'Legacy /setup/admin must be removed');
   });
-  await check('HTTP consumed setup cannot create another school or administrator',async()=>{
-   const before=await setupSnapshot(admin,capability);
-   assert.equal((await migrator.query('select ops.resolve_school_setup_authorization($1) school_id',[capability])).rows[0].school_id,null);
-   assert.ok((await post('/setup/school',payload)).statusCode>=400);
-   assert.ok((await post('/setup/admin',adminPayload)).statusCode>=400);
-   assert.deepEqual(await setupSnapshot(admin,capability),before);
+  await check('legacy setup registrations route is removed (404)',async()=>{
+   const res=await post('/setup/registrations',{});
+   assert.equal(res.statusCode,404,'Legacy /setup/registrations must be removed');
+  });
+  await check('canonical setup config remains available',async()=>{
+   const res=await get('/config');
+   assert.equal(res.statusCode,200,'GET /config must remain available');
+   const body=res.json();
+   assert.equal(body.auth_mode,'native','auth_mode must be native');
+   assert.equal(body.setup_available,false,'setup_available must be false');
+  });
+  await check('SQL setup resolver still works internally despite HTTP removal',async()=>{
+   const capability=digest(randomBytes(32));
+   await migrator.query('select ops.authorize_school_setup($1,$2)',[capability,3600]);
+   const resolved=(await migrator.query('select ops.resolve_school_setup_authorization($1) school_id',[capability])).rows[0].school_id;
+   assert.ok(resolved,'Internal SQL resolver must still function');
   });
  } finally {await app.close();}
 }
