@@ -12,7 +12,7 @@ import { readSessionCookie } from "../authnative/cookie.js";
 import type { AuthNativeService } from "../authnative/service.js";
 import type { LicenseNativeService } from "./service.js";
 
-const OPEN_PREFIXES = ["/native/license", "/native/trial"];
+const OPEN_PREFIXES = ["/native/license", "/native/trial", "/native/session"];
 const DEFAULT_CACHE_TTL_MS = 60_000;
 
 export type LicenseGateDependencies = {

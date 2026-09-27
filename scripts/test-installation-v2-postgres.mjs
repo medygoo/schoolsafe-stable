@@ -1,3 +1,4 @@
+import {qualifyDirectActivation} from './test-direct-school-activation-postgres.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -39,7 +40,7 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
    finally {await migrator.query('rollback');}
   });
   await qualifyAdditiveUpgrade({admin,connectionString,passwords,check});
-  await qualifyInstalled62Upgrade({admin,connectionString,passwords,check});
+  await qualifyInstalled63Upgrade({admin,connectionString,passwords,check});
   await check('migrator cannot read setup authorizations directly',async()=>{
    const privileges=(await admin.query("select has_table_privilege('schoolsafe_migrator','auth.setup_authorizations','SELECT') direct_select, has_schema_privilege('schoolsafe_migrator','auth','USAGE') auth_usage")).rows[0];
    assert.equal(privileges.direct_select,false);assert.equal(privileges.auth_usage,false);
@@ -248,18 +249,22 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
    const rows=(await admin.query("select rolsuper,rolbypassrls from pg_roles where rolname in ('schoolsafe_api','schoolsafe_auth','schoolsafe_worker','schoolsafe_migrator')")).rows;
    assert.equal(rows.length,4);assert.ok(rows.every(r=>!r.rolsuper&&!r.rolbypassrls));
   });
-  await qualifyRecovery({admin,auth,connect,check,denied,a,b,hash});
+  await qualifyRecovery({admin,auth,connect,check,denied,a,b,hash,context});
   await qualifySetupHttp({admin,auth,migrator,check});
   await qualifyRegistrationPending({admin,auth,check,denied});
   await qualifyRegistrationApproval({admin,auth,check,denied});
-  await qualifyAccountRegistrationOnboarding({admin,auth,api,connect,check,denied,hash,context});
+  await qualifyDirectActivation({admin,auth,api,migrator,connect,check,denied,hash,context});
   log(`POSTGRES_QUALIFICATION PASS (${passed} scenarios)`);return {passed,schools};
  }catch(error){
   throw new Error(`POSTGRES_QUALIFICATION FAIL: ${phase}; ${error.code??'assertion'}`,{cause:error});
  }finally{await Promise.allSettled(clients.map(c=>c.end()));}
 }
-async function qualifyRecovery({admin,auth,connect,check,denied,a,b,hash}) {
+async function qualifyRecovery({admin,auth,connect,check,denied,a,b,hash,context}) {
  const phone='+243812345678';
+ let mutationActor=a;
+ async function mutateAsSchoolAdmin(sql,params) {
+  return context(admin,{user_id:mutationActor.user_id,profile_id:mutationActor.profile_id,school_id:mutationActor.school_id},client=>client.query(sql,params));
+ }
  let previousPassword='Synthetic previous '+randomBytes(16).toString('hex');
  const previousHash=await argonHash(previousPassword);
  async function person(school,name,role,profilePhone=phone) {
@@ -270,10 +275,12 @@ async function qualifyRecovery({admin,auth,connect,check,denied,a,b,hash}) {
   await admin.query('insert into auth.credentials(identity_id,password_hash) values($1,$2)',[identity,previousHash]);
   let roleId=(await admin.query('select id from iam.roles where school_id=$1 and code=$2',[school.school_id,role])).rows[0]?.id;
   if(!roleId) {roleId=randomUUID();await admin.query('insert into iam.roles(id,school_id,code,label) values($1,$2,$3,$3)',[roleId,school.school_id,role]);}
-  await admin.query('insert into iam.profile_roles(school_id,profile_id,role_id) values($1,$2,$3)',[school.school_id,profile,roleId]);
+  await mutateAsSchoolAdmin('insert into iam.profile_roles(school_id,profile_id,role_id) values($1,$2,$3)',[school.school_id,profile,roleId]);
   return {user,profile,identity,email,roleId};
  }
  const parent=await person(a,'Synthetic Parent','parent');
+ const contextActor=await person(a,'Synthetic recovery test actor','staff');
+ mutationActor={user_id:contextActor.user,profile_id:contextActor.profile,school_id:a.school_id};
  await admin.query("update app.students set lifecycle_status='active' where id=$1",[a.student_id]);
  await admin.query("update app.student_enrollments set status='active',starts_on=current_date-1,ends_on=null where student_id=$1",[a.student_id]);
  const guardian=randomUUID();
@@ -318,13 +325,13 @@ async function qualifyRecovery({admin,auth,connect,check,denied,a,b,hash}) {
   ['identity inactive',"update auth.identities set status='disabled' where id=$1","update auth.identities set status='active' where id=$1",parent.identity],
  ];
  for(const [name,change,restore,id] of mutations) await check('Recovery Parent '+name,async()=>{
-  await clearFailures();await admin.query(change,[id]);assert.equal(await proof(),false);await admin.query(restore,[id]);
+  await clearFailures();await mutateAsSchoolAdmin(change,[id]);assert.equal(await proof(),false);await mutateAsSchoolAdmin(restore,[id]);
  });
  await check('Recovery Parent ambiguity rejected',async()=>{
   const other=await person(a,'Synthetic Parent','parent');
   await admin.query("insert into app.student_guardians(school_id,student_id,profile_id,guardian_type,full_name) values($1,$2,$3,'autre','Synthetic')",[a.school_id,a.student_id,other.profile]);
   await clearFailures();assert.equal(await proof(),false);
-  await admin.query('update iam.profiles set is_active=false where id=$1',[other.profile]);
+  await mutateAsSchoolAdmin('update iam.profiles set is_active=false where id=$1',[other.profile]);
  });
  await check('Recovery Parent five failures block proof but not login',async()=>{
   await clearFailures();for(let n=0;n<5;n++)assert.equal(await proof(['Wrong',...valid.slice(1)]),false);
@@ -344,7 +351,7 @@ async function qualifyRecovery({admin,auth,connect,check,denied,a,b,hash}) {
   assert.equal((await auth.query('select api.auth_recover_profile_account($1,$2,$3,$4,$5) ok',['Synthetic '+role,phone,schoolName,role,digest(randomBytes(32))])).rows[0].ok,true);
   assert.equal((await auth.query('select api.auth_recover_profile_account($1,$2,$3,$4,$5) ok',['Synthetic '+role,phone,'Wrong school',role,digest(randomBytes(32))])).rows[0].ok,false);
   assert.equal((await auth.query('select api.auth_recover_profile_account($1,$2,$3,$4,$5) ok',['Synthetic '+role,phone,schoolName,'wrong role',digest(randomBytes(32))])).rows[0].ok,false);
-  await admin.query('update iam.profiles set is_active=false where id=$1',[p.profile]);
+  await mutateAsSchoolAdmin('update iam.profiles set is_active=false where id=$1',[p.profile]);
  });
  async function generate(actor=a.profile_id,target=parent.identity,code='0123456789') {
   return (await auth.query('select api.auth_admin_generate_recovery_code($1,$2,$3) result',[actor,target,digest(code)])).rows[0].result;
@@ -367,9 +374,9 @@ async function qualifyRecovery({admin,auth,connect,check,denied,a,b,hash}) {
  });
  for(const table of ['iam.profiles','iam.profile_roles']) await check('Recovery Admin requires active '+table,async()=>{
   const column=table==='iam.profiles'?'id':'profile_id';
-  await admin.query('update '+table+' set is_active=false where '+column+'=$1',[a.profile_id]);
+  await mutateAsSchoolAdmin('update '+table+' set is_active=false where '+column+'=$1',[a.profile_id]);
   assert.equal(await generate(),null);
-  await admin.query('update '+table+' set is_active=true where '+column+'=$1',[a.profile_id]);
+  await mutateAsSchoolAdmin('update '+table+' set is_active=true where '+column+'=$1',[a.profile_id]);
  });
  await check('Recovery Admin five wrong attempts lock code',async()=>{
   await generate();for(let n=0;n<5;n++)assert.equal(await redeem('9999999999'),false);
@@ -514,6 +521,7 @@ async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
   'database/auth/v4/01_auth_resolve_identity_preauth.sql',
    'database/setup/v5/01_registration_approval.sql',
    'database/auth/v5/01_account_registration_onboarding.sql',
+   'database/auth/v6/01_direct_school_activation.sql',
  ]);
  assert.equal(additions.size,plan.units.length-48,'Additions must cover the current plan beyond historical 48');
  assert.ok(additions.has('database/auth/v3/01_inactive_school_auth_gate.sql'),'auth v3 gate must be in additions');
@@ -871,37 +879,54 @@ export async function qualifyAccountRegistrationOnboarding({admin,auth,api,conne
  });
 }
 
-async function qualifyInstalled62Upgrade({admin,connectionString,passwords,check}) {
+async function qualifyInstalled63Upgrade({admin,connectionString,passwords,check}) {
  const plan=loadInstallationPlan();const unit=plan.units.at(-1);
- assert.equal(unit.file,'database/auth/v5/01_account_registration_onboarding.sql');assert.equal(plan.units.length,63);
- const target=new URL(connectionString),name=decodeURIComponent(target.pathname.slice(1))+'_upgrade62';
+ assert.equal(unit.file,'database/auth/v6/01_direct_school_activation.sql');assert.equal(plan.units.length,64);
+ const target=new URL(connectionString),name=decodeURIComponent(target.pathname.slice(1))+'_upgrade63';
  assert.match(name,/^schoolsafe_test_[a-z0-9_]+$/);
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'schoolsafe-account-upgrade-'));let created=false,owner,migrator,auth;
  try {
   fs.cpSync(path.join(repositoryRoot,'database'),path.join(root,'database'),{recursive:true});
   fs.unlinkSync(path.join(root,unit.file));
-  fs.writeFileSync(path.join(root,'database/auth/v5/manifest.json'),JSON.stringify({schema:'schoolsafe-migrations-v5',name:'auth',version:5,units:[]}));
-  fs.writeFileSync(path.join(root,'database/auth/v5/manifest.sha256'),'\n');
-  const initialPlan={...plan,units:plan.units.slice(0,62)};delete initialPlan.digest;
+  fs.writeFileSync(path.join(root,'database/auth/v6/manifest.json'),JSON.stringify({schema:'schoolsafe-migrations-v6',name:'auth',version:6,units:[]}));
+  fs.writeFileSync(path.join(root,'database/auth/v6/manifest.sha256'),'\n');
+  const initialPlan={...plan,units:plan.units.slice(0,63)};delete initialPlan.digest;
   fs.writeFileSync(path.join(root,'database/installation/v2/manifest.json'),JSON.stringify(initialPlan));
   await admin.query('create database "'+name+'"');created=true;target.pathname='/'+name;
   await installSchoolDatabase({connectionString:target.toString(),database:name,mode:'apply',passwords,root,log:()=>{}});
   owner=new pg.Client({connectionString:target.toString()});await owner.connect();
   target.username='schoolsafe_migrator';target.password=passwords.migrator;migrator=new pg.Client({connectionString:target.toString()});await migrator.connect();
   target.username='schoolsafe_auth';target.password=passwords.auth;auth=new pg.Client({connectionString:target.toString()});await auth.connect();
+  const legacyHash=await argonHash(randomBytes(32).toString('hex'),{memoryCost:19456,timeCost:2,parallelism:1});
+  const legacy=[];
+  for(const [index,status] of ['pending','approved'].entries()) {
+   const email='legacy-'+status+'-'+randomUUID()+'@example.test';
+   const request=(await auth.query('select api.account_registration_prepare($1,$2,$3) r',[{first_name:'Legacy',last_name:status,email,phone:'+24389888888'+index},legacyHash,'198.19.1.'+(index+1)])).rows[0].r;
+   if(status==='approved') {
+    const approval=digest(randomBytes(32));await auth.query('select api.account_registration_issue_approval($1,$2,$3)',[request.request_id,approval,new Date(Date.now()+600000)]);
+    await auth.query("select api.account_registration_decide($1,'approve')",[approval]);
+   }
+   legacy.push({email,status});
+  }
+  const legacyBefore=(await owner.query('select * from auth.account_registration_requests order by id')).rows;
   const ledger=async()=> (await owner.query('select unit_order,file_name,sha256 from ops.installation_units order by unit_order')).rows;
-  const initial=await ledger();assert.equal(initial.length,62);const sql=renderAdditiveUpgrade({installed:initial});
+  const initial=await ledger();assert.equal(initial.length,63);const sql=renderAdditiveUpgrade({installed:initial});
   assert.equal((sql.match(/-- APPLY /g)??[]).length,1);
-  await check('account-first upgrade 62 rollback leaves all historical units and no new tables',async()=>{
+  await check('direct activation upgrade 63 rollback leaves all historical units and no new tables',async()=>{
    const faulty=sql.replace(/^commit;$/im,'select 1/0;\ncommit;');assert.ok(faulty!==sql,'Upgrade commit marker required');
    await assert.rejects(migrator.query(faulty),e=>e.code==='22012');await migrator.query('rollback');
-   assert.deepEqual(await ledger(),initial);assert.equal((await owner.query("select to_regclass('auth.account_registration_requests') object")).rows[0].object,null);
+   assert.deepEqual(await ledger(),initial);assert.equal((await owner.query("select to_regclass('auth.direct_onboarding_accounts') object")).rows[0].object,null);
   });
-  await check('account-first upgrade 62 to 63 appends exactly one immutable ledger unit',async()=>{
-   await migrator.query(sql);const after=await ledger();assert.equal(after.length,63);assert.deepEqual(after.slice(0,62),initial);assert.equal(after[62].file_name,unit.file);assert.equal(after[62].sha256,unit.sha256);
+  await check('direct activation upgrade 63 to 64 appends exactly one immutable ledger unit',async()=>{
+   await migrator.query(sql);const after=await ledger();assert.equal(after.length,64);assert.deepEqual(after.slice(0,63),initial);assert.equal(after[63].file_name,unit.file);assert.equal(after[63].sha256,unit.sha256);
    const before=(await owner.query('select * from ops.installation_units order by unit_order')).rows;await migrator.query(renderAdditiveUpgrade({installed:after}));assert.deepEqual((await owner.query('select * from ops.installation_units order by unit_order')).rows,before);
    const hash=await argonHash(randomBytes(32).toString('hex'),{memoryCost:19456,timeCost:2,parallelism:1});
-   const result=(await auth.query('select api.account_registration_prepare($1,$2,$3) r',[{first_name:'Upgrade',last_name:'Proof',email:'upgrade-'+randomUUID()+'@example.test',phone:'+243899999999'},hash,'198.19.0.1'])).rows[0].r;assert.equal(result.status,'pending');
+   const result=(await auth.query('select * from api.auth_create_direct_identity($1,$2,$3)',['upgrade-'+randomUUID()+'@example.test',hash,'198.19.0.1'])).rows[0];assert.equal(result.status,'active');
+   assert.deepEqual((await owner.query('select * from auth.account_registration_requests order by id')).rows,legacyBefore);
+   for(const old of legacy) {
+    assert.equal((await auth.query('select * from api.auth_resolve_onboarding_identity($1)',[old.email])).rowCount,old.status==='approved'?1:0);
+    assert.equal((await auth.query('select * from api.auth_create_direct_identity($1,$2,$3)',[old.email,hash,'198.19.0.2'])).rowCount,0);
+   }
   });
  } finally {
   await Promise.allSettled([auth?.end(),migrator?.end(),owner?.end()]);if(created)await admin.query('drop database "'+name+'"');

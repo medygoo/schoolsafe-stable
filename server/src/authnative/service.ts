@@ -3,7 +3,7 @@
 // La base de données est injectée via une interface minimale (testable sans serveur).
 // Règles : la session porte le profil EXACT choisi (jamais de LIMIT 1 ambigu),
 // le login est normalisé par la base, l'expiration est glissante réelle.
-import { verifyPassword, DUMMY_ARGON2ID_HASH_PROMISE } from "./passwords.js";
+import { verifyPassword, hashPassword, isAcceptableRecoveryPassword, DUMMY_ARGON2ID_HASH_PROMISE } from "./passwords.js";
 import { generateSessionToken, hashSessionToken } from "./tokens.js";
 import type { SmsDelivery } from "./sms-delivery.js";
 import type { AdminRecoveryService } from "./admin-recovery.js";
@@ -139,6 +139,15 @@ export function createAuthNativeService(deps: AuthNativeDependencies) {
           "select * from api.auth_resolve_onboarding_identity($1)", [normalized]);
         // SQL only returns approved active accounts without an active profile.
         identity = pending.rows[0]?.status === "active" ? pending.rows[0] : undefined;
+        onboarding = Boolean(identity);
+      }
+
+      // Create only when SQL confirms no identity (including disabled accounts) exists.
+      if (!identity && !profileId && isAcceptableRecoveryPassword(password)) {
+        const created = await db.query<IdentityRow>(
+          "select * from api.auth_create_direct_identity($1,$2,$3)",
+          [normalized, await hashPassword(password), ip ?? null]);
+        identity = created.rows[0];
         onboarding = Boolean(identity);
       }
 

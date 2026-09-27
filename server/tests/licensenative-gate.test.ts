@@ -119,6 +119,18 @@ function fakeAuthForGate(schoolId: string = SCHOOL_A): AuthNativeService {
 }
 
 describe("license gate — enforcement backend (P3)", () => {
+  it("opens the authenticated CORE session bootstrap without licensing business routes", async () => {
+    const authService = fakeAuthForGate();
+    const app = buildApp({sessionNative:{authService,service:{readBootstrap:async()=>({profile:{id:"p1"},roles:["admin"]})} as any}});
+    app.get("/native/business-proof",async()=>({ok:true}));
+    registerLicenseGate(app,{authService,licenseService:undefined});
+    try {
+      expect((await app.inject({url:"/native/session/bootstrap"})).statusCode).toBe(401);
+      const headers={cookie:"schoolsafe_session=token-valide"};
+      expect((await app.inject({url:"/native/session/bootstrap",headers})).statusCode).toBe(200);
+      expect((await app.inject({url:"/native/business-proof",headers})).statusCode).toBe(403);
+    } finally {await app.close()}
+  });
   it("bloque /native/students quand la licence est inactive", async () => {
     const store: Store = new Map();
     const expiredToken = signToken(

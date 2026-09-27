@@ -30,8 +30,8 @@
   var onboardingIdentity = null;
   var setupSubmitting = false;
   var setupLogoPreview = null;
-  var approvalFragment = window.schoolSafeAccountApproval;
-  delete window.schoolSafeAccountApproval;
+  var onboardingAdmin = {first_name: "", last_name: ""};
+  var activationCode = "";
 
   var SESSION_STORAGE_KEY = "schoolsafe-v2-session";
   function tryLocalStorage() { try { return window.localStorage; } catch (e) { return null; } }
@@ -3362,9 +3362,11 @@
 
   async function openOnboarding() {
     var identity = await window.SchoolSafeAuthNative.onboardingMe();
-    if (!identity || identity.status !== "approved") throw new Error("Session d’onboarding indisponible.");
+    if (!identity || identity.status !== "onboarding") throw new Error("Session d’onboarding indisponible.");
     clearSession();
     onboardingIdentity = identity;
+    onboardingAdmin = {first_name: identity.first_name || "", last_name: identity.last_name || ""};
+    activationCode = "";
     stepIndex = 0;
     renderStep();
     showScreen("setup");
@@ -3375,6 +3377,8 @@
     try {
       await window.SchoolSafeAuthNative.logoutOnboarding();
       onboardingIdentity = null;
+      activationCode = "";
+      onboardingAdmin = {first_name: "", last_name: ""};
       if (setupLogoPreview) URL.revokeObjectURL(setupLogoPreview);
       setupLogoPreview = null;
       document.getElementById("stepContent").replaceChildren();
@@ -3383,104 +3387,6 @@
   }
   document.getElementById("setupHome").addEventListener("click", leaveOnboarding);
   document.getElementById("closeSetup").addEventListener("click", leaveOnboarding);
-
-  document.getElementById("createAccount").addEventListener("click", function () {
-    var pending = false;
-    function input(name, label, type, limit, autocomplete) {
-      return '<label class="ss-field">' + label + '<input class="ss-input" name="' + name +
-        '" type="' + type + '" required maxlength="' + limit + '" autocomplete="' + autocomplete + '"' +
-        (type === "password" ? ' minlength="8"' : '') + '></label>';
-    }
-    var modal = window.ssModal({
-      title: "Créer un compte personnel", size: "md",
-      onClose: function () {
-        if (pending) return false;
-        form.reset();
-      },
-      content: '<form id="accountRegistrationForm" class="ss-form-grid ss-form-grid--2">' +
-        input("first_name", "Prénom", "text", 100, "given-name") +
-        input("last_name", "Nom", "text", 100, "family-name") +
-        input("email", "E-mail", "email", 254, "email") +
-        input("phone", "Téléphone", "tel", 40, "tel") +
-        input("password", "Mot de passe", "password", 64, "new-password") +
-        input("confirmation", "Confirmer le mot de passe", "password", 64, "new-password") + '</form>',
-      actions: [
-        { label: "Annuler", variant: "secondary" },
-        { label: "Envoyer la demande", type: "submit", closeOnClick: false, attrs: {form:"accountRegistrationForm"} }
-      ]
-    });
-    var form = modal.element.querySelector("form");
-    form.onsubmit = async function (event) {
-      event.preventDefault();
-      if (pending || !form.reportValidity()) return;
-      var fields = form.elements;
-      var phone = normalizePhone(fields.phone.value);
-      if (!fields.first_name.value.trim() || !fields.last_name.value.trim()) { modal.setError("Le prénom et le nom sont obligatoires."); return; }
-      if (fields.password.value !== fields.confirmation.value) { modal.setError("Les mots de passe ne correspondent pas."); return; }
-      if (!/^\+243[0-9]{9}$/.test(phone)) { modal.setError("Renseignez un numéro de téléphone valide."); return; }
-      pending = true; modal.setError(""); modal.setLoading(true);
-      try {
-        var config = await loadBackendConfig();
-        if (!config.account_registration_available) throw new Error("Inscription temporairement indisponible.");
-        var result = await window.SchoolSafeAuthNative.registerAccount({
-          first_name: fields.first_name.value.trim(), last_name: fields.last_name.value.trim(),
-          email: fields.email.value.trim().toLowerCase(), phone: phone, password: fields.password.value
-        });
-        if (!result || result.status !== "pending") throw new Error("Inscription temporairement indisponible.");
-        form.reset();
-        modal.content.innerHTML = '<p role="status">Votre demande a été envoyée.<br>Votre compte reste verrouillé jusqu’à validation SchoolSafe.</p>';
-        modal.footer.innerHTML = '<button type="button" class="ss-button">Fermer</button>';
-        modal.footer.querySelector("button").onclick = function () { modal.close(); };
-      } catch (error) { modal.setError(error.message || "Inscription temporairement indisponible."); }
-      finally { pending = false; modal.setLoading(false); }
-    };
-  });
-
-  async function showAccountApproval(rawToken) {
-    var token = rawToken, pending = false;
-    var modal = window.ssModal({
-      title: "Validation du compte", size: "md",
-      content: '<p role="status">Vérification du lien…</p>',
-      onClose: function () {
-        if (pending) return false;
-        token = "";
-        modal.content.replaceChildren();
-      },
-      actions: [{label: "Fermer", variant: "secondary"}]
-    });
-    try {
-      if (!/^[A-Za-z0-9_-]{43}$/.test(token || "")) throw new Error("Invalid link");
-      pending = true; modal.setLoading(true);
-      var review = await window.SchoolSafeAuthNative.reviewAccountRegistration(token);
-      if (!review || review.status !== "pending") throw new Error("Invalid link");
-      modal.content.innerHTML = '<div class="account-approval-review">' +
-        row("Prénom", review.first_name) + row("Nom", review.last_name) +
-        row("E-mail", review.email) + row("Téléphone", review.phone) + '</div><p data-approval-feedback role="status"></p>';
-      review = null;
-      modal.footer.innerHTML = '<button type="button" class="ss-button ss-button--secondary" data-decision="reject">REFUSER</button>' +
-        '<button type="button" class="ss-button" data-decision="approve">APPROUVER</button>';
-      modal.footer.querySelectorAll("[data-decision]").forEach(function (button) {
-        button.onclick = async function () {
-          if (pending || !token) return;
-          pending = true; modal.setError(""); modal.setLoading(true);
-          try {
-            var result = await window.SchoolSafeAuthNative.decideAccountRegistration(token, button.dataset.decision);
-            if (!result || !["approved", "rejected"].includes(result.status)) throw new Error("Invalid decision");
-            token = "";
-            modal.content.textContent = result.status === "approved"
-              ? "Compte approuvé. L’utilisateur peut maintenant se connecter et créer son école."
-              : "Compte refusé.";
-            modal.footer.innerHTML = '<button type="button" class="ss-button">Fermer</button>';
-            modal.footer.querySelector("button").onclick = function () { modal.close(); };
-          } catch (error) { modal.setError("Décision indisponible. Le lien peut être expiré ou déjà utilisé."); }
-          finally { pending = false; modal.setLoading(false); }
-        };
-      });
-    } catch (error) {
-      token = "";
-      modal.content.textContent = "Lien invalide ou expiré.";
-    } finally { rawToken = ""; pending = false; modal.setLoading(false); }
-  }
 
   function bindIfExists(id, event, handler) {
     var el = document.getElementById(id);
@@ -3573,7 +3479,6 @@
     // Session native (cookie HttpOnly) : déconnexion serveur réelle.
     try { if (window.SchoolSafeAuthNative) await window.SchoolSafeAuthNative.logout(); } catch (e) {}
     document.getElementById("emailIdentifier").value = "";
-    document.getElementById("phoneIdentifier").value = "";
     document.getElementById("password").value = "";
     document.getElementById("otpIdentifier").value = "";
     document.getElementById("otpIdentity").classList.add("hidden");
@@ -3676,15 +3581,15 @@
     var form = event.currentTarget;
     if (form.getAttribute("aria-busy") === "true") return;
 
-    var mode = document.querySelector("[data-login-mode].selected")?.getAttribute("data-login-mode") || "email";
-    var identifierInput = document.getElementById(mode === "phone" ? "phoneIdentifier" : "emailIdentifier");
+    var identifierInput = document.getElementById("emailIdentifier");
+    var mode = identifierInput.value.includes("@") ? "email" : "phone";
     var passwordInput = document.getElementById("password");
     var identifier = identifierInput.value.trim();
     var password = passwordInput.value;
     identifierInput.removeAttribute("aria-invalid");
     passwordInput.removeAttribute("aria-invalid");
 
-    if (!identifier || (mode === "email" && !identifierInput.validity.valid)
+    if (!identifier || (mode === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier))
         || (mode === "phone" && !/^\+243\d{9}$/.test(normalizePhone(identifier)))) {
       identifierInput.setAttribute("aria-invalid", "true");
       notify(mode === "phone" ? "Renseignez un numéro de téléphone valide." : "Renseignez une adresse e-mail valide.");
@@ -3742,31 +3647,6 @@
       form.removeAttribute("aria-busy");
       icons();
     }
-  });
-  document.querySelectorAll("[data-login-mode]").forEach(function (button) {
-    button.addEventListener("click", function () {
-      var mode = button.getAttribute("data-login-mode");
-      document.querySelectorAll("[data-login-mode]").forEach(function (item) {
-        var selected = item === button;
-        item.classList.toggle("selected", selected);
-        item.setAttribute("aria-pressed", String(selected));
-      });
-      var emailGroup = document.getElementById("emailIdentity");
-      var phoneGroup = document.getElementById("phoneIdentity");
-      var otpGroup = document.getElementById("otpIdentity");
-      var emailInput = document.getElementById("emailIdentifier");
-      var phoneInput = document.getElementById("phoneIdentifier");
-      var otpInput = document.getElementById("otpIdentifier");
-      emailGroup.classList.toggle("hidden", mode !== "email");
-      phoneGroup.classList.toggle("hidden", mode !== "phone");
-      otpGroup.classList.add("hidden");
-      otpInput.value = "";
-      pendingPhone = null;
-      emailInput.required = mode === "email";
-      phoneInput.required = mode === "phone";
-      otpInput.required = false;
-      (mode === "email" ? emailInput : phoneInput).focus();
-    });
   });
   document.getElementById("forgotPassword").addEventListener("click", function () {
     var clearRecovery = function () { form.reset(); };
@@ -3905,7 +3785,7 @@
     "Coordonnées officielles",
     "Identité visuelle et documents",
     "Administrateur principal",
-    "Vérification de l’instance"
+    "Vérification"
   ];
   var defaults = {
     schoolName: "",
@@ -4101,10 +3981,10 @@
     function readonly(id, label, value) {
       return '<label class="ss-field">' + label + '<input class="ss-input" id="' + id + '" value="' + esc(value) + '" readonly></label>';
     }
-    return intro("Votre compte approuvé", "Ce compte deviendra l’Administrateur principal de cette école.") +
+    return intro("Administrateur principal", "Renseignez votre nom. Le compte connecté administrera cette école.") +
       '<div class="ss-form-grid ss-form-grid--2">' +
-      readonly("adminFirstName", "Prénom", identity.first_name) +
-      readonly("adminLastName", "Nom", identity.last_name) +
+      '<label class="ss-field">Prénom<input class="ss-input" id="adminFirstName" maxlength="100" autocomplete="given-name" value="' + esc(onboardingAdmin.first_name) + '"></label>'  +
+      '<label class="ss-field">Nom<input class="ss-input" id="adminLastName" maxlength="100" autocomplete="family-name" value="' + esc(onboardingAdmin.last_name) + '"></label>'  +
       readonly("adminEmail", "E-mail", identity.email) +
       readonly("adminPhone", "Téléphone", identity.phone) + '</div>';
   }
@@ -4116,7 +3996,8 @@
   function renderReview() {
     var cycleNames = { nursery: "Maternelle", primary: "Primaire", secondary: "Secondaire et Humanités" };
     return [
-      intro("Contrôlez avant de poursuivre", "Vérifiez les informations. La validation créera votre école et attribuera les droits d’Administrateur principal à votre compte approuvé."),
+      intro("Vérification", "Vérifiez les informations et saisissez le code fourni par SchoolSafe."),
+      '<label class="ss-field">Code d’activation SchoolSafe<input class="ss-input" id="schoolActivationCode" type="password" autocomplete="off" maxlength="256" value="' + esc(activationCode) + '"></label>',
       '<div class="review-grid">',
       '<section class="review-block"><h3>Établissement</h3>',
       row("Nom", state.schoolName), row("Statut", state.schoolType), row("Code", state.schoolCode),
@@ -4126,15 +4007,20 @@
       row("Localisation", [state.city, state.province].filter(Boolean).join(", ")), row("E-mail", state.email), row("Téléphone", state.phone),
       row("Site", state.websiteMode), row("Adresse", state.websiteAddress || state.website), row("Publications", "Actualités, galerie et palmarès après validation"),
       '</section><section class="review-block"><h3>Administrateur principal</h3>',
-      row("Nom", [(onboardingIdentity || {}).first_name, (onboardingIdentity || {}).last_name].filter(Boolean).join(" ")), row("E-mail", (onboardingIdentity || {}).email), row("Téléphone", (onboardingIdentity || {}).phone),
+      row("Nom", [onboardingAdmin.first_name, onboardingAdmin.last_name].filter(Boolean).join(" ")), row("E-mail", (onboardingIdentity || {}).email), row("Téléphone", (onboardingIdentity || {}).phone),
       '</section></div>',
-      '<div class="warning-note"><i data-lucide="shield-alert"></i><span>Après la création, connectez-vous avec votre compte personnel pour administrer votre école.</span></div>'
+      '<div class="warning-note"><i data-lucide="shield-alert"></i><span>L’activation ouvre directement votre espace de travail.</span></div>'
     ].join("");
   }
 
   var renderers = [renderIdentity, renderCycles, renderAcademicYear, renderContact, renderBrand, renderAdmin, renderReview];
 
   function collectFields() {
+    var first = document.getElementById("adminFirstName"), last = document.getElementById("adminLastName");
+    if (first) onboardingAdmin.first_name = first.value.trim();
+    if (last) onboardingAdmin.last_name = last.value.trim();
+    var code = document.getElementById("schoolActivationCode");
+    if (code) activationCode = code.value;
     document.querySelectorAll("#stepContent input:not([name=cycles]), #stepContent select, #stepContent textarea").forEach(function (control) {
       if (Object.prototype.hasOwnProperty.call(defaults, control.name)) state[control.name] = control.value;
     });
@@ -4205,9 +4091,11 @@ function validateStep(index) {
       if (!state.phone.trim()) return "Le téléphone officiel est obligatoire.";
       if (state.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email.trim())) return "L'e-mail saisi n'est pas valide.";
     }
-    if (index === 5 && (!onboardingIdentity || onboardingIdentity.status !== "approved")) {
+    if (index === 5 && (!onboardingIdentity || onboardingIdentity.status !== "onboarding")) {
       return "Reconnectez-vous pour continuer la création de votre école.";
     }
+    if (index === 5 && (!onboardingAdmin.first_name || !onboardingAdmin.last_name)) return "Renseignez le prénom et le nom de l’administrateur.";
+    if (index === 6 && activationCode.length === 0) return "Renseignez votre code d’activation SchoolSafe.";
     return null;
   }
 
@@ -4215,6 +4103,8 @@ function validateStep(index) {
     if (!onboardingIdentity) throw new Error("Session d’onboarding requise.");
 
     var schoolPayload = {
+      admin: onboardingAdmin,
+      activation_code: activationCode,
       identity: {
         name_fr: state.schoolName,
         name_en: state.name_en || state.schoolName,
@@ -4260,7 +4150,7 @@ function validateStep(index) {
     document.getElementById("stepContent").innerHTML = renderers[stepIndex]();
     document.getElementById("prevStep").disabled = stepIndex === 0;
     document.getElementById("nextStep").innerHTML = stepIndex === stepLabels.length - 1
-      ? 'Terminer la configuration <i data-lucide="check"></i>'
+      ? 'ACTIVER MON ÉCOLE <i data-lucide="check"></i>'
       : 'Continuer <i data-lucide="arrow-right"></i>';
     renderNav();
     bindStepEvents();
@@ -4280,8 +4170,8 @@ function validateStep(index) {
         if (!nativeBootstrap || !nativeBootstrap.data) throw new Error("Profil incomplet");
         currentSession = { token: null, native: true };
         applyBootstrap(nativeBootstrap.data);
-        notify("Session restaurée.");
-        return;
+        enterLiveSession();
+        return true;
       } catch (error) {
         // Un refus de session par le VPS interdit la reprise depuis le cache.
         var refused = error.status >= 400 && error.status < 500;
@@ -4337,12 +4227,18 @@ function validateStep(index) {
       if (setupLogoPreview) URL.revokeObjectURL(setupLogoPreview);
       setupLogoPreview = null;
       document.getElementById("stepContent").replaceChildren();
-      showScreen("auth");
-      notify("Votre école est créée. Votre compte Administrateur principal est prêt.");
+      activationCode = "";
+      onboardingAdmin = {first_name: "", last_name: ""};
+      if (await restoreSession()) {
+        notify("Votre école est activée. Bienvenue dans votre espace de travail.");
+      } else {
+        showScreen("auth");
+        notify("Votre école est activée. Reconnectez-vous pour ouvrir votre espace.");
+      }
     } catch (error) {
-      notify("Échec de la configuration : " + (error.message || "erreur inconnue"));
+      notify(error.message || "Échec de la configuration.");
       button.disabled = false;
-      button.innerHTML = 'Terminer la configuration <i data-lucide="check"></i>';
+      button.innerHTML = 'ACTIVER MON ÉCOLE <i data-lucide="check"></i>';
       icons();
     } finally {
       setupSubmitting = false;
@@ -4350,13 +4246,5 @@ function validateStep(index) {
     }
   });
 
-  if (typeof approvalFragment === "string") {
-    var initialApproval = approvalFragment;
-    approvalFragment = null;
-    showScreen("auth");
-    showAccountApproval(initialApproval);
-    initialApproval = null;
-  } else {
-    restoreSession();
-  }
+  restoreSession();
 }());

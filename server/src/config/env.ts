@@ -5,6 +5,8 @@ const envSchema = z.object({
   HOST: z.string().min(1).default("127.0.0.1"),
   PORT: z.coerce.number().int().min(1).max(65535).default(8787),
   AUTH_RECOVERY_URL: z.string().url().refine(value => new URL(value).protocol === "https:", "HTTPS required").optional(),
+  // Invalid/absent configuration disables activation (503), without a fallback code.
+  SCHOOLSAFE_SCHOOL_ACTIVATION_CODE_SHA256: z.string().regex(/^[0-9a-f]{64}$/).optional().catch(undefined),
   PILOT_SCHOOL_ID: z.string().uuid().optional(),
   R2_ENDPOINT: z.string().url().optional(),
   R2_ACCESS_KEY_ID: z.string().min(1).optional(),
@@ -45,14 +47,7 @@ const envSchema = z.object({
   JASPE_WORKER_HMAC_SECRET: z.string().min(32).optional(),
   JASPE_CHAT_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(12000),
   JASPE_RATE_PER_MINUTE: z.coerce.number().int().min(1).max(600).default(20),
-  // LOT 2 — approbation sécurisée des inscriptions écoles
-  SCHOOLSAFE_GOOGLE_MAIL_URL: z.string().url().refine(value => {
-    const url = new URL(value);
-    return url.protocol === "https:" && !url.username && !url.password;
-  }, "HTTPS required for Google mail URL").optional(),
-  SCHOOLSAFE_GOOGLE_MAIL_SECRET: z.string().trim().min(1).optional(),
-  SCHOOLSAFE_APPROVAL_URL: z.string().url().refine(value => new URL(value).protocol === "https:", "HTTPS required for approval URL").optional(),
-  SCHOOLSAFE_APPROVAL_TTL_SECONDS: z.coerce.number().int().min(300).max(604800).default(172800),
+
 });
 
 export type AppEnv = z.infer<typeof envSchema>;
