@@ -41,6 +41,8 @@ import { registerDeviceHubRoutes, type DeviceHubRouteDependencies } from "./devi
 import { registerDeviceHubMachineRoutes, type DeviceHubMachineRouteDependencies } from "./devicehub/machine-routes.js";
 import { registerDocumentRoutes, type DocumentRouteDependencies } from "./documents/routes.js";
 import { registerDashboardRoutes as registerLot5DashboardRoutes, type DashboardRouteDependencies as Lot5DashboardRouteDependencies } from "./dashboard/routes.js";
+import { registerProdeliAuth, type ProdeliAuthDependencies } from "./prodeli/auth.js";
+import { registerProdeliRegistrationsRoutes, type ProdeliRegistrationsDependencies } from "./prodeli/registrations.js";
 
 export type BuildAppOptions = {
   onboarding?: OnboardingRouteDependencies;
@@ -80,6 +82,10 @@ export type BuildAppOptions = {
   documents?: DocumentRouteDependencies;
   lot5Dashboard?: Lot5DashboardRouteDependencies;
   registration?: RegistrationRouteDependencies;
+  prodeli?: {
+    auth: ProdeliAuthDependencies;
+    registrations: ProdeliRegistrationsDependencies;
+  };
 };
 
 export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
@@ -261,6 +267,12 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   if (options.lot5Dashboard) {
     registerLot5DashboardRoutes(app, { ...options.lot5Dashboard, authService: options.authNative?.service as any });
+  }
+
+  if (options.prodeli) {
+    registerProdeliAuth(app, options.prodeli.auth);
+    app.addHook("preHandler", app.prodeliAuth);
+    registerProdeliRegistrationsRoutes(app, options.prodeli.registrations);
   }
 
   if (options.testRoutes) {

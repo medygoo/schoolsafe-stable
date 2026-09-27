@@ -29,6 +29,8 @@ import { createCardsBatchService } from "./cardsnative/batches.js";
 import { createFamilyNativeService } from "./familynative/service.js";
 import { createFamilyImportService } from "./familynative/import.js";
 import { createDeviceHubService } from "./devicehub/service.js";
+import type { ProdeliAuthDependencies } from "./prodeli/auth.js";
+import type { ProdeliRegistrationsDependencies } from "./prodeli/registrations.js";
 
 /** Assemble uniquement les services qui utilisent les sessions et pools du VPS. */
 export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
@@ -127,6 +129,13 @@ const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.
         approvalUrl: new URL(env.SCHOOLSAFE_APPROVAL_URL).toString(),
         ttlSeconds: env.SCHOOLSAFE_APPROVAL_TTL_SECONDS,
       }),
+    } : undefined,
+    prodeli: env.PRODELI_SERVICE_TOKEN && env.PRODELI_OPERATOR_EMAILS ? {
+      auth: {
+        serviceToken: env.PRODELI_SERVICE_TOKEN,
+        allowedOperators: env.PRODELI_OPERATOR_EMAILS.split(",").map(e => e.trim()).filter(Boolean),
+      },
+      registrations: { db: createPgAuthDatabase(pools.authPool) },
     } : undefined,
   });
   registerLicenseGate(app, {authService: authService, licenseService, pilotSchoolId: env.PILOT_SCHOOL_ID});
