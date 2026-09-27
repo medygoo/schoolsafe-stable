@@ -316,6 +316,11 @@
       "order": 63,
       "file": "database/auth/v5/01_account_registration_onboarding.sql",
       "sha256": "1cdf3ccb948afe213d4b3da6fbde986e283f8d27503cbb059b47920e9bd51563"
+    },
+    {
+      "order": 64,
+      "file": "database/prodeli/v1/01_registrations_read.sql",
+      "sha256": "984bb6aed1ba935709c5c0e4921d24d63160955a3e3ae9716afd98c8a643f649"
     }
   ],
   "superseded": [
