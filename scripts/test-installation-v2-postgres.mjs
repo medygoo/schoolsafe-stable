@@ -40,6 +40,7 @@ export async function qualifyInstallation({connectionString,passwords,log=consol
   });
   await qualifyAdditiveUpgrade({admin,connectionString,passwords,check});
   await qualifyInstalled62Upgrade({admin,connectionString,passwords,check});
+  await qualifyProdeli63Upgrade({admin,connectionString,passwords,check});
   await check('migrator cannot read setup authorizations directly',async()=>{
    const privileges=(await admin.query("select has_table_privilege('schoolsafe_migrator','auth.setup_authorizations','SELECT') direct_select, has_schema_privilege('schoolsafe_migrator','auth','USAGE') auth_usage")).rows[0];
    assert.equal(privileges.direct_select,false);assert.equal(privileges.auth_usage,false);
@@ -526,13 +527,15 @@ async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
   'database/auth/v4/01_auth_resolve_identity_preauth.sql',
    'database/setup/v5/01_registration_approval.sql',
    'database/auth/v5/01_account_registration_onboarding.sql',
+   'database/prodeli/v1/01_registrations_read.sql',
  ]);
  assert.equal(additions.size,plan.units.length-48,'Additions must cover the current plan beyond historical 48');
  assert.ok(additions.has('database/auth/v3/01_inactive_school_auth_gate.sql'),'auth v3 gate must be in additions');
  assert.ok(additions.has('database/setup/v4/01_registration_pending.sql'),'setup v4 registration must be in additions');
  assert.ok(additions.has('database/auth/v4/01_auth_resolve_identity_preauth.sql'),'auth v4 preauth must be in additions');
  assert.ok(additions.has('database/setup/v5/01_registration_approval.sql'),'setup v5 approval must be in additions');
- let owner,migrator,created=false;
+ assert.ok(additions.has('database/prodeli/v1/01_registrations_read.sql'),'PRODELI unit 64 must be in additions');
+let owner,migrator,created=false;
  try{
   fs.cpSync(path.join(repositoryRoot,'database'),path.join(root,'database'),{recursive:true});
   const historical={...plan,units:plan.units.filter(u=>!additions.has(u.file)).map((u,i)=>({...u,order:i+1}))};delete historical.digest;
@@ -884,17 +887,20 @@ export async function qualifyAccountRegistrationOnboarding({admin,auth,api,conne
 }
 
 async function qualifyInstalled62Upgrade({admin,connectionString,passwords,check}) {
- const plan=loadInstallationPlan();const unit=plan.units.at(-1);
- assert.equal(unit.file,'database/auth/v5/01_account_registration_onboarding.sql');assert.equal(plan.units.length,63);
+ const plan=loadInstallationPlan();
+ const unit=plan.units.find(u=>u.order===63&&u.file==='database/auth/v5/01_account_registration_onboarding.sql');
+ assert.ok(unit,'Historical unit 63 must remain the account onboarding migration');
+ assert.equal(plan.units.length,64,'Current plan must retain PRODELI unit 64');
  const target=new URL(connectionString),name=decodeURIComponent(target.pathname.slice(1))+'_upgrade62';
  assert.match(name,/^schoolsafe_test_[a-z0-9_]+$/);
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'schoolsafe-account-upgrade-'));let created=false,owner,migrator,auth;
  try {
   fs.cpSync(path.join(repositoryRoot,'database'),path.join(root,'database'),{recursive:true});
   fs.unlinkSync(path.join(root,unit.file));
+  fs.rmSync(path.join(root,'database/prodeli'),{recursive:true,force:true});
   fs.writeFileSync(path.join(root,'database/auth/v5/manifest.json'),JSON.stringify({schema:'schoolsafe-migrations-v5',name:'auth',version:5,units:[]}));
   fs.writeFileSync(path.join(root,'database/auth/v5/manifest.sha256'),'\n');
-  const initialPlan={...plan,units:plan.units.slice(0,62)};delete initialPlan.digest;
+  const initialPlan={...plan,units:plan.units.filter(u=>u.order<=62)};delete initialPlan.digest;
   fs.writeFileSync(path.join(root,'database/installation/v2/manifest.json'),JSON.stringify(initialPlan));
   await admin.query('create database "'+name+'"');created=true;target.pathname='/'+name;
   await installSchoolDatabase({connectionString:target.toString(),database:name,mode:'apply',passwords,root,log:()=>{}});
@@ -902,21 +908,79 @@ async function qualifyInstalled62Upgrade({admin,connectionString,passwords,check
   target.username='schoolsafe_migrator';target.password=passwords.migrator;migrator=new pg.Client({connectionString:target.toString()});await migrator.connect();
   target.username='schoolsafe_auth';target.password=passwords.auth;auth=new pg.Client({connectionString:target.toString()});await auth.connect();
   const ledger=async()=> (await owner.query('select unit_order,file_name,sha256 from ops.installation_units order by unit_order')).rows;
-  const initial=await ledger();assert.equal(initial.length,62);const sql=renderAdditiveUpgrade({installed:initial});
-  assert.equal((sql.match(/-- APPLY /g)??[]).length,1);
+  const initial=await ledger();assert.equal(initial.length,62);
+  const plan63={...plan,units:plan.units.filter(u=>u.order<=63)};delete plan63.digest;
+  const authV5=path.join(root,'database/auth/v5');
+  fs.rmSync(authV5,{recursive:true,force:true});
+  fs.cpSync(path.join(repositoryRoot,'database/auth/v5'),authV5,{recursive:true});
+  fs.writeFileSync(path.join(root,'database/installation/v2/manifest.json'),JSON.stringify(plan63));
+  const sql=renderAdditiveUpgrade({installed:initial,root});
+  const marker='-- APPLY 63 database/auth/v5/01_account_registration_onboarding.sql';
+  assert.equal((sql.match(/^-- APPLY /gm)??[]).length,1);
+  assert.ok(sql.includes(marker),'62→63 must apply only the historical auth v5 unit');
   await check('account-first upgrade 62 rollback leaves all historical units and no new tables',async()=>{
    const faulty=sql.replace(/^commit;$/im,'select 1/0;\ncommit;');assert.ok(faulty!==sql,'Upgrade commit marker required');
    await assert.rejects(migrator.query(faulty),e=>e.code==='22012');await migrator.query('rollback');
    assert.deepEqual(await ledger(),initial);assert.equal((await owner.query("select to_regclass('auth.account_registration_requests') object")).rows[0].object,null);
   });
   await check('account-first upgrade 62 to 63 appends exactly one immutable ledger unit',async()=>{
-   await migrator.query(sql);const after=await ledger();assert.equal(after.length,63);assert.deepEqual(after.slice(0,62),initial);assert.equal(after[62].file_name,unit.file);assert.equal(after[62].sha256,unit.sha256);
-   const before=(await owner.query('select * from ops.installation_units order by unit_order')).rows;await migrator.query(renderAdditiveUpgrade({installed:after}));assert.deepEqual((await owner.query('select * from ops.installation_units order by unit_order')).rows,before);
+   await migrator.query(sql);const after=await ledger();assert.equal(after.length,63);assert.deepEqual(after.slice(0,62),initial);
+   assert.equal(after[62].unit_order,63);assert.equal(after[62].file_name,unit.file);assert.equal(after[62].sha256,unit.sha256);
+   const before=(await owner.query('select * from ops.installation_units order by unit_order')).rows;
+   const repeated=renderAdditiveUpgrade({installed:after,root});assert.ok(!repeated.includes('-- APPLY'));
+   await migrator.query(repeated);assert.deepEqual((await owner.query('select * from ops.installation_units order by unit_order')).rows,before);
    const hash=await argonHash(randomBytes(32).toString('hex'),{memoryCost:19456,timeCost:2,parallelism:1});
    const result=(await auth.query('select api.account_registration_prepare($1,$2,$3) r',[{first_name:'Upgrade',last_name:'Proof',email:'upgrade-'+randomUUID()+'@example.test',phone:'+243899999999'},hash,'198.19.0.1'])).rows[0].r;assert.equal(result.status,'pending');
   });
  } finally {
   await Promise.allSettled([auth?.end(),migrator?.end(),owner?.end()]);if(created)await admin.query('drop database "'+name+'"');
   const resolved=path.resolve(root);assert.equal(path.dirname(resolved),path.resolve(os.tmpdir()));assert.ok(path.basename(resolved).startsWith('schoolsafe-account-upgrade-'));fs.rmSync(resolved,{recursive:true});
+ }
+}
+
+async function qualifyProdeli63Upgrade({admin,connectionString,passwords,check}) {
+ const plan=loadInstallationPlan();
+ const file='database/prodeli/v1/01_registrations_read.sql';
+ const unit=plan.units.find(u=>u.order===64&&u.file===file);
+ assert.ok(unit,'PRODELI must be the explicit installation unit 64');
+ assert.equal(plan.units.length,64);
+ const sqlHash=digest(fs.readFileSync(path.join(repositoryRoot,file),'utf8').replace(/\r\n?/g,'\n'));
+ assert.equal(unit.sha256,sqlHash,'PRODELI unit SHA must match the normalized SQL');
+ const target=new URL(connectionString),name=decodeURIComponent(target.pathname.slice(1))+'_upgrade63';
+ assert.match(name,/^schoolsafe_test_[a-z0-9_]+$/);
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'schoolsafe-prodeli-upgrade-'));let created=false,owner,migrator;
+ try {
+  fs.cpSync(path.join(repositoryRoot,'database'),path.join(root,'database'),{recursive:true});
+  fs.rmSync(path.join(root,'database/prodeli'),{recursive:true,force:true});
+  const initialPlan={...plan,units:plan.units.filter(u=>u.order<=63)};delete initialPlan.digest;
+  fs.writeFileSync(path.join(root,'database/installation/v2/manifest.json'),JSON.stringify(initialPlan));
+  await admin.query('create database "'+name+'"');created=true;target.pathname='/'+name;
+  await installSchoolDatabase({connectionString:target.toString(),database:name,mode:'apply',passwords,root,log:()=>{}});
+  owner=new pg.Client({connectionString:target.toString()});await owner.connect();
+  target.username='schoolsafe_migrator';target.password=passwords.migrator;migrator=new pg.Client({connectionString:target.toString()});await migrator.connect();
+  const ledger=async()=> (await owner.query('select unit_order,file_name,sha256 from ops.installation_units order by unit_order')).rows;
+  const initial=await ledger();assert.equal(initial.length,63,'PRODELI upgrade must start from 63 installed units');
+  assert.deepEqual(initial.map(row=>row.file_name),plan.units.filter(u=>u.order<=63).map(u=>u.file));
+  const sql=renderAdditiveUpgrade({installed:initial});
+  const marker=`-- APPLY 64 ${file}`;
+  assert.equal((sql.match(/^-- APPLY /gm)??[]).length,1,'63→64 must append exactly one unit');
+  assert.ok(sql.includes(marker),'63→64 must apply PRODELI order 64');
+  await check('PRODELI upgrade 63 to 64 rollback preserves the complete historical ledger',async()=>{
+   const faulty=sql.replace(marker,'select 1/0;\n'+marker);assert.notEqual(faulty,sql);
+   await assert.rejects(migrator.query(faulty),e=>e.code==='22012');await migrator.query('rollback');
+   assert.deepEqual(await ledger(),initial);
+  });
+  await check('PRODELI upgrade 63 to 64 appends exactly its immutable unit',async()=>{
+   await migrator.query(sql);const after=await ledger();assert.equal(after.length,64);assert.deepEqual(after.slice(0,63),initial);
+   assert.equal(after[63].unit_order,64);assert.equal(after[63].file_name,file);assert.equal(after[63].sha256,unit.sha256);
+  });
+  await check('PRODELI 63 to 64 second execution is idempotent including timestamps',async()=>{
+   const before=(await owner.query('select * from ops.installation_units order by unit_order')).rows;
+   const repeated=renderAdditiveUpgrade({installed:await ledger()});assert.ok(!repeated.includes('-- APPLY'));
+   await migrator.query(repeated);assert.deepEqual((await owner.query('select * from ops.installation_units order by unit_order')).rows,before);
+  });
+ } finally {
+  await Promise.allSettled([migrator?.end(),owner?.end()]);if(created)await admin.query('drop database "'+name+'"');
+  const resolved=path.resolve(root);assert.equal(path.dirname(resolved),path.resolve(os.tmpdir()));assert.ok(path.basename(resolved).startsWith('schoolsafe-prodeli-upgrade-'));fs.rmSync(resolved,{recursive:true});
  }
 }
