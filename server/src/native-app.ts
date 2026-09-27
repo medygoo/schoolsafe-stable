@@ -8,7 +8,7 @@ import {createMachineContextResolver} from "./devicehub/machine-context.js";
 import { buildApp } from "./app.js";
 import type { AppEnv } from "./config/env.js";
 import type { VerifiedPools } from "./db/startpools.js";
-import { createPgAuthDatabase } from "./db/auth-adapter.js";
+import { createPgAuthDatabase, createPgBusinessDatabase } from "./db/auth-adapter.js";
 import { createAuthNativeService } from "./authnative/service.js";
 import { createStudentsNativeService } from "./studentsnative/service.js";
 import { createTrialNativeService } from "./trialnative/service.js";
@@ -27,6 +27,8 @@ import { createCardsBatchService } from "./cardsnative/batches.js";
 import { createFamilyNativeService } from "./familynative/service.js";
 import { createFamilyImportService } from "./familynative/import.js";
 import { createDeviceHubService } from "./devicehub/service.js";
+import type { ProdeliAuthDependencies } from "./prodeli/auth.js";
+import type { ProdeliRegistrationsDependencies } from "./prodeli/registrations.js";
 
 /** Assemble uniquement les services qui utilisent les sessions et pools du VPS. */
 export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
@@ -115,6 +117,13 @@ const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.
       expectedInstanceId: controlConfig.instanceId,
       // École résolue côté serveur uniquement — jamais depuis la requête.
       resolveContext: createMachineContextResolver(pools.businessPool),
+    } : undefined,
+prodeli: env.PRODELI_SERVICE_TOKEN && env.PRODELI_OPERATOR_EMAILS ? {
+      auth: {
+        serviceToken: env.PRODELI_SERVICE_TOKEN,
+        allowedOperators: env.PRODELI_OPERATOR_EMAILS.split(",").map(e => e.trim()).filter(Boolean),
+      },
+      registrations: { db: createPgBusinessDatabase(pools.businessPool) },
     } : undefined,
   });
   registerLicenseGate(app, {authService: authService, licenseService, pilotSchoolId: env.PILOT_SCHOOL_ID});

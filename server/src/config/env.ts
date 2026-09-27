@@ -53,6 +53,9 @@ const envSchema = z.object({
   SCHOOLSAFE_GOOGLE_MAIL_SECRET: z.string().trim().min(1).optional(),
   SCHOOLSAFE_APPROVAL_URL: z.string().url().refine(value => new URL(value).protocol === "https:", "HTTPS required for approval URL").optional(),
   SCHOOLSAFE_APPROVAL_TTL_SECONDS: z.coerce.number().int().min(300).max(604800).default(172800),
+  // PRODELI — API opérateur sécurisée (lecture inscriptions)
+  PRODELI_SERVICE_TOKEN: z.string().min(32).optional(),
+  PRODELI_OPERATOR_EMAILS: z.string().min(1).optional(),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;
