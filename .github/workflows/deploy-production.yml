@@ -5,6 +5,7 @@ on:
     workflows: ["CI"]
     types: [completed]
     branches: [production]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,9 +19,10 @@ jobs:
   deploy:
     if: >-
       ${{ vars.SCHOOLSAFE_DEPLOY_ENABLED == 'true'
-          && github.event.workflow_run.conclusion == 'success'
-          && github.event.workflow_run.event == 'push'
-          && github.event.workflow_run.head_branch == 'production' }}
+          && (github.event_name == 'workflow_dispatch'
+              || (github.event.workflow_run.conclusion == 'success'
+                  && github.event.workflow_run.event == 'push'
+                  && github.event.workflow_run.head_branch == 'production')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -32,11 +34,43 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Resolve deployment SHA and CI run
+        id: resolve
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "workflow_run" ]]; then
+            commit_sha="$WORKFLOW_RUN_SHA"
+            ci_run_id="$WORKFLOW_RUN_ID"
+          else
+            commit_sha="$(gh api "/repos/${GITHUB_REPOSITORY}/git/ref/heads/production" --jq .object.sha)"
+            ci_run_id="$(
+              gh api "/repos/${GITHUB_REPOSITORY}/actions/runs?branch=production&event=push&status=success&per_page=50" \
+                --jq "[.workflow_runs[] | select(.name == \"CI\" and .head_sha == \"$commit_sha\")] | sort_by(.created_at) | reverse | .[0].id // empty"
+            )"
+            if [[ -z "$ci_run_id" ]]; then
+              echo "::error::No successful CI run found for production HEAD $commit_sha"
+              exit 1
+            fi
+          fi
+
+          [[ "$commit_sha" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$ci_run_id" =~ ^[0-9]+$ ]]
+
+          echo "commit_sha=$commit_sha" >> "$GITHUB_OUTPUT"
+          echo "ci_run_id=$ci_run_id" >> "$GITHUB_OUTPUT"
+
       - name: Validate exact production SHA and triggering CI
         shell: bash
         env:
-          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
-          CI_RUN_ID: ${{ github.event.workflow_run.id }}
+          COMMIT_SHA: ${{ steps.resolve.outputs.commit_sha }}
+          CI_RUN_ID: ${{ steps.resolve.outputs.ci_run_id }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -72,7 +106,7 @@ jobs:
       - name: Invoke restricted VPS deployer
         shell: bash
         env:
-          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+          COMMIT_SHA: ${{ steps.resolve.outputs.commit_sha }}
           DEPLOY_KEY: ${{ secrets.SCHOOLSAFE_DEPLOY_SSH_KEY }}
           KNOWN_HOSTS: ${{ secrets.SCHOOLSAFE_DEPLOY_KNOWN_HOSTS }}
         run: |
@@ -109,7 +143,8 @@ jobs:
             <<<"$deploy_output"
 
           {
-            echo "### SchoolSafe automatic production deployment"
+            echo "### SchoolSafe production deployment"
+            echo "- Trigger: `${{ github.event_name }}`"
             echo "- Triggering CI run: `$CI_RUN_ID`"
             echo "- Requested SHA: `$COMMIT_SHA`"
             echo "- Confirmed deployed SHA: `$COMMIT_SHA`"
