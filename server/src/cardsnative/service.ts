@@ -81,9 +81,9 @@ export function createCardsNativeService(
     async getAcademicYearLabel(context: RequestContext): Promise<string | null> {
       return withRequestContext(businessPool, context, async (client: PoolClient) => {
         const r = await client.query(
-          "select name from app.academic_years where is_active = true limit 1",
+          "select label from app.academic_years where is_active = true limit 1",
         );
-        return r.rows[0]?.name ?? null;
+        return r.rows[0]?.label ?? null;
       });
     },
 

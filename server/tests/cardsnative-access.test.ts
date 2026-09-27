@@ -67,4 +67,26 @@ describe("cardsnative — contexte de requête (phase A tâche 4)", () => {
       SESSION.schoolId,
     ]);
   });
+
+  it("getAcademicYearLabel lit le champ canonique app.academic_years.label (C1)", async () => {
+    const log: QueryCall[] = [];
+    const client = {
+      async query(sql: string, params?: unknown[]) {
+        log.push({ sql, params: params ?? [] });
+        if (/select\s+label\s+from\s+app\.academic_years/i.test(sql)) {
+          return { rows: [{ label: "2026-2027" }] };
+        }
+        return { rows: [] };
+      },
+      release() {},
+    };
+    const pool = { connect: async () => client } as unknown as BusinessPool;
+    const service = createCardsNativeService(pool);
+    const label = await service.getAcademicYearLabel(context());
+    const yearCall = log.find((call) => call.sql.includes("app.academic_years"));
+    expect(yearCall).toBeDefined();
+    expect(yearCall?.sql).toMatch(/select\s+label\s+from\s+app\.academic_years/i);
+    expect(yearCall?.sql).not.toMatch(/select\s+name\s+from\s+app\.academic_years/i);
+    expect(label).toBe("2026-2027");
+  });
 });
