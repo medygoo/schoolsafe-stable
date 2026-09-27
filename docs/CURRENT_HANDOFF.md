@@ -1,3 +1,15 @@
+## DÉCISION VERROUILLÉE — CD production manuel uniquement (2026-09-26)
+
+- Décision active et prioritaire : **aucun déploiement automatique après CI ou après merge**.
+- Le workflow de production doit être déclenché uniquement par `workflow_dispatch`.
+- Chaque déploiement exige un **feu vert explicite du propriétaire** et le **SHA complet exact** du HEAD courant de `production`.
+- Le workflow doit refuser un SHA qui n'est plus exactement le HEAD de `production` et doit exiger une CI `production` GREEN pour ce même SHA.
+- `SCHOOLSAFE_DEPLOY_ENABLED` reste un **kill switch technique** ; sa valeur `true` n'est jamais une autorisation de déployer.
+- Le compte SSH restreint et `/usr/local/sbin/approve-schoolsafe-sha` + `/usr/local/sbin/deploy-schoolsafe` restent le seul chemin de déploiement.
+- Toutes les mentions historiques ci-dessous de **CD automatique**, `workflow_run` ou « ancien workflow manuel remplacé » sont **OBSOLÈTES** et conservées uniquement pour la traçabilité.
+- La PR #32 a restauré le mode manuel ; merge production : `63aacc84e24bb38e4e0589a721eca62d09330b46`, CI production GREEN.
+- Toute modification future de `.github/workflows/deploy-production.yml` doit conserver cette politique et passer le test de verrouillage CI.
+
 ## Ordre 3 — correction des permissions de l'image migrator (2026-09-25)
 
 - PR #25 fusionnée ; CI branche 36154252159, CI PR 36155007113 et CI production 36155829487 GREEN. SHA fusionné : 3a10576ac662169f407f5cc37494922dde0e5984.
