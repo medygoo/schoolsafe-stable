@@ -8,7 +8,7 @@ import {createMachineContextResolver} from "./devicehub/machine-context.js";
 import { buildApp } from "./app.js";
 import type { AppEnv } from "./config/env.js";
 import type { VerifiedPools } from "./db/startpools.js";
-import { createPgAuthDatabase } from "./db/auth-adapter.js";
+import { createPgAuthDatabase, createPgBusinessDatabase } from "./db/auth-adapter.js";
 import { createAuthNativeService } from "./authnative/service.js";
 import { createStudentsNativeService } from "./studentsnative/service.js";
 import { createTrialNativeService } from "./trialnative/service.js";
@@ -123,7 +123,7 @@ prodeli: env.PRODELI_SERVICE_TOKEN && env.PRODELI_OPERATOR_EMAILS ? {
         serviceToken: env.PRODELI_SERVICE_TOKEN,
         allowedOperators: env.PRODELI_OPERATOR_EMAILS.split(",").map(e => e.trim()).filter(Boolean),
       },
-      registrations: { db: createPgAuthDatabase(pools.businessPool) },
+      registrations: { db: createPgBusinessDatabase(pools.businessPool) },
     } : undefined,
   });
   registerLicenseGate(app, {authService: authService, licenseService, pilotSchoolId: env.PILOT_SCHOOL_ID});
