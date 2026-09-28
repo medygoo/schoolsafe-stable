@@ -1,0 +1,11 @@
+{
+  "schema": "schoolsafe-migrations-v1",
+  "unit": "studentrecord",
+  "version": 1,
+  "units": [
+    { "file": "01_student_identity_emergency.sql" },
+    { "file": "02_health_dietary.sql" },
+    { "file": "03_confirmations_permissions.sql" },
+    { "file": "04_student_record_rpc.sql" }
+  ]
+}

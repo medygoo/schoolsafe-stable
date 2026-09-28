@@ -5,7 +5,7 @@ import {sha256Sql} from '../../../scripts/migration-manifest.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../..');
 const read=file=>fs.readFileSync(path.join(root,file));
 const digest=file=>sha256Sql(read(file));
-const sets=['baseline','auth','access','finance','pedagogy','cards','family','devicehub','dashboard','license','trial','projections'];
+const sets=['baseline','auth','access','finance','pedagogy','cards','family','documents','studentrecord','devicehub','dashboard','license','trial','projections'];
 const versions=['baseline','auth','finance','devicehub','projections','setup'];
 for(const name of versions){
  const directory=`database/${name}/v2`;
@@ -31,6 +31,24 @@ for(const set of sets){
  if(set==='access')files.push(replacement['database/setup/v1/01_setup_native.sql']);
 }
 files.push(replacement['database/projections/v1/02_student_list.sql'],'database/baseline/v2/01_runtime_security.sql');
+// Explicit additive units not covered by the sets/v1 loop (multi-version modules)
+const explicitAdditions=[
+  'database/auth/v2/02_identity_verification.sql',
+  'database/auth/v2/03_webauthn_credentials.sql',
+  'database/auth/v2/04_admin_recovery.sql',
+  'database/auth/v2/05_parent_recovery.sql',
+  'database/auth/v2/06_admin_assisted_recovery.sql',
+  'database/auth/v3/01_inactive_school_auth_gate.sql',
+  'database/auth/v4/01_auth_resolve_identity_preauth.sql',
+  'database/auth/v5/01_account_registration_onboarding.sql',
+  'database/auth/v6/01_direct_school_activation.sql',
+  'database/auth/v7/01_control_admin_links.sql',
+  'database/setup/v3/01_resolve_setup_authorization.sql',
+  'database/setup/v3/02_bind_setup_resolver.sql',
+  'database/setup/v4/01_registration_pending.sql',
+  'database/setup/v5/01_registration_approval.sql',
+];
+for(const f of explicitAdditions){if(!files.includes(f))files.push(f);}
 const manifest={schema:'schoolsafe-installation-v2',postgres:170011,
  units:files.map((file,index)=>({order:index+1,file,sha256:digest(file)})),
  superseded:Object.entries(replacement).map(([file,replacedBy])=>({file,sha256:digest(file),replacedBy}))};
