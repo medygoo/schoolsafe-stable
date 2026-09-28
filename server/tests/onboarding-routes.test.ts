@@ -1,24 +1,25 @@
 import {describe,it,expect,vi} from "vitest";
-import {buildNativeApp} from "../src/native-app.js";
+import {buildApp} from "../src/app.js";
+import {createOnboardingSchoolService} from "../src/onboarding/school-service.js";
 import {parseEnv} from "../src/config/env.js";
 import {hashSessionToken} from "../src/authnative/tokens.js";
 const token="a".repeat(43),cookie="schoolsafe_onboarding="+token;
 const identity={first_name:"Ada",last_name:"Test",email:"ada@example.test",phone:"+243812345678",status:"onboarding"};
-const school={activation_code:"synthetic-activation-code",admin:{first_name:"Ada",last_name:"Test"},identity:{name_fr:" Test School "},cycles:["primary"],academic_year:{label:"2026-2027",starts_on:"2026-09-01",ends_on:"2027-07-01"},contact:{country:"RDC",province:"Province",city:"City",address:"Address",email:"school@example.test",phone:"+243812345678",website_url:"https://example.test",website_mode:"Mode",public_news:"News",public_gallery:"Gallery",public_honors:"Honors"},brand:{primary_color:"#112233",accent_color:"#abcdef",document_footer:"Footer"}};
-function fixture(valid=true,fail?:string){const query=vi.fn(async(sql:string,_params:unknown[])=>{if(fail)throw Object.assign(Error("private SQL detail"),{code:fail});if(sql.includes("auth_record_activation_attempt"))return {rows:[{result:"allowed"}]};if(sql.includes("resolve_onboarding_session"))return {rows:[{result:valid?identity:null}]};return {rows:[{result:{school_id:"school",profile_id:"profile",status:"completed"}}]}});const app=buildNativeApp(parseEnv({NODE_ENV:"test",SCHOOLSAFE_SCHOOL_ACTIVATION_CODE_SHA256:hashSessionToken(school.activation_code)}),{authPool:{query,end:vi.fn()},businessPool:{query:vi.fn(),end:vi.fn()}} as any);return {app,query}}
+const school={admin:{first_name:"Ada",last_name:"Test"},identity:{name_fr:" Test School "},cycles:["primary"],academic_year:{label:"2026-2027",starts_on:"2026-09-01",ends_on:"2027-07-01"},contact:{country:"RDC",province:"Province",city:"City",address:"Address",email:"school@example.test",phone:"+243812345678",website_url:"https://example.test",website_mode:"Mode",public_news:"News",public_gallery:"Gallery",public_honors:"Honors"},brand:{primary_color:"#112233",accent_color:"#abcdef",document_footer:"Footer"}};
+function fixture(valid=true,fail?:string){const query=vi.fn(async(sql:string,_params:unknown[])=>{if(fail)throw Object.assign(Error("private SQL detail"),{code:fail});if(sql.includes("auth_record_activation_attempt"))return {rows:[{result:"allowed"}]};if(sql.includes("resolve_onboarding_session"))return {rows:[{result:valid?{...identity,access_id:"access"}:null}]};return {rows:[{result:{school_id:"school",profile_id:"profile",status:"completed",access_id:"access"}}]}});const app=buildApp({onboarding:{schoolService:createOnboardingSchoolService({query} as any,{verify:vi.fn(),status:async()=>({access_id:"access",status:"active",school_id:null}),bind:vi.fn()}),cookieSecure:false}});return {app,query}}
 describe("onboarding cookie routes",()=>{
- it("keeps the activation code in Node and sends only the ordinary session hash",async()=>{
+ it("requires no activation code and sends only the ordinary session hash",async()=>{
   const {app,query}=fixture();try{
    const response=await app.inject({method:"POST",url:"/auth/onboarding/school",headers:{cookie},payload:school});
    expect(response.statusCode).toBe(201);
    const call=query.mock.calls.find(([sql])=>sql.includes("auth_activate_school"))!;
-   expect(call[1]).toHaveLength(3);expect(JSON.stringify(query.mock.calls)).not.toContain(hashSessionToken(school.activation_code));
+   expect(call[1]).toHaveLength(3);expect(JSON.stringify(query.mock.calls)).not.toContain("activation_code");
    expect(JSON.parse(call[1][1] as string)).not.toHaveProperty("activation_code");
    const cookies=[response.headers["set-cookie"]].flat() as string[];
    const session=cookies.find(c=>c.startsWith("schoolsafe_session="))!;
    expect(session).toContain("HttpOnly");expect(session).toContain("SameSite=Lax");
    const raw=session.split(";")[0].split("=")[1];expect(call[1][2]).toBe(hashSessionToken(raw));
-   expect(response.body).not.toContain(raw);expect(response.body).not.toContain(school.activation_code);
+   expect(response.body).not.toContain(raw);
   }finally{await app.close()}
  });
  it("resolves approved account with hashed cookie and no Google configuration",async()=>{const {app,query}=fixture();try{const res=await app.inject({url:"/auth/onboarding/me",headers:{cookie}});expect(res.json()).toEqual(identity);expect(query.mock.calls[0][1]).toEqual([hashSessionToken(token)])}finally{await app.close()}});

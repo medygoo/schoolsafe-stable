@@ -8,11 +8,11 @@ function fixture(status="active",normal=false){
  const query=vi.fn(async(sql:string,_params:unknown[])=>{
   if(sql.includes("auth_is_locked"))return {rows:[{auth_is_locked:false}]};
   if(sql.includes("auth_resolve_identity"))return {rows:normal?[{identity_id:"id",user_id:"user",status:"active",password_hash:passwordHash,must_change:false}]:[]};
-  if(sql.includes("auth_resolve_onboarding_identity"))return {rows:status==="missing"?[]:[{identity_id:"id",user_id:"user",status,password_hash:passwordHash,must_change:false}]};
+  if(sql.includes("auth_control_resolve_identity"))return {rows:status==="missing"?[]:[{identity_id:"id",user_id:"user",status,school_id:null,profile_id:null}]};
   if(sql.includes("auth_list_profiles"))return {rows:[{profile_id:"p1"},{profile_id:"p2"}]};
   if(sql.includes("auth_create_onboarding_session"))return {rows:[{session_id:"session",expires_at:"later"}]};
   return {rows:[]};
- });const service=createAuthNativeService({db:{query} as any});return {query,service};
+ });const service=createAuthNativeService({db:{query} as any,control:{verify:async(_login,password)=>!normal&&status==="active"&&password==="test-password-123"?{access_id:"id",status:"active",school_id:null,onboarding_required:true,email:"ada@example.test",phone:null}:null,status:vi.fn(),bind:vi.fn()}});return {query,service};
 }
 describe("account-first native login",()=>{
  it("creates only a hashed one-hour onboarding session",async()=>{const f=fixture();const result=await f.service.loginWithPassword("ada@example.test","test-password-123",undefined,"127.0.0.1","ua",true);expect(result).toMatchObject({ok:true,onboarding:true});if(!result.ok)throw Error();const args=f.query.mock.calls.find(([s])=>s.includes("create_onboarding_session"))![1];expect(args).toEqual(["id",hashSessionToken(result.token),3600,"127.0.0.1","ua"]);expect(f.query.mock.calls.some(([s])=>s.includes("api.auth_create_session("))).toBe(false)});

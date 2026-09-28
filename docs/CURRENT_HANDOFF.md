@@ -1,3 +1,18 @@
+# Lot Control → SchoolSafe — code qualifié localement (2026-09-28)
+
+Agent : Codex. Branche : feat/control-admin-onboarding-v1.
+Base : 575ddb115af99a5bb1d133af667ad44ea61a8de7, vérifiée sur origin/production.
+Périmètre : client Control serveur, auth native, onboarding existant, migration auth/v7 additive,
+manifestes, interface sept étapes, tests et documentation du contrat.
+Control : PR https://github.com/medygoo/schoolsafe-control-/pull/9, SHA 2a53a5a ; CI PostgreSQL verte.
+Réalisé : admission pré-enregistrée, aucune auto-création inconnue, retrait du code maître,
+liaison école atomique locale avec reprise de bind et contrôle du statut des sessions.
+Preuves locales : PostgreSQL 17.11 réel, 139 scénarios ; 13 contrôles navigateur/PWA.
+Voir [le contrat et les limites de qualification](CONTROL_ADMIN_ONBOARDING_V1.md).
+Les résultats CI GitHub sont à vérifier sur le SHA final de la PR avant validation.
+Prochaine action : revue des deux PR ; aucun merge avant une nouvelle autorisation explicite.
+Aucun VPS, déploiement ou changement de production. Les comptes locaux sont conservés.
+
 ## Ordre 3 — correction des permissions de l'image migrator (2026-09-25)
 
 - PR #25 fusionnée ; CI branche 36154252159, CI PR 36155007113 et CI production 36155829487 GREEN. SHA fusionné : 3a10576ac662169f407f5cc37494922dde0e5984.

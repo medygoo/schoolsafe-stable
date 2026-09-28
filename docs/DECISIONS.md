@@ -1,3 +1,7 @@
+## 2026-09-28 — Admission du principal par Control
+
+Décision du propriétaire : Control pré-enregistre l'administrateur principal et conserve seul son mot de passe sécurisé. SchoolSafe vérifie son accès par API bootstrap serveur, réutilise son auth native et son onboarding à sept étapes, sans code maître ni auto-inscription inconnue. La liaison locale auth/v7 est atomique avec la création ; le bind Control est idempotent et récupérable à la prochaine connexion. Les sessions liées sont refusées après suspension/révocation. Les comptes locaux créés par l'école sont préservés. Voir [le contrat](CONTROL_ADMIN_ONBOARDING_V1.md). Ce lot autorise les PR uniquement, sans merge ni déploiement.
+
 # Décisions validées SchoolSafe
 
 Ce journal conserve les décisions durables. Il ne doit contenir ni secrets ni transcriptions brutes de conversations.

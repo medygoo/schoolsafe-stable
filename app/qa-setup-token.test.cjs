@@ -82,13 +82,13 @@ async function noSensitiveStorage(page) {
   for(const forbidden of [syntheticToken,'synthetic-password-123','legacy-secret','data:image','officialLogoData','adminPassword']) assert.ok(!stored.includes(forbidden),'Sensitive storage: '+forbidden);
 }
 for (const [size,viewport] of [['desktop',{width:1440,height:1000}],['mobile',{width:390,height:844}]]) {
- test(size+': direct login, seven steps, activation refusal and retry',async t=>{
+ test(size+': Control login, seven steps without code, validation failure and retry',async t=>{
   const {page,calls}=await openUI(t,viewport,{draft:{schoolName:'Brouillon',setupToken:'legacy-secret',adminPassword:'legacy-secret'}});
   await noSensitiveStorage(page);await expect(page.locator('#createAccount')).toHaveCount(0);
   await page.route('**/auth/native/login',r=>r.fulfill({json:{code:'ONBOARDING_REQUIRED'}}));
   await page.route('**/auth/onboarding/me',r=>r.fulfill({json:{...applicant,status:'onboarding'}}));
   let submissions=[];
-  await page.route('**/auth/onboarding/school',r=>{submissions.push(r.request().postDataJSON());return r.fulfill({status:403,json:{message:'Code d’activation incorrect.'}});});
+  await page.route('**/auth/onboarding/school',r=>{submissions.push(r.request().postDataJSON());return r.fulfill({status:503,json:{message:'Création temporairement indisponible.'}});});
   await page.locator('#enterSplash').click();await page.locator('#emailIdentifier').fill(applicant.email);await page.locator('#password').fill('synthetic-password-123');await page.locator('#loginForm button[type=submit]').click();
   await expect(page.locator('#setup.active')).toBeVisible();await expect(page.locator('#password')).toHaveValue('');
   await expect(page.locator('#stepNav button')).toHaveCount(7);
@@ -99,12 +99,12 @@ for (const [size,viewport] of [['desktop',{width:1440,height:1000}],['mobile',{w
   await page.locator('#adminFirstName').fill('Ada');await page.locator('#adminLastName').fill('Test');
   await expect(page.locator('#adminEmail')).toHaveAttribute('readonly','');await page.locator('#nextStep').click();
   await expect(page.locator('#stepTitle')).toHaveText('Vérification');
-  await expect(page.getByLabel('Code d’activation SchoolSafe')).toBeVisible();
+  await expect(page.getByLabel('Code d’activation SchoolSafe')).toHaveCount(0);
   await expect(page.locator('#nextStep')).toContainText('ACTIVER MON ÉCOLE');
-  await page.locator('#schoolActivationCode').fill(syntheticToken);await page.locator('#nextStep').click();
+  await page.locator('#nextStep').click();
   await expect(page.locator('#nextStep')).toBeEnabled();assert.equal(submissions.length,1);
-  await expect(page.getByText('Code d’activation incorrect.',{exact:true})).toBeVisible();
-  assert.equal(submissions[0].identity.name_fr,'École Test');assert.equal(submissions[0].activation_code,syntheticToken);
+  await expect(page.getByText('Création temporairement indisponible.',{exact:true})).toBeVisible();
+  assert.equal(submissions[0].identity.name_fr,'École Test');assert.ok(!Object.hasOwn(submissions[0],'activation_code'));
   assert.deepEqual(submissions[0].admin,{first_name:'Ada',last_name:'Test'});
   await expect(page.locator('#setup.active')).toBeVisible();await noSensitiveStorage(page);
   assert.ok(!calls.some(c=>c.url.includes('/auth/registrations')));

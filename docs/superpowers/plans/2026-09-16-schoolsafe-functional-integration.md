@@ -1,3 +1,7 @@
+## Lot prioritaire du 28 septembre 2026 — Control → SchoolSafe
+
+Statut : implémentation et qualification locales terminées, publication en PR pour revue et CI GitHub. Base SchoolSafe 575ddb1, branche feat/control-admin-onboarding-v1. Auth/v7 additive, 139 scénarios PostgreSQL réels et sept étapes sans code maître. [Contrat](../../CONTROL_ADMIN_ONBOARDING_V1.md). Prochaine action : vérifier la CI du SHA final et revoir les PR ; aucun merge, VPS ou déploiement dans ce mandat. Les anciens ordres ci-dessous sont historiques.
+
 # SchoolSafe — intégration des fonctionnalités, Rôles et accès en premier
 
 Date : 16 septembre 2026. Inventaire initial : `main`, `3ca73fa`.

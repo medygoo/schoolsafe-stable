@@ -1,3 +1,4 @@
+import {createControlAdminClient} from "./authnative/control-client.js";
 import {createOnboardingSchoolService} from "./onboarding/school-service.js";
 import {createBrevoEmailService} from "./email/service.js";
 import {createRecoveryDelivery} from "./authnative/recovery-delivery.js";
@@ -27,10 +28,11 @@ import { createDeviceHubService } from "./devicehub/service.js";
 
 /** Assemble uniquement les services qui utilisent les sessions et pools du VPS. */
 export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
+  const controlAdmin = env.CONTROL_APP_URL && env.SCHOOLSAFE_BOOTSTRAP_SECRET ? createControlAdminClient(env.CONTROL_APP_URL,env.SCHOOLSAFE_BOOTSTRAP_SECRET) : undefined;
   const onboardingDb = createPgAuthDatabase(pools.authPool);
   const recovery = env.BREVO_API_KEY && env.BREVO_SENDER_EMAIL && env.AUTH_RECOVERY_URL
     ? createRecoveryDelivery(createBrevoEmailService({apiKey: env.BREVO_API_KEY, senderEmail: env.BREVO_SENDER_EMAIL}), env.AUTH_RECOVERY_URL) : undefined;
-  const authService = createAuthNativeService({ db: createPgAuthDatabase(pools.authPool), emailDelivery: recovery });
+  const authService = createAuthNativeService({ db: createPgAuthDatabase(pools.authPool), emailDelivery: recovery, control: controlAdmin });
 const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.CONTROL_APP_HMAC_SECRET
     ? { url: env.CONTROL_APP_URL, instanceId: env.CONTROL_APP_INSTANCE_ID, hmacSecret: env.CONTROL_APP_HMAC_SECRET }
     : undefined;
@@ -43,7 +45,7 @@ const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.
     : undefined;
   const app = buildApp({
     onboarding: {
-      schoolService: createOnboardingSchoolService(onboardingDb, env.SCHOOLSAFE_SCHOOL_ACTIVATION_CODE_SHA256),
+      schoolService: createOnboardingSchoolService(onboardingDb, controlAdmin),
       cookieSecure: env.NODE_ENV === "production",
     },
     readinessProbe: async () => {

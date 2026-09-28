@@ -213,6 +213,14 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "auth",
+      "file": "database/auth/v7/01_control_admin_links.sql",
+      "manifest": "database/auth/v7/manifest.json",
+      "orderInSet": 1,
+      "sha256": "3bf8ccd744810643796a61efa18743c052c371f6fbbf681a72bca34ae0aa27bb",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "access",
       "file": "database/access/v1/01_role_templates.sql",
       "manifest": "database/access/v1/manifest.json",

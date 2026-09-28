@@ -31,7 +31,6 @@
   var setupSubmitting = false;
   var setupLogoPreview = null;
   var onboardingAdmin = {first_name: "", last_name: ""};
-  var activationCode = "";
 
   var SESSION_STORAGE_KEY = "schoolsafe-v2-session";
   function tryLocalStorage() { try { return window.localStorage; } catch (e) { return null; } }
@@ -3366,7 +3365,6 @@
     clearSession();
     onboardingIdentity = identity;
     onboardingAdmin = {first_name: identity.first_name || "", last_name: identity.last_name || ""};
-    activationCode = "";
     stepIndex = 0;
     renderStep();
     showScreen("setup");
@@ -3377,7 +3375,6 @@
     try {
       await window.SchoolSafeAuthNative.logoutOnboarding();
       onboardingIdentity = null;
-      activationCode = "";
       onboardingAdmin = {first_name: "", last_name: ""};
       if (setupLogoPreview) URL.revokeObjectURL(setupLogoPreview);
       setupLogoPreview = null;
@@ -3996,8 +3993,7 @@
   function renderReview() {
     var cycleNames = { nursery: "Maternelle", primary: "Primaire", secondary: "Secondaire et Humanités" };
     return [
-      intro("Vérification", "Vérifiez les informations et saisissez le code fourni par SchoolSafe."),
-      '<label class="ss-field">Code d’activation SchoolSafe<input class="ss-input" id="schoolActivationCode" type="password" autocomplete="off" maxlength="256" value="' + esc(activationCode) + '"></label>',
+      intro("Vérification", "Vérifiez les informations avant de créer votre école."),
       '<div class="review-grid">',
       '<section class="review-block"><h3>Établissement</h3>',
       row("Nom", state.schoolName), row("Statut", state.schoolType), row("Code", state.schoolCode),
@@ -4019,8 +4015,6 @@
     var first = document.getElementById("adminFirstName"), last = document.getElementById("adminLastName");
     if (first) onboardingAdmin.first_name = first.value.trim();
     if (last) onboardingAdmin.last_name = last.value.trim();
-    var code = document.getElementById("schoolActivationCode");
-    if (code) activationCode = code.value;
     document.querySelectorAll("#stepContent input:not([name=cycles]), #stepContent select, #stepContent textarea").forEach(function (control) {
       if (Object.prototype.hasOwnProperty.call(defaults, control.name)) state[control.name] = control.value;
     });
@@ -4095,7 +4089,6 @@ function validateStep(index) {
       return "Reconnectez-vous pour continuer la création de votre école.";
     }
     if (index === 5 && (!onboardingAdmin.first_name || !onboardingAdmin.last_name)) return "Renseignez le prénom et le nom de l’administrateur.";
-    if (index === 6 && activationCode.length === 0) return "Renseignez votre code d’activation SchoolSafe.";
     return null;
   }
 
@@ -4104,7 +4097,6 @@ function validateStep(index) {
 
     var schoolPayload = {
       admin: onboardingAdmin,
-      activation_code: activationCode,
       identity: {
         name_fr: state.schoolName,
         name_en: state.name_en || state.schoolName,
@@ -4227,7 +4219,6 @@ function validateStep(index) {
       if (setupLogoPreview) URL.revokeObjectURL(setupLogoPreview);
       setupLogoPreview = null;
       document.getElementById("stepContent").replaceChildren();
-      activationCode = "";
       onboardingAdmin = {first_name: "", last_name: ""};
       if (await restoreSession()) {
         notify("Votre école est activée. Bienvenue dans votre espace de travail.");
