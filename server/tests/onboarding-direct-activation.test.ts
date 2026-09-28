@@ -33,13 +33,13 @@ describe("direct school activation entry",()=>{
   } finally {await app.close()}
  });
 
- it("creates onboarding on first valid login without calling approval mail",async()=>{
+ it("refuses unknown login without creating an account or calling approval mail",async()=>{
   const {app,authPool}=fixture();
   try {
    const response=await app.inject({method:"POST",url:"/auth/native/login",payload:{login:"new@example.test",password:"Synthetic-Direct-2026!"}});
-   expect(response.statusCode).toBe(200);
-   expect(response.json()).toEqual({code:"ONBOARDING_REQUIRED"});
-   expect([response.headers["set-cookie"]].flat().some(cookie=>cookie!.startsWith("schoolsafe_onboarding=")&&cookie!.includes("HttpOnly"))).toBe(true);
+   expect(response.statusCode).toBe(401);
+   expect(response.headers["set-cookie"]).toBeUndefined();
+   expect(authPool.query.mock.calls.some(([sql])=>sql.includes("auth_create_direct_identity")||sql.includes("auth_create_onboarding_session"))).toBe(false);
    expect(authPool.query.mock.calls.some(([sql])=>sql.includes("registration_prepare")||sql.includes("google"))).toBe(false);
   } finally {await app.close()}
  });

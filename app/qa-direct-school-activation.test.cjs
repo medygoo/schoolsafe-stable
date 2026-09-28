@@ -12,7 +12,7 @@ test('direct school activation replaces the approval entry point', () => {
   assert.doesNotMatch(html, /id="createAccount"|Nouveau compte SchoolSafe|Créer un compte/);
   assert.doesNotMatch(html, /account-approval=/);
   assert.doesNotMatch(app + client, /accountRegistrationForm|registerAccount|reviewAccountRegistration|decideAccountRegistration|account-approval=|\/auth\/registrations/);
-  assert.match(app, /type="password"[^>]*id="schoolActivationCode"|id="schoolActivationCode"[^>]*type="password"/);
+  assert.doesNotMatch(app, /schoolActivationCode|activation_code/);
   assert.match(app, /ACTIVER MON ÉCOLE/);
 });
 

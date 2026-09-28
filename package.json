@@ -25,7 +25,8 @@
     "test:rls": "node scripts/run-rls-tests.mjs",
     "test:installer": "node --test scripts/installer.test.mjs",
     "test:installation": "node scripts/test-from-zero.mjs",
-    "test:contracts": "node scripts/check-control-contract.mjs"
+    "test:contracts": "node scripts/check-control-contract.mjs",
+    "build": "npm run build --workspace server"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

@@ -13,7 +13,7 @@ function fixture(rows: Record<string, unknown>[] = []) {
   const calls: {sql: string; params: unknown[]}[] = [];
   const db: AuthDatabase = { async query<T>(sql: string, params: unknown[]) {
     calls.push({sql, params});
-    return {rows: (sql.includes('auth_recovery_normalize_phone') ? [{auth_recovery_normalize_phone:'+243812345678'}] : rows) as T[]};
+    return {rows: (sql.includes('auth_control_link') ? [] : sql.includes('auth_recovery_normalize_phone') ? [{auth_recovery_normalize_phone:'+243812345678'}] : rows) as T[]};
   }};
   const service = createAuthNativeService({db});
   const app = Fastify();
@@ -72,20 +72,20 @@ describe('Recovery R2', () => {
   it('does not allow browser-supplied administrative identity or school', async () => {
     const {app,calls}=fixture([{session_id:'session',profile_id:'00000000-0000-4000-8000-000000000001'}]);
     await app.inject({method:'POST',url:'/auth/recovery/admin/generate',headers:{cookie:'schoolsafe_session=test'},payload:{targetProfileId:'00000000-0000-4000-8000-000000000002',adminProfileId:'forged',schoolId:'forged'}});
-    expect(calls).toHaveLength(1); expect(calls[0].sql).toContain('auth_resolve_session'); await app.close();
+    expect(calls).toHaveLength(2); expect(calls[0].sql).toContain('auth_resolve_session');expect(calls[1].sql).toContain('auth_control_link'); await app.close();
   });
   it('generates a code only after server-session target resolution', async () => {
     const actor='00000000-0000-4000-8000-000000000001',target='00000000-0000-4000-8000-000000000002',identity='00000000-0000-4000-8000-000000000003';
     const {app,calls}=fixture([{profile_id:actor,auth_resolve_admin_recovery_target:identity,auth_admin_generate_recovery_code:'CODE_GENERATED'}]);
     const response=await app.inject({method:'POST',url:'/auth/recovery/admin/generate',headers:{cookie:'schoolsafe_session=opaque'},payload:{targetProfileId:target}});
     expect(response.statusCode).toBe(200);expect(response.json().code).toMatch(/^\d{10}$/);expect(response.json().expiresInMinutes).toBe(60);
-    expect(calls[1].params).toEqual([actor,target]);expect(calls[2].params).toEqual([actor,identity,createHash('sha256').update(response.json().code).digest('hex')]);
+    expect(calls[1].sql).toContain('auth_control_link');expect(calls[2].params).toEqual([actor,target]);expect(calls[3].params).toEqual([actor,identity,createHash('sha256').update(response.json().code).digest('hex')]);
     expect(response.body).not.toContain(identity);await app.close();
   });
   it('refuses a target rejected by PostgreSQL without generating a code', async () => {
     const {app,calls}=fixture([{profile_id:'00000000-0000-4000-8000-000000000001',auth_resolve_admin_recovery_target:null}]);
     const response=await app.inject({method:'POST',url:'/auth/recovery/admin/generate',headers:{cookie:'schoolsafe_session=opaque'},payload:{targetProfileId:'00000000-0000-4000-8000-000000000002'}});
-    expect(response.statusCode).toBe(403);expect(calls).toHaveLength(2);expect(response.json()).not.toHaveProperty('codeHash');await app.close();
+    expect(response.statusCode).toBe(403);expect(calls).toHaveLength(3);expect(response.json()).not.toHaveProperty('codeHash');await app.close();
   });
   it.each(['/auth/recover/parent','/auth/recover/profile','/auth/recovery/admin/redeem'])('does not expose proof or database errors for %s', async url => {
     const output=vi.spyOn(console,'log').mockImplementation(()=>{});

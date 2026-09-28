@@ -321,6 +321,11 @@
       "order": 64,
       "file": "database/auth/v6/01_direct_school_activation.sql",
       "sha256": "de404df6bf06997724b4bb38ebac7164a255997a1098c04e7fb3ccaf86e542c0"
+    },
+    {
+      "order": 65,
+      "file": "database/auth/v7/01_control_admin_links.sql",
+      "sha256": "3bf8ccd744810643796a61efa18743c052c371f6fbbf681a72bca34ae0aa27bb"
     }
   ],
   "superseded": [

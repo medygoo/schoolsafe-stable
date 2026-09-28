@@ -2,7 +2,6 @@ import { z } from "zod";
 import { schoolIdentitySchema, cycleKeySchema, academicYearSchema, schoolContactSchema, schoolBrandSchema } from "../setup/schema.js";
 
 export const onboardingSchoolSchema = z.object({
-  activation_code: z.string().min(1).max(256),
   admin: z.object({
     first_name: z.string().trim().min(1).max(100),
     last_name: z.string().trim().min(1).max(100),

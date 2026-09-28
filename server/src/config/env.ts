@@ -6,7 +6,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(8787),
   AUTH_RECOVERY_URL: z.string().url().refine(value => new URL(value).protocol === "https:", "HTTPS required").optional(),
   // Invalid/absent configuration disables activation (503), without a fallback code.
-  SCHOOLSAFE_SCHOOL_ACTIVATION_CODE_SHA256: z.string().regex(/^[0-9a-f]{64}$/).optional().catch(undefined),
+  SCHOOLSAFE_BOOTSTRAP_SECRET: z.string().optional(),
   PILOT_SCHOOL_ID: z.string().uuid().optional(),
   R2_ENDPOINT: z.string().url().optional(),
   R2_ACCESS_KEY_ID: z.string().min(1).optional(),

@@ -1,3 +1,5 @@
+import {SchoolSafeError} from "../http/errors.js";
+import {controlUnavailable, type ControlAdminClient} from "./control-client.js";
 // SchoolSafe Auth v2 — service d'authentification complet.
 // Intègre : login, sessions, recovery email/SMS/WebAuthn/admin, vérification identité.
 // La base de données est injectée via une interface minimale (testable sans serveur).
@@ -93,6 +95,7 @@ export interface AdminRecoveryStore {
 }
 
 export interface AuthNativeDependencies {
+  control?: ControlAdminClient;
   db: AuthDatabase;
   emailDelivery?: RecoveryDelivery;
   smsDelivery?: SmsDelivery;
@@ -128,27 +131,45 @@ export function createAuthNativeService(deps: AuthNativeDependencies) {
         return { ok: false, reason: "locked" };
       }
 
+
+      if(deps.control) {
+        const verified=await deps.control.verify(normalized,password);
+        if(verified) {
+          const resolved=await db.query<{access_id:string;identity_id:string;user_id:string;school_id:string|null;profile_id:string|null}>(
+            "select * from api.auth_control_resolve_identity($1,$2,$3)",[verified.access_id,verified.email,verified.phone]);
+          const link=resolved.rows[0];if(!link)throw controlUnavailable();
+          if(verified.school_id && verified.school_id!==link.school_id)throw new SchoolSafeError(409,"VERSION_CONFLICT","Rattachement de l’école incohérent",false);
+          const token=generateSessionToken();
+          if(!link.school_id) {
+            const created=await db.query<{session_id:string}>("select * from api.auth_create_onboarding_session($1,$2,$3,$4,$5)",
+             [link.identity_id,hashSessionToken(token),3600,ip??null,userAgent??null]);
+            if(!created.rows[0]?.session_id)throw controlUnavailable();
+            await db.query("select * from api.auth_record_attempt($1,$2)",[normalized,true]);
+            return {ok:true,onboarding:true,token};
+          }
+          if(!link.profile_id || (profileId && profileId!==link.profile_id))return {ok:false,reason:"invalid_credentials"};
+          if(!verified.school_id) {
+            try {await deps.control.bind(verified.access_id,link.school_id);}
+            catch(error) {if(!(error instanceof SchoolSafeError) || error.statusCode!==503)throw error;}
+          }
+          const created=await db.query<{session_id:string;expires_at:string}>("select * from api.auth_create_session($1,$2,$3,$4,$5,$6)",
+           [link.identity_id,link.profile_id,hashSessionToken(token),remember?REMEMBER_TTL_SECONDS:SESSION_TTL_SECONDS,ip??null,userAgent??null]);
+          const row=created.rows[0];if(!row)throw controlUnavailable();
+          await db.query("select * from api.auth_record_attempt($1,$2)",[normalized,true]);
+          return {ok:true,onboarding:false,token,session:{sessionId:row.session_id,identityId:link.identity_id,userId:link.user_id,
+           profileId:link.profile_id,schoolId:link.school_id,mustChange:false,expiresAt:row.expires_at}};
+        }
+      }
+
       const resolved = await db.query<IdentityRow>(
         "select * from api.auth_resolve_identity($1)",
         [normalized],
       );
-      let identity: IdentityRow | undefined = resolved.rows[0];
-      let onboarding = false;
-      if (!identity) {
-        const pending = await db.query<IdentityRow>(
-          "select * from api.auth_resolve_onboarding_identity($1)", [normalized]);
-        // SQL only returns approved active accounts without an active profile.
-        identity = pending.rows[0]?.status === "active" ? pending.rows[0] : undefined;
-        onboarding = Boolean(identity);
-      }
-
-      // Create only when SQL confirms no identity (including disabled accounts) exists.
-      if (!identity && !profileId && isAcceptableRecoveryPassword(password)) {
-        const created = await db.query<IdentityRow>(
-          "select * from api.auth_create_direct_identity($1,$2,$3)",
-          [normalized, await hashPassword(password), ip ?? null]);
-        identity = created.rows[0];
-        onboarding = Boolean(identity);
+      const identity: IdentityRow | undefined = resolved.rows[0];
+      if(identity) {
+        const linked=await db.query<{access_id:string}>("select * from api.auth_control_link($1)",[identity.identity_id]);
+        // A Control-managed identity never falls back to any local credential.
+        if(linked.rows[0]?.access_id) return {ok:false,reason:"invalid_credentials"};
       }
 
       // Anti-énumération : vérification argon2 factice si l'identité est absente.
@@ -166,14 +187,6 @@ export function createAuthNativeService(deps: AuthNativeDependencies) {
       }
 
       // Choix du profil : jamais de sélection arbitraire.
-      if (onboarding) {
-        const token = generateSessionToken();
-        const created = await db.query<{session_id: string; expires_at: string}>(
-          "select * from api.auth_create_onboarding_session($1,$2,$3,$4,$5)",
-          [identity.identity_id, hashSessionToken(token), 3600, ip ?? null, userAgent ?? null]);
-        if (!created.rows[0]?.session_id) return {ok: false, reason: "invalid_credentials"};
-        return {ok: true, onboarding: true, token};
-      }
       const profiles = await db.query<ProfileRow>(
         "select * from api.auth_list_profiles($1)",
         [identity.identity_id],
@@ -236,6 +249,18 @@ export function createAuthNativeService(deps: AuthNativeDependencies) {
       );
       const row = resolved.rows[0];
       if (!row) return null;
+      const links = await db.query<{access_id: string; school_id: string | null}>(
+        "select * from api.auth_control_link($1)", [row.identity_id]);
+      const link = links.rows[0];
+      if (link?.access_id) {
+        if (!deps.control) throw controlUnavailable();
+        const status = await deps.control.status(link.access_id);
+        if (status.status !== "active" || link.school_id !== row.school_id ||
+            (status.school_id !== null && status.school_id !== link.school_id)) {
+          await db.query("select api.auth_control_revoke_sessions($1)", [link.access_id]);
+          return null;
+        }
+      }
       return {
         sessionId: row.session_id,
         identityId: row.identity_id,
