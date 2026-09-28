@@ -62,5 +62,11 @@
   { "code": "school.structure.manage", "label": "Gérer la structure académique", "scope": "school" },
   { "code": "finance.cash_register.open", "label": "Ouvrir une caisse", "scope": "school" },
   { "code": "cards.print.read", "label": "Consulter les travaux d'impression", "scope": "school" },
-  { "code": "cards.print.manage", "label": "Gérer les travaux d'impression", "scope": "school", "authority": "control" }
+  { "code": "cards.print.manage", "label": "Gérer les travaux d'impression", "scope": "school", "authority": "control" },
+  { "code": "school.student.health.read", "label": "Consulter le dossier santé élève", "scope": "own_children" },
+  { "code": "school.student.health.manage", "label": "Modifier le dossier santé élève", "scope": "school" },
+  { "code": "school.student.health.confirm", "label": "Confirmer les informations santé élève", "scope": "school" },
+  { "code": "school.student.dietary.read", "label": "Consulter le profil alimentaire élève", "scope": "assigned_classes" },
+  { "code": "school.student.dietary.manage", "label": "Modifier le profil alimentaire élève", "scope": "school" },
+  { "code": "school.student.dietary.confirm", "label": "Confirmer les informations alimentaires élève", "scope": "school" }
 ]
