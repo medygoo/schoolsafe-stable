@@ -75,6 +75,28 @@ describe("B1 Child Record Contract — GREEN acceptance", () => {
     expectContains(routes, 'app.get("/native/parent/children"');
   });
 
+  it("exposes the complete locked child-record route surface", () => {
+    for (const route of [
+      'app.patch("/native/students/:id/identity"',
+      'app.get("/native/students/:id/family"',
+      'app.post("/native/students/:id/guardians"',
+      'app.patch("/native/students/:id/guardians/:guardianId"',
+      'app.post("/native/students/:id/guardians/:guardianId/set-primary"',
+      'app.post("/native/students/:id/guardians/:guardianId/deactivate"',
+      'app.get("/native/students/:id/emergency-contacts"',
+      'app.post("/native/students/:id/health/conditions"',
+      'app.patch("/native/students/:id/health/conditions/:conditionId"',
+      'app.patch("/native/students/:id/allergies/:allergyId"',
+      'app.patch("/native/students/:id/medications/:medicationId"',
+      'app.get("/native/students/:id/dietary"',
+      'app.patch("/native/students/:id/dietary/restrictions/:restrictionId"',
+      'app.patch("/native/students/:id/dietary/preferences/:preferenceId"',
+      'app.get("/native/parent/children/:studentId/record"',
+    ]) {
+      expectContains(routes, route);
+    }
+  });
+
   it("registers the health permissions in the shared catalog", () => {
     const codes = new Set(permissions.map((permission) => permission.code));
     expect(codes.has("school.student.health.read")).toBe(true);
@@ -131,6 +153,48 @@ describe("B1 Child Record Contract — GREEN acceptance", () => {
     expectContains(realFrontend, "root.StudentRecordAPI.getRecord(studentId)");
     expectContains(realFrontend, "root.StudentRecordAPI.getCompleteness(studentId)");
     expectContains(realFrontend, "root.StudentRecordReal");
+  });
+
+  it("keeps the locked B1 section and wizard labels", () => {
+    for (const label of [
+      'label: "Résumé"',
+      'label: "Identité"',
+      'label: "Scolarité"',
+      'label: "Famille"',
+      'label: "Contacts urgence"',
+      'label: "Santé"',
+      'label: "Cantine"',
+      'label: "Personnes autorisées"',
+      'label: "Documents"',
+      'label: "Historique"',
+      'label: "Documents + Vérification finale"',
+    ]) {
+      expectContains(realFrontend, label);
+    }
+  });
+
+  it("exposes complete read/edit RPCs for the locked child-record contract", () => {
+    for (const rpc of [
+      "api.student_record_read",
+      "api.student_identity_update",
+      "api.student_family_read",
+      "api.student_guardian_add",
+      "api.student_guardian_update",
+      "api.student_guardian_set_primary",
+      "api.student_guardian_deactivate",
+      "api.student_emergency_contacts_read",
+      "api.student_health_read",
+      "api.student_health_condition_add",
+      "api.student_health_condition_update",
+      "api.student_allergy_update",
+      "api.student_medication_update",
+      "api.student_dietary_read",
+      "api.student_dietary_restriction_update",
+      "api.student_food_preference_update",
+    ]) {
+      expectContains(rpcSql, `create or replace function ${rpc}`);
+      expectContains(service, rpc);
+    }
   });
 
   it("routes B1 mutations through SECURITY DEFINER RPCs without direct app table writes", () => {
