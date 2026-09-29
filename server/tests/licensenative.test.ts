@@ -270,7 +270,7 @@ describe("routes license", () => {
   it("401 sans session ; 200 avec l'état réel", async () => {
     const store: Store = new Map();
     const service = makeService(store, fakeActivationClient(makeEnvelope(makePayload())));
-    await service.refreshFromActivation(CTX);
+    await service.redeem(CTX, "synthetic-activation-code");
     const app = buildApp({
       authNative: { service: fakeAuth(), cookieSecure: false },
       licenseNative: { authService: fakeAuth(), service },
