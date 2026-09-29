@@ -65,7 +65,7 @@ export function registerLicenseNativeRoutes(
     const session = request.authSession!;
     const parsed = redeemBodySchema.safeParse(request.body);
     if (!parsed.success) {
-      throw new SchoolSafeError(400, "INVALID_REQUEST", "activation_code requis", false);
+      throw new SchoolSafeError(400, "VALIDATION_INVALID", "activation_code requis", false);
     }
     const { state, payload } = await dependencies.service.redeem(
       {

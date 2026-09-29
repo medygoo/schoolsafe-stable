@@ -5,6 +5,7 @@
 import { createPublicKey, verify as cryptoVerify } from "node:crypto";
 import { z } from "zod";
 import { canonicalizePayloadV1 } from "./canonicalize.js";
+export { canonicalizePayloadV1 };
 
 const licensePayloadV1Schema = z.object({
   version: z.literal(1),
