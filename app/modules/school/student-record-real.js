@@ -9,11 +9,13 @@
    */
 
   var SECTIONS = [
+    { id: "summary", label: "Résumé", icon: "layout-dashboard", permission: "school.student.read" },
     { id: "identity", label: "Identité", icon: "contact", permission: "school.student.read" },
-    { id: "family", label: "Famille", icon: "users-round", permission: "school.guardian.read" },
     { id: "schooling", label: "Scolarité", icon: "graduation-cap", permission: "school.student.read" },
-    { id: "emergency", label: "Urgence", icon: "phone-call", permission: "school.student.read" },
-    { id: "health", label: "Santé & Alimentation", icon: "heart-pulse", permission: "school.student.health.read" },
+    { id: "family", label: "Famille", icon: "users-round", permission: "school.guardian.read" },
+    { id: "emergency", label: "Contacts urgence", icon: "phone-call", permission: "school.student.read" },
+    { id: "health", label: "Santé", icon: "heart-pulse", permission: "school.student.health.read" },
+    { id: "canteen", label: "Cantine", icon: "utensils", permission: "school.student.dietary.read" },
     { id: "pickup", label: "Personnes autorisées", icon: "shield-check", permission: "security.events.read" },
     { id: "documents", label: "Documents", icon: "files", permission: "school.student.read" },
     { id: "history", label: "Historique", icon: "history", permission: "school.student.read" }
@@ -26,7 +28,7 @@
     { id: "emergency", label: "Contacts d'urgence" },
     { id: "health", label: "Santé & Alimentation" },
     { id: "pickup", label: "Personnes autorisées" },
-    { id: "verify", label: "Vérification" }
+    { id: "verify", label: "Documents + Vérification finale" }
   ];
 
   function escapeMarkup(value) {
@@ -161,47 +163,115 @@
       var api = root.StudentRecordAPI;
       var html = "";
       switch (sectionId) {
+        case "summary": {
+          var summary = await api.getRecord(studentId);
+          var sum = summary.data || summary;
+          var comp = await api.getCompleteness(studentId);
+          var cmp = comp.data || comp;
+          html = '<div class="ss-summary-section">';
+          html += '<p><strong>Élève :</strong> ' + escapeMarkup((sum.first_name || "") + " " + (sum.last_name || "")) + '</p>';
+          html += '<p><strong>Matricule :</strong> ' + escapeMarkup(sum.matricule || "—") + '</p>';
+          html += '<p><strong>Classe :</strong> ' + escapeMarkup((sum.schooling && sum.schooling.class_name) || "—") + '</p>';
+          html += renderCompletenessBadge(cmp);
+          html += '</div>';
+          break;
+        }
         case "identity": {
           var rec = await api.getRecord(studentId);
           var r = rec.data || rec;
           html = '<div class="ss-identity-section">';
           html += '<p><strong>Matricule :</strong> ' + escapeMarkup(r.matricule || "—") + '</p>';
           html += '<p><strong>Prénom :</strong> ' + escapeMarkup(r.first_name || "—") + '</p>';
+          html += '<p><strong>Postnom :</strong> ' + escapeMarkup(r.middle_name || "—") + '</p>';
           html += '<p><strong>Nom :</strong> ' + escapeMarkup(r.last_name || "—") + '</p>';
           html += '<p><strong>Date de naissance :</strong> ' + escapeMarkup(r.date_of_birth || "—") + '</p>';
-          html += '<p><strong>Sexe :</strong> ' + escapeMarkup(r.gender || "—") + '</p>';
+          html += '<p><strong>Lieu de naissance :</strong> ' + escapeMarkup(r.place_of_birth || "—") + '</p>';
+          html += '<p><strong>Nationalité :</strong> ' + escapeMarkup(r.nationality || "—") + '</p>';
+          html += '<p><strong>Adresse :</strong> ' + escapeMarkup(r.home_address || "—") + '</p>';
+          html += '</div>';
+          break;
+        }
+        case "schooling": {
+          var schoolRec = await api.getRecord(studentId);
+          var sr = schoolRec.data || schoolRec;
+          var sc = sr.schooling || {};
+          html = '<div class="ss-schooling-section">';
+          html += '<p><strong>Classe :</strong> ' + escapeMarkup(sc.class_name || "—") + '</p>';
+          html += '<p><strong>Année scolaire :</strong> ' + escapeMarkup(sc.academic_year_id || "—") + '</p>';
+          html += '<p><strong>Statut :</strong> ' + escapeMarkup(sr.lifecycle_status || "—") + '</p>';
           html += '</div>';
           break;
         }
         case "family": {
           var fam = await api.getFamily(studentId);
-          var f = fam.data || fam;
+          var f = fam.data || fam || [];
           html = '<div class="ss-family-section">';
-          var types = ["pere", "mere", "tuteur"];
-          for (var i = 0; i < types.length; i++) {
-            var type = types[i];
-            var label = type.charAt(0).toUpperCase() + type.slice(1);
+          if (!f.length) html += '<p>Aucun responsable familial enregistré.</p>';
+          for (var i = 0; i < f.length; i++) {
+            var guardian = f[i];
+            var role = guardian.guardian_type === "pere" ? "PÈRE" : guardian.guardian_type === "mere" ? "MÈRE" : "TUTEUR";
             html += '<div class="ss-guardian-card" style="padding:12px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:8px;">';
-            html += '<strong>' + escapeMarkup(label) + '</strong>';
-            html += '<p style="margin:4px 0 0;font-size:13px;color:#6b7280;">Données chargées depuis l\'API backend.</p>';
+            html += '<strong>' + escapeMarkup(role) + (guardian.is_primary ? " · Principal" : "") + '</strong>';
+            html += '<p style="margin:4px 0 0;">' + escapeMarkup(guardian.full_name || "—") + '</p>';
             html += '</div>';
+          }
+          html += '</div>';
+          break;
+        }
+        case "emergency": {
+          var emergency = await api.getEmergencyContacts(studentId);
+          var contacts = emergency.data || emergency || [];
+          html = '<div class="ss-emergency-section">';
+          if (!contacts.length) html += '<p>Aucun contact d\'urgence enregistré.</p>';
+          for (var e = 0; e < contacts.length; e++) {
+            var contact = contacts[e];
+            html += '<div style="padding:10px;border-bottom:1px solid #e5e7eb;"><strong>Contact ' + escapeMarkup(contact.slot_no) + ' :</strong> ' + escapeMarkup(contact.full_name || "—") + ' · ' + escapeMarkup(contact.phone || "—") + '</div>';
           }
           html += '</div>';
           break;
         }
         case "health": {
           var health = await api.getHealth(studentId);
-          var h = health.data || health;
+          var h = health.data || health || {};
+          var hp = h.profile || {};
           html = '<div class="ss-health-section">';
-          html += '<p><strong>Groupe sanguin :</strong> ' + escapeMarkup(h.blood_type || "UNKNOWN") + '</p>';
-          html += '<p><strong>Déclaration santé complétée :</strong> ' + (h.medical_declaration_completed ? "Oui" : "Non") + '</p>';
-          html += '<hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;">';
-          html += '<p style="font-size:13px;color:#6b7280;">Allergies, médicaments et restrictions alimentaires chargés depuis l\'API.</p>';
+          html += '<p><strong>Groupe sanguin :</strong> ' + escapeMarkup(hp.blood_type || "UNKNOWN") + '</p>';
+          html += '<p><strong>Médecin :</strong> ' + escapeMarkup(hp.primary_doctor_name || "—") + '</p>';
+          html += '<p><strong>Déclaration santé complétée :</strong> ' + (hp.medical_declaration_completed ? "Oui" : "Non") + '</p>';
+          html += '<p><strong>Conditions :</strong> ' + escapeMarkup((h.conditions || []).length) + '</p>';
+          html += '<p><strong>Allergies :</strong> ' + escapeMarkup((h.allergies || []).length) + '</p>';
+          html += '<p><strong>Médicaments :</strong> ' + escapeMarkup((h.medications || []).length) + '</p>';
           html += '</div>';
           break;
         }
+        case "canteen": {
+          var dietary = await api.getDietary(studentId);
+          var d = dietary.data || dietary || {};
+          var dp = d.profile || {};
+          html = '<div class="ss-canteen-section">';
+          html += '<p><strong>Déclaration alimentation complétée :</strong> ' + (dp.dietary_declaration_completed ? "Oui" : "Non") + '</p>';
+          html += '<p><strong>Note parent :</strong> ' + escapeMarkup(dp.parent_food_note || "—") + '</p>';
+          html += '<p><strong>Restrictions :</strong> ' + escapeMarkup((d.restrictions || []).length) + '</p>';
+          html += '<p><strong>Préférences :</strong> ' + escapeMarkup((d.preferences || []).length) + '</p>';
+          html += '</div>';
+          break;
+        }
+        case "pickup": {
+          var pickupFamily = await api.getFamily(studentId);
+          var pf = pickupFamily.data || pickupFamily || [];
+          var authorized = pf.filter(function (guardian) { return guardian.is_authorized_pickup; });
+          html = '<div class="ss-pickup-section"><p><strong>Responsables familiaux autorisés :</strong> ' + escapeMarkup(authorized.length) + '</p>';
+          html += '<p style="font-size:13px;color:#6b7280;">Les personnes externes autorisées restent gérées par le module sécurité existant (maximum 3).</p></div>';
+          break;
+        }
+        case "documents":
+          html = '<p>Documents et consentements du dossier élève.</p>';
+          break;
+        case "history":
+          html = '<p>Historique audité des modifications matérielles du dossier.</p>';
+          break;
         default:
-          html = '<p>Section « ' + escapeMarkup(sectionId) + ' » — contenu chargé depuis l\'API backend.</p>';
+          html = '<p>Section indisponible.</p>';
       }
       contentDiv.innerHTML = html;
     } catch (err) {
