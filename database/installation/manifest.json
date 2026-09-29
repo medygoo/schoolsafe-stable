@@ -353,7 +353,7 @@
       "file": "database/studentrecord/v1/01_student_identity_emergency.sql",
       "manifest": "database/studentrecord/v1/manifest.json",
       "orderInSet": 1,
-      "sha256": "9a8cc196d395804a7b9dde1001647d1a0513b089c4864043e52cb47c97a7c32d",
+      "sha256": "e13c5d836484f99d51380287e37c2e4b84d01dd9771e25b6980284eaab288b9e",
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
@@ -361,7 +361,7 @@
       "file": "database/studentrecord/v1/02_health_dietary.sql",
       "manifest": "database/studentrecord/v1/manifest.json",
       "orderInSet": 2,
-      "sha256": "91842a0f3759e9cc0781c82f03a5bc598958d8c5ce6e652b983f75dcb98adc65",
+      "sha256": "4782841c82936c29ce9dcabfd097e4f1321f9a6ece83155b09433c0a292afa82",
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
@@ -369,7 +369,7 @@
       "file": "database/studentrecord/v1/03_confirmations_permissions.sql",
       "manifest": "database/studentrecord/v1/manifest.json",
       "orderInSet": 3,
-      "sha256": "15e3d90c1bd66d6c0baadb2d3d6904e3025febc5c61a0bdc850e4c73b1ce9561",
+      "sha256": "86c3623340b455528bd6ed29e560b325e65ef4467dc24cd7dc63be22d01b7ada",
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
@@ -377,7 +377,7 @@
       "file": "database/studentrecord/v1/04_student_record_rpc.sql",
       "manifest": "database/studentrecord/v1/manifest.json",
       "orderInSet": 4,
-      "sha256": "0eb0b2b8434c7f2ba565bc990222dea2e57cbb96cf48ea201f9b02212b1331fd",
+      "sha256": "c2aeffd767d7991cbb0d9c65e166d408b5657aba3a40719a23e60fb8cb93146e",
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
