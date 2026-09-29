@@ -69,9 +69,10 @@ export function verifySignedLicenseV1(
     return null;
   }
 
-  // Decode and verify signature length (Ed25519 = 64 bytes)
+  // Decode and verify signature length (Ed25519 = 64 bytes) and canonical encoding
   const signatureBytes = base64urlToBuffer(env.signature);
   if (!signatureBytes || signatureBytes.length !== 64) return null;
+  if (signatureBytes.toString("base64url") !== env.signature) return null;
 
   // Verify Ed25519 signature over canonical bytes
   try {

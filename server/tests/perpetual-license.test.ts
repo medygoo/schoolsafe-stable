@@ -40,14 +40,16 @@ describe('explicit signed perpetual licenses (Activation Service V1)', () => {
   });
 
   it('refuses a missing marker, missing date or contradictory expiry', () => {
-    for (const data of [
-      {...basePayload, perpetual: undefined},
-      {...basePayload, expires_at: undefined},
-      {...basePayload, perpetual: false},
-      {...basePayload, expires_at: '2030-01-01T00:00:00.000Z'},
-    ]) {
-      expect(verifySignedLicenseV1(makeEnvelope(data), registry)).toBeNull();
-    }
+    // perpetual absent (property removed, not undefined)
+    const { perpetual: _p1, ...missingPerpetual } = basePayload;
+    expect(verifySignedLicenseV1(makeEnvelope(missingPerpetual), registry)).toBeNull();
+    // expires_at absent (property removed, not undefined)
+    const { expires_at: _e1, ...missingExpiry } = basePayload;
+    expect(verifySignedLicenseV1(makeEnvelope(missingExpiry), registry)).toBeNull();
+    // perpetual=false with null expires_at → rejected
+    expect(verifySignedLicenseV1(makeEnvelope({...basePayload, perpetual: false}), registry)).toBeNull();
+    // perpetual=true with non-null expires_at → rejected
+    expect(verifySignedLicenseV1(makeEnvelope({...basePayload, expires_at: '2030-01-01T00:00:00.000Z'}), registry)).toBeNull();
   });
 
   it('does not grant perpetual access when a dated token is altered', () => {

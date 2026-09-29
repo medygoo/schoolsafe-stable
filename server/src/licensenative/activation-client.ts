@@ -50,7 +50,7 @@ export function createActivationServiceClient(
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(timeoutMs),
       });
-      if (!response.ok) return null;
+      if (response.status !== 200) return null;
       const data = (await response.json()) as unknown;
       if (!data || typeof data !== "object") return null;
       const envelope = data as Record<string, unknown>;

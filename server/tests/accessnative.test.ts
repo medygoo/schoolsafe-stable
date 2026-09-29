@@ -1,5 +1,7 @@
 // IAM tests isolate authorization from licensing; license enforcement has its own suite.
 vi.mock("../src/licensenative/service.js", () => ({createLicenseNativeService: () => ({readState: async () => ({state: "active", payload: null})})}));
+vi.mock("../src/licensenative/installation-key.js", () => ({loadInstallationKey: () => ({publicKeyBase64Url: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", sign: () => "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"})}));
+vi.mock("../src/licensenative/activation-client.js", () => ({createActivationServiceClient: () => ({redeem: async () => null, refresh: async () => null})}));
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildNativeApp } from "../src/native-app.js";
 import { parseEnv } from "../src/config/env.js";
@@ -37,7 +39,7 @@ function fixture(options: { allowed?: boolean; invalidSession?: boolean; data?: 
     async end() {},
   };
   const businessPool = { async connect() { return client; }, async end() {} };
-  const app = buildNativeApp(parseEnv({ NODE_ENV: "test", CONTROL_LICENSE_PUBLIC_KEY: "synthetic-key-for-mocked-license-service" }), { authPool, businessPool } as unknown as VerifiedPools);
+  const app = buildNativeApp(parseEnv({ NODE_ENV: "test", ACTIVATION_SERVICE_URL: "https://activation.example.test", ACTIVATION_INSTALLATION_ID: "11111111-2222-3333-4444-555555555555", ACTIVATION_INSTALLATION_PRIVATE_KEY_PATH: "/synthetic/test-only-installation.pem", ACTIVATION_LICENSE_PUBLIC_KEYS_JSON: JSON.stringify({"test-key":"synthetic-test-public-key"}) }), { authPool, businessPool } as unknown as VerifiedPools);
   apps.push(app);
   return { app, log, isReleased: () => released };
 }

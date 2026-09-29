@@ -163,7 +163,7 @@ describe("license service — scénarios Activation Service V1", () => {
   it("S1 Activation Service disponible + licence active → active", async () => {
     const store: Store = new Map();
     const service = makeService(store, fakeActivationClient(makeEnvelope(makePayload())));
-    const result = await service.refreshFromActivation(CTX);
+    const result = await service.redeem(CTX, "synthetic-activation-code");
     expect(result.state).toBe("active");
     expect(store.get(SCHOOL_A)?.license_id).toBe("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
   });
@@ -171,7 +171,7 @@ describe("license service — scénarios Activation Service V1", () => {
   it("S2 Activation Service indisponible + licence locale active → active", async () => {
     const store: Store = new Map();
     const serviceWithClient = makeService(store, fakeActivationClient(makeEnvelope(makePayload())));
-    await serviceWithClient.refreshFromActivation(CTX);
+    await serviceWithClient.redeem(CTX, "synthetic-activation-code");
     // Nouveau service sans client → lecture locale uniquement
     const offlineService = makeService(store, undefined);
     const { state } = await offlineService.readState(CTX);
@@ -184,14 +184,14 @@ describe("license service — scénarios Activation Service V1", () => {
     const store: Store = new Map();
     const expired = makePayload({ expires_at: new Date(Date.now() - 20 * 86_400_000).toISOString() });
     const service = makeService(store, fakeActivationClient(makeEnvelope(expired)));
-    await service.refreshFromActivation(CTX);
+    await service.redeem(CTX, "synthetic-activation-code");
     expect(await service.gateAllows(CTX)).toBe(false);
   });
 
   it("S4 licence révoquée → révocation appliquée immédiatement", async () => {
     const store: Store = new Map();
     const service = makeService(store, fakeActivationClient(makeEnvelope(makePayload())));
-    await service.refreshFromActivation(CTX);
+    await service.redeem(CTX, "synthetic-activation-code");
     const revoked = makePayload({ status: "revoked", issued_at: new Date().toISOString() });
     const revokedService = makeService(store, fakeActivationClient(makeEnvelope(revoked)));
     const result = await revokedService.refreshFromActivation(CTX);
@@ -202,7 +202,7 @@ describe("license service — scénarios Activation Service V1", () => {
   it("S5 état local falsifié → la signature casse, fermé", async () => {
     const store: Store = new Map();
     const service = makeService(store, fakeActivationClient(makeEnvelope(makePayload())));
-    await service.refreshFromActivation(CTX);
+    await service.redeem(CTX, "synthetic-activation-code");
     const otherEnvelope = makeEnvelope(makePayload({ school_id: SCHOOL_B, license_id: "bbbbbbbb-cccc-dddd-eeee-ffffffffffff" }));
     store.set(SCHOOL_A, {
       ...store.get(SCHOOL_A)!,
@@ -215,7 +215,7 @@ describe("license service — scénarios Activation Service V1", () => {
   it("S7 redémarrage serveur → l'état persiste (même store)", async () => {
     const store: Store = new Map();
     const service1 = makeService(store, fakeActivationClient(makeEnvelope(makePayload())));
-    await service1.refreshFromActivation(CTX);
+    await service1.redeem(CTX, "synthetic-activation-code");
     const service2 = makeService(store, undefined);
     const { state } = await service2.readState(CTX);
     expect(state).toBe("active");
@@ -225,7 +225,7 @@ describe("license service — scénarios Activation Service V1", () => {
     const store: Store = new Map();
     const envelopeB = makeEnvelope(makePayload({ school_id: SCHOOL_B, license_id: "bbbbbbbb-cccc-dddd-eeee-ffffffffffff" }));
     const service = makeService(store, fakeActivationClient(envelopeB));
-    const result = await service.refreshFromActivation(CTX);
+    const result = await service.redeem(CTX, "synthetic-activation-code");
     expect(result.state).toBe("expired");
     expect(store.has(SCHOOL_A)).toBe(false);
   });
@@ -235,7 +235,7 @@ describe("license service — scénarios Activation Service V1", () => {
     const fresh = makeEnvelope(makePayload({ issued_at: new Date().toISOString() }));
     const stale = makeEnvelope(makePayload({ status: "revoked", issued_at: new Date(Date.now() - 86_400_000).toISOString() }));
     const service = makeService(store, fakeActivationClient(fresh));
-    await service.refreshFromActivation(CTX);
+    await service.redeem(CTX, "synthetic-activation-code");
     const serviceStale = makeService(store, fakeActivationClient(stale));
     const result = await serviceStale.refreshFromActivation(CTX);
     expect(result.state).toBe("active");

@@ -124,6 +124,18 @@ describe("Activation Service V1 client", () => {
     expect(body.proof).toBe("proof-base64url-64bytes");
   });
 
+  it("returns null on HTTP 201 response (only 200 accepted)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 201, json: async () => ({ payload: {}, signature: "x" }) }));
+    const client = createActivationServiceClient({ baseUrl: "https://activation.example.invalid", timeoutMs: 5000 });
+    const result = await client.redeem({
+      activationCode: "SSA1_test",
+      schoolId: "school-123",
+      installationId: "11111111-2222-3333-4444-555555555555",
+      installationPublicKey: "AAAA",
+    });
+    expect(result).toBeNull();
+  });
+
   it("rejects non-HTTPS base URL", () => {
     expect(() =>
       createActivationServiceClient({ baseUrl: "http://insecure.example.invalid", timeoutMs: 5000 }),

@@ -161,4 +161,24 @@ describe("Activation Service V1 signed license verification", () => {
       expect(computeLicenseStateV1(verified.payload, new Date())).toBe(status);
     }
   });
+
+  it("rejects a non-canonical base64url signature encoding", () => {
+    const payload = {
+      version: 1,
+      license_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      school_id: "school-123",
+      installation_id: "11111111-2222-3333-4444-555555555555",
+      status: "active",
+      plan: "basic",
+      modules: [],
+      issued_at: "2026-09-29T00:00:00.000Z",
+      expires_at: "2027-09-29T00:00:00.000Z",
+      perpetual: false,
+      key_id: keyId,
+    };
+    const env = makeEnvelope(payload);
+    // Pad the canonical signature with trailing '=' to create a non-canonical but decodable variant
+    const nonCanonical = { ...env, signature: env.signature + "=" };
+    expect(verifySignedLicenseV1(nonCanonical, registry)).toBeNull();
+  });
 });
