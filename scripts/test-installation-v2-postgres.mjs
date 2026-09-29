@@ -974,6 +974,12 @@ async function qualifyInstalled64Upgrade({admin,connectionString,passwords,check
   fs.unlinkSync(path.join(root,controlUnit.file));
   fs.writeFileSync(path.join(root,'database/auth/v7/manifest.json'),JSON.stringify({schema:'schoolsafe-migrations-v7',name:'auth',version:7,units:[]}));
   fs.writeFileSync(path.join(root,'database/auth/v7/manifest.sha256'),'\n');
+  for(const file of studentrecordFiles) fs.unlinkSync(path.join(root,file));
+  const studentrecordManifestPath=path.join(root,'database/studentrecord/v1/manifest.json');
+  const studentrecordManifest=JSON.parse(fs.readFileSync(studentrecordManifestPath));
+  studentrecordManifest.units=[];
+  fs.writeFileSync(studentrecordManifestPath,JSON.stringify(studentrecordManifest));
+  fs.writeFileSync(path.join(root,'database/studentrecord/v1/manifest.sha256'),'\n');
   const initialPlan={...plan,units:plan.units.slice(0,64)};delete initialPlan.digest;
   fs.writeFileSync(path.join(root,'database/installation/v2/manifest.json'),JSON.stringify(initialPlan));
   await admin.query('create database "'+name+'"');created=true;target.pathname='/'+name;
