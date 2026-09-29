@@ -59,6 +59,4 @@ begin
   end if;
 end $$;
 
-grant select, insert, update, delete on app.student_emergency_contacts to schoolsafe_api;
-
 commit;
