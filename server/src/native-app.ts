@@ -14,7 +14,8 @@ import { createSessionNativeService } from "./sessionnative/service.js";
 import { createAccessNativeService } from "./accessnative/service.js";
 import { createJaspeNativeService } from "./jaspenative/service.js";
 import { createLicenseNativeService } from "./licensenative/service.js";
-import { createControlLicenseClient } from "./licensenative/control-client.js";
+import { createActivationServiceClient } from "./licensenative/activation-client.js";
+import { loadInstallationKey } from "./licensenative/installation-key.js";
 import { registerLicenseGate } from "./licensenative/gate.js";
 import { createSetupNativeService } from "./setup/service.js";
 import { createFinanceNativeService } from "./financenative/service.js";
@@ -34,16 +35,41 @@ export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
   const recovery = env.BREVO_API_KEY && env.BREVO_SENDER_EMAIL && env.AUTH_RECOVERY_URL
     ? createRecoveryDelivery(createBrevoEmailService({apiKey: env.BREVO_API_KEY, senderEmail: env.BREVO_SENDER_EMAIL}), env.AUTH_RECOVERY_URL) : undefined;
   const authService = createAuthNativeService({ db: createPgAuthDatabase(pools.authPool), emailDelivery: recovery, control: controlAdmin });
-const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.CONTROL_APP_HMAC_SECRET
+
+  // Activation Service V1 — licence native (remplace Control pour licensenative uniquement).
+  let licenseService = undefined;
+  if (
+    env.ACTIVATION_SERVICE_URL &&
+    env.ACTIVATION_INSTALLATION_ID &&
+    env.ACTIVATION_INSTALLATION_PRIVATE_KEY_PATH &&
+    env.ACTIVATION_LICENSE_PUBLIC_KEYS_JSON
+  ) {
+    try {
+      const registryJson = JSON.parse(env.ACTIVATION_LICENSE_PUBLIC_KEYS_JSON) as Record<string, unknown>;
+      const publicKeyRegistry = new Map<string, string>();
+      for (const [keyId, pem] of Object.entries(registryJson)) {
+        if (typeof pem === "string") publicKeyRegistry.set(keyId, pem);
+      }
+      const installationKey = loadInstallationKey(env.ACTIVATION_INSTALLATION_PRIVATE_KEY_PATH);
+      const activationClient = createActivationServiceClient({ baseUrl: env.ACTIVATION_SERVICE_URL });
+      licenseService = createLicenseNativeService(
+        pools.businessPool,
+        activationClient,
+        publicKeyRegistry,
+        env.ACTIVATION_INSTALLATION_ID,
+        installationKey,
+      );
+    } catch {
+      // Configuration invalide → licence désactivée (fail-closed)
+      licenseService = undefined;
+    }
+  }
+
+  // Control config conservé pour Device Hub, impression et autres modules hérités.
+  const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.CONTROL_APP_HMAC_SECRET
     ? { url: env.CONTROL_APP_URL, instanceId: env.CONTROL_APP_INSTANCE_ID, hmacSecret: env.CONTROL_APP_HMAC_SECRET }
     : undefined;
-  const licenseService = env.CONTROL_LICENSE_PUBLIC_KEY
-    ? createLicenseNativeService(
-        pools.businessPool,
-        controlConfig ? createControlLicenseClient(controlConfig) : undefined,
-        env.CONTROL_LICENSE_PUBLIC_KEY,
-      )
-    : undefined;
+
   const app = buildApp({
     onboarding: {
       schoolService: createOnboardingSchoolService(onboardingDb, controlAdmin),
@@ -106,7 +132,6 @@ const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.
       service: createDeviceHubService(pools.businessPool, controlConfig),
       hmacSecret: controlConfig.hmacSecret,
       expectedInstanceId: controlConfig.instanceId,
-      // École résolue côté serveur uniquement — jamais depuis la requête.
       resolveContext: createMachineContextResolver(pools.businessPool),
     } : undefined,
     studentRecordNative: {
