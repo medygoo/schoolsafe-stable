@@ -377,7 +377,7 @@
       "file": "database/studentrecord/v1/04_student_record_rpc.sql",
       "manifest": "database/studentrecord/v1/manifest.json",
       "orderInSet": 4,
-      "sha256": "c2aeffd767d7991cbb0d9c65e166d408b5657aba3a40719a23e60fb8cb93146e",
+      "sha256": "15b3608ca72749104c06ff0420c3e5c11bf1c2ff75b4b44328c0121686279f85",
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
