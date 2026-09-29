@@ -528,6 +528,7 @@ async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
    'database/studentrecord/v1/02_health_dietary.sql',
    'database/studentrecord/v1/03_confirmations_permissions.sql',
    'database/studentrecord/v1/04_student_record_rpc.sql',
+   'database/license/v2/01_perpetual_license.sql',
  ]);
  assert.equal(additions.size,plan.units.length-48,'Additions must cover the current plan beyond historical 48');
  assert.ok(additions.has('database/auth/v3/01_inactive_school_auth_gate.sql'),'auth v3 gate must be in additions');
@@ -932,7 +933,7 @@ async function qualifyInstalled63Upgrade({admin,connectionString,passwords,check
   const legacyBefore=(await owner.query('select * from auth.account_registration_requests order by id')).rows;
   const ledger=async()=> (await owner.query('select unit_order,file_name,sha256 from ops.installation_units order by unit_order')).rows;
   const initial=await ledger();assert.equal(initial.length,63);const sql=renderAdditiveUpgrade({installed:initial});
-  assert.equal((sql.match(/-- APPLY /g)??[]).length,6);
+  assert.equal((sql.match(/-- APPLY /g)??[]).length,7);
   await check('direct activation upgrade 63 rollback leaves all historical units and no new tables',async()=>{
    const faulty=sql.replace(/^commit;$/im,'select 1/0;\ncommit;');assert.ok(faulty!==sql,'Upgrade commit marker required');
    await assert.rejects(migrator.query(faulty),e=>e.code==='22012');await migrator.query('rollback');
