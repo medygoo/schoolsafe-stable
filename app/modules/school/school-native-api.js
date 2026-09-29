@@ -63,5 +63,16 @@
         },
       });
     },
+
+    getSettings: function () {
+      return request("/native/school/settings", { method: "GET" });
+    },
+
+    updateSettings: function (payload) {
+      return request("/native/school/settings", {
+        method: "PUT",
+        body: payload,
+      });
+    },
   };
 })();

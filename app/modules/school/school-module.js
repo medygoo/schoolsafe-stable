@@ -88,7 +88,7 @@
       return;
     }
     try {
-      settingsData = await window.SchoolSafeSchoolAPI.getSettings();
+      settingsData = await window.SchoolSafeSchoolNativeAPI.getSettings();
       renderSchoolTab();
     } catch (e) {
       notify("Erreur chargement école : " + e.message);
@@ -737,7 +737,7 @@
             logo_path: logoPath,
           },
         };
-        settingsData = await window.SchoolSafeSchoolAPI.updateSettings(payload);
+        settingsData = await window.SchoolSafeSchoolNativeAPI.updateSettings(payload);
         notify("Paramètres de l'école enregistrés.");
         renderSchoolTab();
       } catch (err) {
