@@ -40,8 +40,6 @@ begin
   end if;
 end $$;
 
-grant select, insert, update on app.student_health_profiles to schoolsafe_api;
-
 -- ============================================================================
 -- 2. HEALTH CONDITIONS
 -- ============================================================================
@@ -76,8 +74,6 @@ begin
       with check (school_id = iam.current_school_id());
   end if;
 end $$;
-
-grant select, insert, update on app.student_health_conditions to schoolsafe_api;
 
 -- ============================================================================
 -- 3. ALLERGIES
@@ -120,8 +116,6 @@ begin
   end if;
 end $$;
 
-grant select, insert, update on app.student_allergies to schoolsafe_api;
-
 -- ============================================================================
 -- 4. MEDICATIONS
 -- ============================================================================
@@ -158,8 +152,6 @@ begin
   end if;
 end $$;
 
-grant select, insert, update on app.student_medications to schoolsafe_api;
-
 -- ============================================================================
 -- 5. DIETARY PROFILE
 -- ============================================================================
@@ -187,8 +179,6 @@ begin
       with check (school_id = iam.current_school_id());
   end if;
 end $$;
-
-grant select, insert, update on app.student_dietary_profiles to schoolsafe_api;
 
 -- ============================================================================
 -- 6. DIETARY RESTRICTIONS
@@ -227,8 +217,6 @@ begin
   end if;
 end $$;
 
-grant select, insert, update on app.student_dietary_restrictions to schoolsafe_api;
-
 -- ============================================================================
 -- 7. FOOD PREFERENCES
 -- ============================================================================
@@ -262,7 +250,5 @@ begin
       with check (school_id = iam.current_school_id());
   end if;
 end $$;
-
-grant select, insert, update on app.student_food_preferences to schoolsafe_api;
 
 commit;
