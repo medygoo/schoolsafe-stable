@@ -68,7 +68,14 @@ jobs:
           export POSTGRES_PASSWORD="$SCHOOLSAFE_BOOTSTRAP_PASSWORD"
           docker run -d --name schoolsafe-test -e POSTGRES_PASSWORD -e POSTGRES_USER=schoolsafe_bootstrap -e POSTGRES_DB=schoolsafe_test_ci -p 127.0.0.1:55439:5432 postgres:17.11-bookworm postgres -c shared_preload_libraries=pg_stat_statements -c compute_query_id=auto
           for attempt in $(seq 1 40); do
-            if docker exec schoolsafe-test pg_isready -U schoolsafe_bootstrap -d schoolsafe_test_ci; then break; fi
+            if pg_isready -h 127.0.0.1 -p 55439 -U schoolsafe_bootstrap -d schoolsafe_test_ci; then
+              break
+            fi
+            if [ "$attempt" -eq 40 ]; then
+              echo "PostgreSQL TCP endpoint did not become ready"
+              docker logs schoolsafe-test
+              exit 1
+            fi
             sleep 1
           done
           export DATABASE_URL="postgresql://schoolsafe_bootstrap:$SCHOOLSAFE_BOOTSTRAP_PASSWORD@127.0.0.1:55439/schoolsafe_test_ci"
