@@ -1,116 +1,150 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-/**
- * B1 RED TESTS — Child Record Complete Contract
- * These tests MUST FAIL before implementation and PASS after.
- * They verify the existence of new tables, APIs, and behaviors
- * required by the locked B1 contract.
- */
+const testDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(testDir, "../../..");
 
-describe("B1 Child Record Contract — RED phase", () => {
-  it("should have student_emergency_contacts table", async () => {
-    // This test verifies the emergency contacts table exists
-    // Expected to FAIL before migration 01_student_identity_emergency.sql
-    const tableExists = false; // Will be replaced by real DB check
-    expect(tableExists).toBe(true);
+function readRepo(relativePath: string): string {
+  return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
+}
+
+function expectContains(source: string, fragment: string): void {
+  expect(source.includes(fragment), `Expected source to contain: ${fragment}`).toBe(true);
+}
+
+describe("B1 Child Record Contract — GREEN acceptance", () => {
+  const identityEmergencySql = readRepo("database/studentrecord/v1/01_student_identity_emergency.sql");
+  const healthDietarySql = readRepo("database/studentrecord/v1/02_health_dietary.sql");
+  const confirmationsSql = readRepo("database/studentrecord/v1/03_confirmations_permissions.sql");
+  const rpcSql = readRepo("database/studentrecord/v1/04_student_record_rpc.sql");
+  const routes = readRepo("server/src/studentrecordnative/routes.ts");
+  const permissions = JSON.parse(readRepo("shared/permissions.json")) as Array<{ code: string }>;
+  const apiAdapter = readRepo("app/modules/school/student-record-api.js");
+  const realFrontend = readRepo("app/modules/school/student-record-real.js");
+
+  it("declares the student emergency contacts table", () => {
+    expectContains(identityEmergencySql, "create table if not exists app.student_emergency_contacts");
+    expectContains(identityEmergencySql, "slot_no");
   });
 
-  it("should have student_health_profiles table", async () => {
-    // This test verifies the health profile table exists
-    // Expected to FAIL before migration 02_health_dietary.sql
-    const tableExists = false;
-    expect(tableExists).toBe(true);
+  it("declares the student health profile table", () => {
+    expectContains(healthDietarySql, "create table if not exists app.student_health_profiles");
+    expectContains(healthDietarySql, "medical_declaration_completed");
   });
 
-  it("should have student_allergies table", async () => {
-    // This test verifies the allergies table exists
-    // Expected to FAIL before migration 02_health_dietary.sql
-    const tableExists = false;
-    expect(tableExists).toBe(true);
+  it("declares the student allergies table", () => {
+    expectContains(healthDietarySql, "create table if not exists app.student_allergies");
+    expectContains(healthDietarySql, "status");
   });
 
-  it("should have student_dietary_profiles table", async () => {
-    // This test verifies the dietary profile table exists
-    // Expected to FAIL before migration 02_health_dietary.sql
-    const tableExists = false;
-    expect(tableExists).toBe(true);
+  it("declares the student dietary profile table", () => {
+    expectContains(healthDietarySql, "create table if not exists app.student_dietary_profiles");
+    expectContains(healthDietarySql, "dietary_declaration_completed");
   });
 
-  it("should have student_record_confirmations table", async () => {
-    // This test verifies the confirmations table exists
-    // Expected to FAIL before migration 03_confirmations_permissions.sql
-    const tableExists = false;
-    expect(tableExists).toBe(true);
+  it("declares confirmations with the four locked confirmation keys", () => {
+    expectContains(confirmationsSql, "create table if not exists app.student_record_confirmations");
+    for (const key of ["family", "medical", "dietary", "pickup"]) {
+      expectContains(confirmationsSql, `'${key}'`);
+    }
   });
 
-  it("should have student_consents table", async () => {
-    // This test verifies the consents table exists
-    // Expected to FAIL before migration 03_confirmations_permissions.sql
-    const tableExists = false;
-    expect(tableExists).toBe(true);
+  it("declares explicit student consents", () => {
+    expectContains(confirmationsSql, "create table if not exists app.student_consents");
+    expectContains(confirmationsSql, "decision boolean not null");
+    expectContains(confirmationsSql, "'photo_video'");
+    expectContains(confirmationsSql, "'emergency_care'");
   });
 
-  it("should expose GET /native/students/:id/record endpoint", async () => {
-    // This test verifies the unified record endpoint exists
-    // Expected to FAIL before backend implementation
-    const endpointExists = false;
-    expect(endpointExists).toBe(true);
+  it("exposes the unified student record endpoint", () => {
+    expectContains(routes, 'app.get("/native/students/:id/record"');
   });
 
-  it("should expose GET /native/students/:id/completeness endpoint", async () => {
-    // This test verifies the completeness calculation endpoint exists
-    // Expected to FAIL before backend implementation
-    const endpointExists = false;
-    expect(endpointExists).toBe(true);
+  it("exposes the completeness endpoint", () => {
+    expectContains(routes, 'app.get("/native/students/:id/completeness"');
   });
 
-  it("should expose GET /native/canteen/students/:studentId/dietary endpoint", async () => {
-    // This test verifies the canteen-safe dietary projection exists
-    // Expected to FAIL before backend implementation
-    const endpointExists = false;
-    expect(endpointExists).toBe(true);
+  it("exposes the canteen-safe dietary projection endpoint", () => {
+    expectContains(routes, 'app.get("/native/canteen/students/:studentId/dietary"');
   });
 
-  it("should expose GET /native/parent/children endpoint", async () => {
-    // This test verifies the parent multi-children endpoint exists
-    // Expected to FAIL before backend implementation
-    const endpointExists = false;
-    expect(endpointExists).toBe(true);
+  it("exposes the parent multi-children endpoint", () => {
+    expectContains(routes, 'app.get("/native/parent/children"');
   });
 
-  it("should have school.student.health.read permission", async () => {
-    // This test verifies the health read permission is seeded
-    // Expected to FAIL before migration 03_confirmations_permissions.sql
-    const permissionExists = false;
-    expect(permissionExists).toBe(true);
+  it("registers the health permissions in the shared catalog", () => {
+    const codes = new Set(permissions.map((permission) => permission.code));
+    expect(codes.has("school.student.health.read")).toBe(true);
+    expect(codes.has("school.student.health.manage")).toBe(true);
+    expect(codes.has("school.student.health.confirm")).toBe(true);
   });
 
-  it("should have school.student.dietary.read permission", async () => {
-    // This test verifies the dietary read permission is seeded
-    // Expected to FAIL before migration 03_confirmations_permissions.sql
-    const permissionExists = false;
-    expect(permissionExists).toBe(true);
+  it("registers the dietary permissions in the shared catalog", () => {
+    const codes = new Set(permissions.map((permission) => permission.code));
+    expect(codes.has("school.student.dietary.read")).toBe(true);
+    expect(codes.has("school.student.dietary.manage")).toBe(true);
+    expect(codes.has("school.student.dietary.confirm")).toBe(true);
   });
 
-  it("should calculate completeness with exactly 12 checkpoints", async () => {
-    // This test verifies the completeness RPC returns 12 total checkpoints
-    // Expected to FAIL before migration 04_student_record_rpc.sql
-    const totalCheckpoints = 0;
-    expect(totalCheckpoints).toBe(12);
+  it("calculates completeness with exactly 12 checkpoints without activating lifecycle", () => {
+    expect(rpcSql).toMatch(/v_total\s+integer\s*:=\s*12\s*;/);
+    expectContains(rpcSql, "'READY_TO_VALIDATE'");
+    expectContains(rpcSql, "'INCOMPLETE'");
+    expect(rpcSql).not.toMatch(/update\s+app\.students\s+set\s+lifecycle_status/i);
   });
 
-  it("should reject food allergy without hiding it from canteen when reported", async () => {
-    // This test verifies that a reported food allergy is visible to canteen
-    // even before confirmation (critical safety rule)
-    // Expected to FAIL before backend implementation
-    const canteenSeesReportedAllergy = false;
-    expect(canteenSeesReportedAllergy).toBe(true);
+  it("keeps reported food allergies visible to canteen before confirmation", () => {
+    const start = rpcSql.indexOf("create or replace function api.canteen_student_dietary");
+    const end = rpcSql.indexOf("grant execute on function api.canteen_student_dietary", start);
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    const canteenProjection = rpcSql.slice(start, end);
+    expectContains(canteenProjection, "a.category = 'food'");
+    expect(canteenProjection).toMatch(/a\.status\s+in\s*\(\s*'reported'\s*,\s*'confirmed'\s*\)/);
+    expect(canteenProjection).not.toContain("primary_doctor");
+    expect(canteenProjection).not.toContain("student_medications");
+    expect(canteenProjection).not.toContain("medical_notes");
   });
 
-  it("should prevent parent from seeing other guardian private contact info", async () => {
-    // This test verifies confidentiality between guardians
-    // Expected to FAIL before backend implementation
-    const confidentialityEnforced = false;
-    expect(confidentialityEnforced).toBe(true);
+  it("keeps parent multi-child projection free of other guardians private contacts", () => {
+    const start = rpcSql.indexOf("create or replace function api.parent_children()");
+    const end = rpcSql.indexOf("grant execute on function api.parent_children()", start);
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    const parentProjection = rpcSql.slice(start, end);
+    expectContains(parentProjection, "g.profile_id = v_profile_id");
+    expect(parentProjection).not.toContain("'email'");
+    expect(parentProjection).not.toContain("'phone'");
+  });
+
+  it("connects the browser adapter to native APIs instead of business localStorage", () => {
+    expectContains(apiAdapter, "fetch(buildUrl(url), opts)");
+    expectContains(apiAdapter, 'getRecord: function (studentId)');
+    expectContains(apiAdapter, 'getParentChildren: function ()');
+    expect(apiAdapter).not.toMatch(/\blocalStorage\s*\./);
+  });
+
+  it("connects the real student-record UI to StudentRecordAPI", () => {
+    expectContains(realFrontend, "root.StudentRecordAPI.getRecord(studentId)");
+    expectContains(realFrontend, "root.StudentRecordAPI.getCompleteness(studentId)");
+    expectContains(realFrontend, "root.StudentRecordReal");
+  });
+
+  it("forces RLS on the new sensitive record tables", () => {
+    for (const table of [
+      "student_health_profiles",
+      "student_allergies",
+      "student_dietary_profiles",
+      "student_record_confirmations",
+      "student_consents",
+    ]) {
+      const source = table === "student_record_confirmations" || table === "student_consents"
+        ? confirmationsSql
+        : healthDietarySql;
+      expectContains(source, `alter table app.${table} enable row level security`);
+      expectContains(source, `alter table app.${table} force row level security`);
+    }
   });
 });
