@@ -6,7 +6,7 @@ import { sha256Sql } from './migration-manifest.mjs';
 
 export function installationInventory(root) {
   const sets = ['baseline', 'auth', 'access', 'finance', 'pedagogy', 'cards',
-    'family', 'devicehub', 'dashboard', 'license', 'trial', 'projections', 'documents', 'setup'];
+    'family', 'studentrecord', 'devicehub', 'dashboard', 'license', 'trial', 'projections', 'documents', 'setup'];
   const units = [];
   const versionPattern = /^v[1-9][0-9]*$/;
 

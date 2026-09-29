@@ -1,0 +1,27 @@
+{
+  "schema": "schoolsafe-migrations-v1",
+  "unit": "studentrecord",
+  "version": 1,
+  "units": [
+    {
+      "order": 1,
+      "file": "01_student_identity_emergency.sql",
+      "sha256": "e13c5d836484f99d51380287e37c2e4b84d01dd9771e25b6980284eaab288b9e"
+    },
+    {
+      "order": 2,
+      "file": "02_health_dietary.sql",
+      "sha256": "4782841c82936c29ce9dcabfd097e4f1321f9a6ece83155b09433c0a292afa82"
+    },
+    {
+      "order": 3,
+      "file": "03_confirmations_permissions.sql",
+      "sha256": "86c3623340b455528bd6ed29e560b325e65ef4467dc24cd7dc63be22d01b7ada"
+    },
+    {
+      "order": 4,
+      "file": "04_student_record_rpc.sql",
+      "sha256": "15b3608ca72749104c06ff0420c3e5c11bf1c2ff75b4b44328c0121686279f85"
+    }
+  ]
+}

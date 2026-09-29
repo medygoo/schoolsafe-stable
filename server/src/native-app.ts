@@ -25,6 +25,7 @@ import { createCardsBatchService } from "./cardsnative/batches.js";
 import { createFamilyNativeService } from "./familynative/service.js";
 import { createFamilyImportService } from "./familynative/import.js";
 import { createDeviceHubService } from "./devicehub/service.js";
+import { createStudentRecordNativeService } from "./studentrecordnative/service.js";
 
 /** Assemble uniquement les services qui utilisent les sessions et pools du VPS. */
 export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
@@ -108,6 +109,10 @@ const controlConfig = env.CONTROL_APP_URL && env.CONTROL_APP_INSTANCE_ID && env.
       // École résolue côté serveur uniquement — jamais depuis la requête.
       resolveContext: createMachineContextResolver(pools.businessPool),
     } : undefined,
+    studentRecordNative: {
+      authService: authService,
+      service: createStudentRecordNativeService(pools.businessPool),
+    },
   });
   registerLicenseGate(app, {authService: authService, licenseService, pilotSchoolId: env.PILOT_SCHOOL_ID});
   app.addHook("onClose", async () => {

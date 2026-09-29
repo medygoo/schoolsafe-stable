@@ -349,6 +349,38 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "studentrecord",
+      "file": "database/studentrecord/v1/01_student_identity_emergency.sql",
+      "manifest": "database/studentrecord/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "e13c5d836484f99d51380287e37c2e4b84d01dd9771e25b6980284eaab288b9e",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "studentrecord",
+      "file": "database/studentrecord/v1/02_health_dietary.sql",
+      "manifest": "database/studentrecord/v1/manifest.json",
+      "orderInSet": 2,
+      "sha256": "4782841c82936c29ce9dcabfd097e4f1321f9a6ece83155b09433c0a292afa82",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "studentrecord",
+      "file": "database/studentrecord/v1/03_confirmations_permissions.sql",
+      "manifest": "database/studentrecord/v1/manifest.json",
+      "orderInSet": 3,
+      "sha256": "86c3623340b455528bd6ed29e560b325e65ef4467dc24cd7dc63be22d01b7ada",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
+      "set": "studentrecord",
+      "file": "database/studentrecord/v1/04_student_record_rpc.sql",
+      "manifest": "database/studentrecord/v1/manifest.json",
+      "orderInSet": 4,
+      "sha256": "15b3608ca72749104c06ff0420c3e5c11bf1c2ff75b4b44328c0121686279f85",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "devicehub",
       "file": "database/devicehub/v1/01_devicehub_core.sql",
       "manifest": "database/devicehub/v1/manifest.json",

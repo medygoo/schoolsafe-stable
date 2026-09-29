@@ -38,6 +38,7 @@ import { registerCardsNativeRoutes, type CardsNativeRouteDependencies } from "./
 import { registerFamilyNativeRoutes, type FamilyNativeRouteDependencies } from "./familynative/routes.js";
 import { registerDeviceHubRoutes, type DeviceHubRouteDependencies } from "./devicehub/routes.js";
 import { registerDeviceHubMachineRoutes, type DeviceHubMachineRouteDependencies } from "./devicehub/machine-routes.js";
+import { registerStudentRecordNativeRoutes, type StudentRecordNativeRouteDependencies } from "./studentrecordnative/routes.js";
 import { registerDocumentRoutes, type DocumentRouteDependencies } from "./documents/routes.js";
 import { registerDashboardRoutes as registerLot5DashboardRoutes, type DashboardRouteDependencies as Lot5DashboardRouteDependencies } from "./dashboard/routes.js";
 
@@ -76,6 +77,7 @@ export type BuildAppOptions = {
   familyNative?: FamilyNativeRouteDependencies;
   deviceHub?: DeviceHubRouteDependencies;
   deviceHubMachine?: DeviceHubMachineRouteDependencies;
+  studentRecordNative?: StudentRecordNativeRouteDependencies;
   documents?: DocumentRouteDependencies;
   lot5Dashboard?: Lot5DashboardRouteDependencies;
 };
@@ -255,6 +257,10 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   if (options.lot5Dashboard) {
     registerLot5DashboardRoutes(app, { ...options.lot5Dashboard, authService: options.authNative?.service as any });
+  }
+
+  if (options.studentRecordNative) {
+    registerStudentRecordNativeRoutes(app, options.studentRecordNative);
   }
 
   if (options.testRoutes) {
