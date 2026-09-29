@@ -70,6 +70,15 @@ if(files.length!==69)throw new Error(`B1 installation plan must contain 69 units
 // Perpetual license support appends after the deployed 69-unit lineage.
 const license=JSON.parse(read('database/license/v2/manifest.json'));
 for(const unit of license.units)files.push(`database/license/v2/${unit.file}`);
+if(files.length!==70)throw new Error(`Perpetual-license installation plan must contain 70 units, got ${files.length}`);
+
+// Mon école natif : append après la lignée production 70 unités.
+const school=JSON.parse(read('database/school/v1/manifest.json'));
+for(const unit of school.units){
+ const f=`database/school/v1/${unit.file}`;
+ if(!files.includes(f))files.push(f);
+}
+if(files.length!==71)throw new Error(`Mon école installation plan must contain 71 units, got ${files.length}`);
 
 const manifest={schema:'schoolsafe-installation-v2',postgres:170011,
  units:files.map((file,index)=>({order:index+1,file,sha256:digest(file)})),
