@@ -888,14 +888,15 @@ export async function qualifyAccountRegistrationOnboarding({admin,auth,api,conne
 async function qualifyInstalled63Upgrade({admin,connectionString,passwords,check}) {
  const plan=loadInstallationPlan();
  const controlUnit=plan.units.find(u=>u.file==='database/auth/v7/01_control_admin_links.sql');
- assert.ok(controlUnit);assert.equal(controlUnit.order,65);assert.equal(plan.units.length,69);
+ assert.ok(controlUnit);assert.equal(controlUnit.order,65);assert.equal(plan.units.length,70);
  const studentrecordFiles=[
   'database/studentrecord/v1/01_student_identity_emergency.sql',
   'database/studentrecord/v1/02_health_dietary.sql',
   'database/studentrecord/v1/03_confirmations_permissions.sql',
   'database/studentrecord/v1/04_student_record_rpc.sql',
  ];
- assert.deepEqual(plan.units.slice(-4).map(u=>u.file),studentrecordFiles);
+ assert.deepEqual(plan.units.slice(65,69).map(u=>u.file),studentrecordFiles);
+ assert.equal(plan.units[69].file,'database/license/v2/01_perpetual_license.sql');
  const target=new URL(connectionString),name=decodeURIComponent(target.pathname.slice(1))+'_upgrade63';
  assert.match(name,/^schoolsafe_test_[a-z0-9_]+$/);
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'schoolsafe-account-upgrade-'));let created=false,owner,migrator,auth;
@@ -908,6 +909,8 @@ async function qualifyInstalled63Upgrade({admin,connectionString,passwords,check
   fs.writeFileSync(path.join(root,'database/auth/v6/manifest.sha256'),'\n');
   fs.writeFileSync(path.join(root,'database/studentrecord/v1/manifest.json'),JSON.stringify({schema:'schoolsafe-migrations-v1',unit:'studentrecord',version:1,units:[]}));
   fs.writeFileSync(path.join(root,'database/studentrecord/v1/manifest.sha256'),'\n');
+  fs.writeFileSync(path.join(root,'database/license/v2/manifest.json'),JSON.stringify({schema:'schoolsafe-migrations-v2',name:'license',version:2,units:[]}));
+  fs.writeFileSync(path.join(root,'database/license/v2/manifest.sha256'),'\n');
   const initialPlan={...plan,units:plan.units.slice(0,63)};delete initialPlan.digest;
   fs.writeFileSync(path.join(root,'database/installation/v2/manifest.json'),JSON.stringify(initialPlan));
   await admin.query('create database "'+name+'"');created=true;target.pathname='/'+name;
@@ -939,7 +942,8 @@ async function qualifyInstalled63Upgrade({admin,connectionString,passwords,check
   await check('upgrade 63 to current appends Control and B1 units while preserving historical ledger',async()=>{
    await migrator.query(sql);const after=await ledger();assert.equal(after.length,plan.units.length);assert.deepEqual(after.slice(0,63),initial);
    assert.equal(after[64].file_name,controlUnit.file);assert.equal(after[64].sha256,controlUnit.sha256);
-   assert.deepEqual(after.slice(-4).map(u=>u.file_name),studentrecordFiles);
+   assert.deepEqual(after.slice(65,69).map(u=>u.file_name),studentrecordFiles);
+   assert.equal(after[69].file_name,'database/license/v2/01_perpetual_license.sql');
    const before=(await owner.query('select * from ops.installation_units order by unit_order')).rows;await migrator.query(renderAdditiveUpgrade({installed:after}));assert.deepEqual((await owner.query('select * from ops.installation_units order by unit_order')).rows,before);
    const hash=await argonHash(randomBytes(32).toString('hex'),{memoryCost:19456,timeCost:2,parallelism:1});
    const result=(await auth.query('select * from api.auth_control_resolve_identity($1,$2,$3)',[randomUUID(),'upgrade-'+randomUUID()+'@example.test',null])).rows[0];assert.ok(result.identity_id);assert.equal(result.school_id,null);
@@ -958,14 +962,15 @@ async function qualifyInstalled63Upgrade({admin,connectionString,passwords,check
 async function qualifyInstalled64Upgrade({admin,connectionString,passwords,check}) {
  const plan=loadInstallationPlan();
  const controlUnit=plan.units.find(u=>u.file==='database/auth/v7/01_control_admin_links.sql');
- assert.ok(controlUnit);assert.equal(controlUnit.order,65);assert.equal(plan.units.length,69);
+ assert.ok(controlUnit);assert.equal(controlUnit.order,65);assert.equal(plan.units.length,70);
  const studentrecordFiles=[
   'database/studentrecord/v1/01_student_identity_emergency.sql',
   'database/studentrecord/v1/02_health_dietary.sql',
   'database/studentrecord/v1/03_confirmations_permissions.sql',
   'database/studentrecord/v1/04_student_record_rpc.sql',
  ];
- assert.deepEqual(plan.units.slice(-4).map(u=>u.file),studentrecordFiles);
+ assert.deepEqual(plan.units.slice(65,69).map(u=>u.file),studentrecordFiles);
+ assert.equal(plan.units[69].file,'database/license/v2/01_perpetual_license.sql');
  const target=new URL(connectionString),name=decodeURIComponent(target.pathname.slice(1))+'_upgrade64';
  assert.match(name,/^schoolsafe_test_[a-z0-9_]+$/);
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'schoolsafe-control-upgrade-'));let created=false,owner,migrator,auth;
@@ -980,6 +985,9 @@ async function qualifyInstalled64Upgrade({admin,connectionString,passwords,check
   studentrecordManifest.units=[];
   fs.writeFileSync(studentrecordManifestPath,JSON.stringify(studentrecordManifest));
   fs.writeFileSync(path.join(root,'database/studentrecord/v1/manifest.sha256'),'\n');
+  fs.unlinkSync(path.join(root,'database/license/v2/01_perpetual_license.sql'));
+  fs.writeFileSync(path.join(root,'database/license/v2/manifest.json'),JSON.stringify({schema:'schoolsafe-migrations-v2',name:'license',version:2,units:[]}));
+  fs.writeFileSync(path.join(root,'database/license/v2/manifest.sha256'),'\n');
   const initialPlan={...plan,units:plan.units.slice(0,64)};delete initialPlan.digest;
   fs.writeFileSync(path.join(root,'database/installation/v2/manifest.json'),JSON.stringify(initialPlan));
   await admin.query('create database "'+name+'"');created=true;target.pathname='/'+name;
@@ -991,7 +999,7 @@ async function qualifyInstalled64Upgrade({admin,connectionString,passwords,check
   const old=(await auth.query('select * from api.auth_create_direct_identity($1,$2,$3)',['legacy-direct-'+randomUUID()+'@example.test',hash,'198.19.2.1'])).rows[0];assert.ok(old.identity_id);
   const credentials=(await owner.query('select * from auth.credentials order by identity_id')).rows;
   const ledger=async()=> (await owner.query('select unit_order,file_name,sha256 from ops.installation_units order by unit_order')).rows;
-  const initial=await ledger(),sql=renderAdditiveUpgrade({installed:initial});assert.equal(initial.length,64);assert.equal((sql.match(/-- APPLY /g)??[]).length,5);
+  const initial=await ledger(),sql=renderAdditiveUpgrade({installed:initial});assert.equal(initial.length,64);assert.equal((sql.match(/-- APPLY /g)??[]).length,6);
   await check('Control v7 plus B1 upgrade from production 64 rolls back completely on late failure',async()=>{
    await assert.rejects(migrator.query(sql.replace(/^commit;$/im,'select 1/0;\ncommit;')),e=>e.code==='22012');await migrator.query('rollback');
    assert.deepEqual(await ledger(),initial);assert.equal((await owner.query("select to_regclass('auth.control_admin_links') object")).rows[0].object,null);
@@ -1001,7 +1009,8 @@ async function qualifyInstalled64Upgrade({admin,connectionString,passwords,check
   await check('production 64 upgrade appends Control then four B1 units and preserves identities and credentials',async()=>{
    await migrator.query(sql);const after=await ledger();assert.equal(after.length,plan.units.length);assert.deepEqual(after.slice(0,64),initial);
    assert.equal(after[64].file_name,controlUnit.file);assert.equal(after[64].sha256,controlUnit.sha256);
-   assert.deepEqual(after.slice(-4).map(u=>u.file_name),studentrecordFiles);
+   assert.deepEqual(after.slice(65,69).map(u=>u.file_name),studentrecordFiles);
+   assert.equal(after[69].file_name,'database/license/v2/01_perpetual_license.sql');
    assert.deepEqual((await owner.query('select * from auth.credentials order by identity_id')).rows,credentials);
    assert.equal((await owner.query('select count(*)::int n from auth.identities where id=$1',[old.identity_id])).rows[0].n,1);
    await migrator.query(renderAdditiveUpgrade({installed:after}));assert.deepEqual(await ledger(),after);
