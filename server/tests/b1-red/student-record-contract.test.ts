@@ -20,6 +20,7 @@ describe("B1 Child Record Contract — GREEN acceptance", () => {
   const confirmationsSql = readRepo("database/studentrecord/v1/03_confirmations_permissions.sql");
   const rpcSql = readRepo("database/studentrecord/v1/04_student_record_rpc.sql");
   const routes = readRepo("server/src/studentrecordnative/routes.ts");
+  const service = readRepo("server/src/studentrecordnative/service.ts");
   const permissions = JSON.parse(readRepo("shared/permissions.json")) as Array<{ code: string }>;
   const apiAdapter = readRepo("app/modules/school/student-record-api.js");
   const realFrontend = readRepo("app/modules/school/student-record-real.js");
@@ -130,6 +131,28 @@ describe("B1 Child Record Contract — GREEN acceptance", () => {
     expectContains(realFrontend, "root.StudentRecordAPI.getRecord(studentId)");
     expectContains(realFrontend, "root.StudentRecordAPI.getCompleteness(studentId)");
     expectContains(realFrontend, "root.StudentRecordReal");
+  });
+
+  it("routes B1 mutations through SECURITY DEFINER RPCs without direct app table writes", () => {
+    for (const rpc of [
+      "api.student_emergency_contact_upsert",
+      "api.student_health_profile_upsert",
+      "api.student_allergy_add",
+      "api.student_dietary_restriction_add",
+      "api.student_record_confirmation_set",
+      "api.student_consent_set",
+      "api.student_medication_add",
+      "api.student_food_preference_add",
+      "api.student_dietary_profile_upsert",
+    ]) {
+      expectContains(rpcSql, `create or replace function ${rpc}`);
+      expectContains(service, `select * from ${rpc}`);
+    }
+    expect(service).not.toMatch(/insert\s+into\s+app\.student_/i);
+    expect(identityEmergencySql).not.toContain("to schoolsafe_api;");
+    expect(healthDietarySql).not.toContain("to schoolsafe_api;");
+    expect(confirmationsSql).not.toContain("on app.student_record_confirmations to schoolsafe_api");
+    expect(confirmationsSql).not.toContain("on app.student_consents to schoolsafe_api");
   });
 
   it("forces RLS on the new sensitive record tables", () => {
