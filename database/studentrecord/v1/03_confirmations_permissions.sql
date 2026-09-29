@@ -76,14 +76,18 @@ grant select, insert, update on app.student_consents to schoolsafe_api;
 -- ============================================================================
 -- 3. ADDITIVE PERMISSIONS SEED
 -- ============================================================================
-insert into app.permissions (code, scope, label)
+insert into iam.permissions (code, default_scope_code, label)
 values
-  ('school.student.health.read', 'school', 'Consulter le dossier santé élève'),
+  ('school.student.health.read', 'own_children', 'Consulter le dossier santé élève'),
   ('school.student.health.manage', 'school', 'Modifier le dossier santé élève'),
   ('school.student.health.confirm', 'school', 'Confirmer les informations santé élève'),
-  ('school.student.dietary.read', 'school', 'Consulter le profil alimentaire élève'),
+  ('school.student.dietary.read', 'assigned_classes', 'Consulter le profil alimentaire élève'),
   ('school.student.dietary.manage', 'school', 'Modifier le profil alimentaire élève'),
   ('school.student.dietary.confirm', 'school', 'Confirmer les informations alimentaires élève')
-on conflict (code) do nothing;
+on conflict (code) do update set
+  default_scope_code = excluded.default_scope_code,
+  label = excluded.label,
+  is_active = true,
+  updated_at = pg_catalog.now();
 
 commit;
