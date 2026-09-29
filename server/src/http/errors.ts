@@ -33,6 +33,7 @@ export type ApiErrorCode =
   | "JASPE_PROVIDER_ERROR"
   | "JASPE_RATE_LIMITED"
   | "CONTROL_UNAVAILABLE"
+  | "ACTIVATION_REJECTED"
   | "INTERNAL_ERROR";
 
 export type ApiErrorBody = {

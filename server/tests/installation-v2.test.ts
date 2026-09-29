@@ -9,7 +9,7 @@ import {createSetupNativeService} from "../src/setup/service.js";
 import {createRecoveryDelivery} from "../src/authnative/recovery-delivery.js";
 import {registerDeviceHubMachineRoutes} from "../src/devicehub/machine-routes.js";
 import {signRequest,verifyRequest} from "../src/machine/hmac.js";
-import {createControlLicenseClient} from "../src/licensenative/control-client.js";
+
 import type {AuthPool,BusinessPool} from "../src/db/pool.js";
 import type {DeviceHubService} from "../src/devicehub/service.js";
 afterEach(()=>vi.unstubAllGlobals());
@@ -46,14 +46,7 @@ describe("native installation v2",()=>{
   for(const timestamp of [NaN,Infinity,input.timestamp-301,input.timestamp+301,input.timestamp+0.5])expect(verifyRequest({...input,timestamp,signature:independent,now:input.timestamp})).toBe(false);
   expect(verifyRequest({...input,signature:independent+"00",now:input.timestamp})).toBe(false);
  });
- it("signs license GET using canonical headers, seconds, query path and empty JSON body",async()=>{
-  const fetcher=vi.fn().mockResolvedValue({ok:true,json:async()=>({signed_token:"synthetic.signed"})});vi.stubGlobal("fetch",fetcher);
-  const config={url:"https://control.example.test",instanceId:"instance-a",hmacSecret:"synthetic-contract-secret"};
-  expect(await createControlLicenseClient(config).fetchLicenseState("school-a")).toBe("synthetic.signed");
-  const [url,options]=fetcher.mock.calls[0];const headers=options.headers;const timestamp=Number(headers["x-schoolsafe-timestamp"]);
-  expect(timestamp).toBeLessThan(1e11);expect(headers["X-Control-Instance"]).toBeUndefined();
-  expect(headers["x-schoolsafe-signature"]).toBe(signRequest({method:"GET",path:new URL(url).pathname+new URL(url).search,body:"{}",timestamp,secret:config.hmacSecret}));
- });
+ 
  it("maps two devices through the server registry and rejects client school injection",async()=>{
   const devices: string[]=[randomUUID(),randomUUID()],schools=[randomUUID(),randomUUID()];const ingestEvent=vi.fn().mockResolvedValue({accepted:true});
   const resolveContext=vi.fn(async(instance:string,device:string,requestId:string)=>{expect(instance).toBe("instance-a");const index=devices.indexOf(device);if(index<0)throw Error("unbound");return {schoolId:schools[index],userId:randomUUID(),profileId:randomUUID(),requestId};});

@@ -5,38 +5,49 @@ import { lot4AuthStubs } from "./helpers/lot4-auth-stubs.js";
 import { registerLicenseGate } from "../src/licensenative/gate.js";
 import type { BusinessPool } from "../src/db/pool.js";
 import {
-  computeLicenseState,
-  verifyLicenseToken,
-  type LicensePayload,
+  computeLicenseStateV1,
+  verifySignedLicenseV1,
+  canonicalizePayloadV1,
+  type LicensePayloadV1,
+  type PublicKeyRegistry,
 } from "../src/licensenative/license.js";
 import {
   createLicenseNativeService,
-  type ControlLicenseClient,
 } from "../src/licensenative/service.js";
+import type { ActivationServiceClient } from "../src/licensenative/activation-client.js";
+import type { InstallationKey } from "../src/licensenative/installation-key.js";
 import type { AuthNativeService, AuthSessionInfo } from "../src/authnative/service.js";
 
 const { publicKey, privateKey } = generateKeyPairSync("ed25519");
 const PUBLIC_PEM = publicKey.export({ format: "pem", type: "spki" }).toString();
 const PRIVATE_KEY = createPrivateKey(privateKey.export({ format: "pem", type: "pkcs8" }).toString());
+const KEY_ID = "test-key-1";
+const REGISTRY: PublicKeyRegistry = new Map([[KEY_ID, PUBLIC_PEM]]);
+const INSTALLATION_ID = "11111111-2222-3333-4444-555555555555";
 
 const SCHOOL_A = "33333333-0000-4000-8000-000000000001";
 const SCHOOL_B = "33333333-0000-4000-8000-000000000002";
 
-function signToken(payload: LicensePayload): string {
-  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const signature = cryptoSign(null, Buffer.from(payloadB64, "utf8"), PRIVATE_KEY).toString("base64url");
-  return `${payloadB64}.${signature}`;
+function makeEnvelope(payload: LicensePayloadV1) {
+  const canonical = canonicalizePayloadV1(payload);
+  const signature = cryptoSign(null, Buffer.from(canonical, "utf8"), PRIVATE_KEY).toString("base64url");
+  return { payload, signature };
 }
 
-function makePayload(overrides: Partial<LicensePayload> = {}): LicensePayload {
+function makePayload(overrides: Partial<LicensePayloadV1> = {}): LicensePayloadV1 {
   const now = Date.now();
   return {
-    license_id: "LIC-TEST-1",
+    version: 1,
+    license_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
     school_id: SCHOOL_A,
+    installation_id: INSTALLATION_ID,
     status: "active",
+    plan: "basic",
+    modules: [],
     issued_at: new Date(now - 3600_000).toISOString(),
     expires_at: new Date(now + 14 * 86_400_000).toISOString(),
-    grace_days: 7,
+    perpetual: false,
+    key_id: KEY_ID,
     ...overrides,
   };
 }
@@ -78,19 +89,35 @@ function fakeBusinessPool(store: Store) {
   return { connect: async () => client } as unknown as BusinessPool;
 }
 
-function fakeControl(token: string | null, fail = false): ControlLicenseClient {
+function fakeActivationClient(envelope: ReturnType<typeof makeEnvelope> | null, fail = false): ActivationServiceClient {
   return {
-    async fetchLicenseState() {
-      if (fail) throw new Error("Control indisponible");
-      return token;
+    async redeem() { return envelope; },
+    async refresh() {
+      if (fail) throw new Error("Activation Service indisponible");
+      return envelope;
+    },
+  };
+}
+
+function fakeInstallationKey(): InstallationKey {
+  return {
+    publicKeyBase64Url: Buffer.alloc(32, 0xaa).toString("base64url"),
+    sign(message: string) {
+      return cryptoSign(null, Buffer.from(message, "utf8"), PRIVATE_KEY).toString("base64url");
     },
   };
 }
 
 const CTX = { userId: "u1", profileId: "p1", schoolId: SCHOOL_A, requestId: "r1" };
 
-function makeService(store: Store, control?: ControlLicenseClient) {
-  return createLicenseNativeService(fakeBusinessPool(store), control, PUBLIC_PEM);
+function makeService(store: Store, client?: ActivationServiceClient) {
+  return createLicenseNativeService(
+    fakeBusinessPool(store),
+    client,
+    REGISTRY,
+    INSTALLATION_ID,
+    fakeInstallationKey(),
+  );
 }
 
 function fakeAuthForGate(schoolId: string = SCHOOL_A): AuthNativeService {
@@ -114,7 +141,7 @@ function fakeAuthForGate(schoolId: string = SCHOOL_A): AuthNativeService {
     async forgotPassword() {},
     async resetPassword() { return false; },
     async switchProfile() { return { ok: false as const }; },
- ...lot4AuthStubs,
+    ...lot4AuthStubs,
   };
 }
 
@@ -133,11 +160,11 @@ describe("license gate — enforcement backend (P3)", () => {
   });
   it("bloque /native/students quand la licence est inactive", async () => {
     const store: Store = new Map();
-    const expiredToken = signToken(
+    const expiredEnvelope = makeEnvelope(
       makePayload({ expires_at: new Date(Date.now() - 20 * 86_400_000).toISOString() }),
     );
-    const service = makeService(store, fakeControl(expiredToken));
-    await service.refreshFromControl(CTX);
+    const service = makeService(store, fakeActivationClient(expiredEnvelope));
+    await service.refreshFromActivation(CTX);
     const app = buildApp({
       authNative: { service: fakeAuthForGate(), cookieSecure: false },
       licenseNative: { authService: fakeAuthForGate(), service },
@@ -158,11 +185,11 @@ describe("license gate — enforcement backend (P3)", () => {
 
   it("laisse passer /native/license même avec licence inactive", async () => {
     const store: Store = new Map();
-    const expiredToken = signToken(
+    const expiredEnvelope = makeEnvelope(
       makePayload({ expires_at: new Date(Date.now() - 20 * 86_400_000).toISOString() }),
     );
-    const service = makeService(store, fakeControl(expiredToken));
-    await service.refreshFromControl(CTX);
+    const service = makeService(store, fakeActivationClient(expiredEnvelope));
+    await service.refreshFromActivation(CTX);
     const app = buildApp({
       authNative: { service: fakeAuthForGate(), cookieSecure: false },
       licenseNative: { authService: fakeAuthForGate(), service },
@@ -178,8 +205,9 @@ describe("license gate — enforcement backend (P3)", () => {
 
   it("laisse passer /native/trial même avec licence inactive", async () => {
     const store: Store = new Map();
-    const service = makeService(store, fakeControl(signToken(makePayload({ status: "revoked" }))));
-    await service.refreshFromControl(CTX);
+    const revokedEnvelope = makeEnvelope(makePayload({ status: "revoked" }));
+    const service = makeService(store, fakeActivationClient(revokedEnvelope));
+    await service.refreshFromActivation(CTX);
     const app = buildApp({
       authNative: { service: fakeAuthForGate(), cookieSecure: false },
       licenseNative: { authService: fakeAuthForGate(), service },
@@ -197,35 +225,11 @@ describe("license gate — enforcement backend (P3)", () => {
     expect(response.statusCode).not.toBe(403);
   });
 
-  it("autorise /native/finance quand la licence est en grâce", async () => {
-    const store: Store = new Map();
-    const graceToken = signToken(
-      makePayload({ expires_at: new Date(Date.now() - 86_400_000).toISOString(), grace_days: 7 }),
-    );
-    const service = makeService(store, fakeControl(graceToken));
-    await service.refreshFromControl(CTX);
-    const app = buildApp({
-      authNative: { service: fakeAuthForGate(), cookieSecure: false },
-      licenseNative: { authService: fakeAuthForGate(), service },
-      financeNative: {
-        authService: fakeAuthForGate(),
-        service: { listFees: async () => [] } as any,
-      },
-    });
-    registerLicenseGate(app, { authService: fakeAuthForGate(), licenseService: service });
-    const response = await app.inject({
-      method: "GET",
-      url: "/native/finance/fees",
-      headers: { cookie: "schoolsafe_session=token-valide" },
-    });
-    expect(response.statusCode).not.toBe(403);
-  });
-
   it("isolation gate : la licence de B ne débloque pas A", async () => {
     const store: Store = new Map();
-    const tokenB = signToken(makePayload({ school_id: SCHOOL_B, license_id: "LIC-B" }));
-    const service = makeService(store, fakeControl(tokenB));
-    await service.refreshFromControl(CTX);
+    const envelopeB = makeEnvelope(makePayload({ school_id: SCHOOL_B, license_id: "bbbbbbbb-cccc-dddd-eeee-ffffffffffff" }));
+    const service = makeService(store, fakeActivationClient(envelopeB));
+    await service.refreshFromActivation(CTX);
     const app = buildApp({
       authNative: { service: fakeAuthForGate(SCHOOL_A), cookieSecure: false },
       licenseNative: { authService: fakeAuthForGate(SCHOOL_A), service },

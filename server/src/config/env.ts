@@ -48,6 +48,11 @@ const envSchema = z.object({
   JASPE_CHAT_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(12000),
   JASPE_RATE_PER_MINUTE: z.coerce.number().int().min(1).max(600).default(20),
 
+  // SchoolSafe Activation Service V1 — protocole de licence natif.
+  ACTIVATION_SERVICE_URL: z.string().url().refine(value => new URL(value).protocol === "https:", "HTTPS required").optional(),
+  ACTIVATION_INSTALLATION_ID: z.string().uuid().optional(),
+  ACTIVATION_INSTALLATION_PRIVATE_KEY_PATH: z.string().min(1).optional(),
+  ACTIVATION_LICENSE_PUBLIC_KEYS_JSON: z.string().min(1).optional(),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;
