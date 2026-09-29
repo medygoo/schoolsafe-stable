@@ -38,8 +38,6 @@ begin
   end if;
 end $$;
 
-grant select, insert, update on app.student_record_confirmations to schoolsafe_api;
-
 -- ============================================================================
 -- 2. STUDENT CONSENTS (photo_video, emergency_care)
 -- ============================================================================
@@ -70,8 +68,6 @@ begin
       with check (school_id = iam.current_school_id());
   end if;
 end $$;
-
-grant select, insert, update on app.student_consents to schoolsafe_api;
 
 -- ============================================================================
 -- 3. ADDITIVE PERMISSIONS SEED
