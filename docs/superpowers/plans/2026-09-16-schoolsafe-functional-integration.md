@@ -613,3 +613,7 @@ Docker Compose + Caddy, deux bases/reseaux, source GitHub production. Correction
 locales additives sur codex/schoolsafe-installation-v2, jamais dans le checkout
 VPS ; ni merge ni deploiement SchoolSafe autorise. Voir docs/INSTALLATION_V2.md
 et SCHOOLSAFE_DIRECT_VPS_REPORT.md. Les sections anterieures restent historiques.
+
+## 29 septembre 2026 — licence perpétuelle
+
+Lot ciblé en qualification sur codex/perpetual-license. Contrat Control/SchoolSafe explicite et migration additive. Production inchangée ; provisionnement et vérification métier bloqués jusqu’à livraison coordonnée et configuration de signature.

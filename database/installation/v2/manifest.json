@@ -346,6 +346,11 @@
       "order": 69,
       "file": "database/studentrecord/v1/04_student_record_rpc.sql",
       "sha256": "15b3608ca72749104c06ff0420c3e5c11bf1c2ff75b4b44328c0121686279f85"
+    },
+    {
+      "order": 70,
+      "file": "database/license/v2/01_perpetual_license.sql",
+      "sha256": "08177c9d8f3530783986b113043cdd5ce6ed72d2da7330febb2b558aa5db75e7"
     }
   ],
   "superseded": [

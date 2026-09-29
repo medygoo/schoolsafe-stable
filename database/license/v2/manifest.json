@@ -1,0 +1,12 @@
+{
+  "schema": "schoolsafe-migrations-v2",
+  "name": "license",
+  "version": 2,
+  "units": [
+    {
+      "order": 1,
+      "file": "01_perpetual_license.sql",
+      "sha256": "08177c9d8f3530783986b113043cdd5ce6ed72d2da7330febb2b558aa5db75e7"
+    }
+  ]
+}

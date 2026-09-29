@@ -445,6 +445,14 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "license",
+      "file": "database/license/v2/01_perpetual_license.sql",
+      "manifest": "database/license/v2/manifest.json",
+      "orderInSet": 1,
+      "sha256": "08177c9d8f3530783986b113043cdd5ce6ed72d2da7330febb2b558aa5db75e7",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "trial",
       "file": "database/trial/v1/01_trial.sql",
       "manifest": "database/trial/v1/manifest.json",

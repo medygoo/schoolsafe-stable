@@ -1,3 +1,14 @@
+# 29 septembre 2026 — licence perpétuelle explicite
+
+Agent : Codex. Branche : codex/perpetual-license. Base actualis�e : 9325ee5c635720a0456f83e391bfb7afa967a1f1 (PR #42 dossier �l�ve pr�serv�e).
+Mandat : le propriétaire autorise une durée indéterminée pour son école ; aucune licence créée dans ce lot de code.
+Périmètre : vérificateur signé, statut licence, migration additive license/v2, manifestes et tests.
+Un expires_at null exige perpetual=true signé et zéro grâce. Les anciennes licences datées fonctionnent ; suspension/révocation restent prioritaires. Un état perpétuel déjà mis en cache reste utilisable hors ligne jusqu’à une synchronisation ; aucune révocation instantanée hors ligne promise.
+Migration testée via l’installateur existant sur PostgreSQL 17.11 isolé : 66 unités atomiques. Contrôles date/null, ACL et FORCE RLS PASS. Tests ciblés licence 32 PASS. Typecheck/build PASS. Suite globale : 531 tests serveur PASS, 7 tests installateur PASS. Contrat entre les vrais builds Control/SchoolSafe : active/suspended/revoked PASS sur base locale PostgreSQL 17.11.
+Le lot coordonnées facultatives est conservé séparément sur codex/onboarding-optional-details, commit 4ede690 ; il n’est pas inclus ici.
+Blocage livraison : le compte Windows Codex ne peut lire le jeton du coffre Windows utilisateur ; publication depuis le PowerShell utilisateur. Aucun VPS, secret, compte ou donnée métier modifié.
+Prochaine action : livrer les changements coordonnés Control/SchoolSafe, puis sauvegarder/provisionner les clés de signature, l’instance existante et la licence de l’école demandée. Aucun certificat/signature ne peut être déduit de la seule clé publique.
+
 # Lot Control → SchoolSafe — code qualifié localement (2026-09-28)
 
 Agent : Codex. Branche : feat/control-admin-onboarding-v1.
