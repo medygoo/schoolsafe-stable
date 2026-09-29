@@ -16,7 +16,7 @@ type LicenseRowJson = {
   license_id: string;
   status: "active" | "suspended" | "revoked";
   issued_at: string;
-  expires_at: string;
+  expires_at: string | null;
   grace_days: number;
   last_seen_at: string;
 };

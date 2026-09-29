@@ -49,6 +49,7 @@ export function registerLicenseNativeRoutes(
         state,
         license_id: payload?.license_id ?? null,
         expires_at: payload?.expires_at ?? null,
+        perpetual: payload?.perpetual === true,
         grace_days: payload?.grace_days ?? null,
       },
       request_id: newRequestId(),

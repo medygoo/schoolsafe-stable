@@ -264,3 +264,7 @@ Docker Compose + Caddy, deux bases/reseaux, source GitHub production. Correction
 locales additives sur codex/schoolsafe-installation-v2, jamais dans le checkout
 VPS ; ni merge ni deploiement SchoolSafe autorise. Voir docs/INSTALLATION_V2.md
 et SCHOOLSAFE_DIRECT_VPS_REPORT.md. Les sections anterieures restent historiques.
+
+## 29 septembre 2026 — durée indéterminée par école
+
+Le propriétaire demande une licence sans expiration pour son école. Représentation explicite : expires_at=null et perpetual=true dans le jeton signé ; aucune date artificielle, aucune activation globale. Les licences demeurent suspendables/révocables après synchronisation. Une migration additive préserve les données et FORCE RLS. La clé de signature et la confiance correspondante restent à provisionner, sans modifier les clés SSH.

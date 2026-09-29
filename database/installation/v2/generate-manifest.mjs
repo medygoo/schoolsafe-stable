@@ -6,7 +6,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../..')
 const read=file=>fs.readFileSync(path.join(root,file));
 const digest=file=>sha256Sql(read(file));
 const sets=['baseline','auth','access','finance','pedagogy','cards','family','devicehub','dashboard','license','trial','projections'];
-const versions=['baseline','auth','finance','devicehub','projections','setup'];
+const versions=['baseline','auth','finance','devicehub','projections','setup','license'];
 for(const name of versions){
  const directory=`database/${name}/v2`;
  const files=fs.readdirSync(path.join(root,directory)).filter(f=>/^\d{2}_[a-z0-9_]+\.sql$/.test(f)).sort();
@@ -66,6 +66,10 @@ for(const unit of studentrecord.units){
  if(!files.includes(f))files.push(f);
 }
 if(files.length!==69)throw new Error(`B1 installation plan must contain 69 units, got ${files.length}`);
+
+// Perpetual license support appends after the deployed 69-unit lineage.
+const license=JSON.parse(read('database/license/v2/manifest.json'));
+for(const unit of license.units)files.push(`database/license/v2/${unit.file}`);
 
 const manifest={schema:'schoolsafe-installation-v2',postgres:170011,
  units:files.map((file,index)=>({order:index+1,file,sha256:digest(file)})),

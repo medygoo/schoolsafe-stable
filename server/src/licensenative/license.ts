@@ -10,9 +10,10 @@ const payloadSchema = z.object({
   school_id: z.string().uuid(),
   status: z.enum(["active", "suspended", "revoked"]),
   issued_at: z.string().datetime({ offset: true }),
-  expires_at: z.string().datetime({ offset: true }),
+  expires_at: z.string().datetime({ offset: true }).nullable(),
+  perpetual: z.boolean().optional(),
   grace_days: z.number().int().min(0).max(90),
-});
+}).refine(p => p.expires_at === null ? p.perpetual === true && p.grace_days === 0 : p.perpetual !== true);
 
 export type LicensePayload = z.infer<typeof payloadSchema>;
 
@@ -51,6 +52,7 @@ export function computeLicenseState(
 ): LicenseState {
   if (payload.status === "revoked") return "revoked";
   if (payload.status === "suspended") return "suspended";
+  if (payload.expires_at === null) return payload.perpetual === true ? "active" : "expired";
 
   const effectiveNow = now.getTime() > lastSeenAt.getTime() ? now : lastSeenAt;
   const expiresAt = new Date(payload.expires_at);
