@@ -369,7 +369,7 @@
       "file": "database/studentrecord/v1/03_confirmations_permissions.sql",
       "manifest": "database/studentrecord/v1/manifest.json",
       "orderInSet": 3,
-      "sha256": "c78e19801def26cbf63df02c588ffb90a7f073b68c8e2e5d8e42977247dcc61d",
+      "sha256": "15e3d90c1bd66d6c0baadb2d3d6904e3025febc5c61a0bdc850e4c73b1ce9561",
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
