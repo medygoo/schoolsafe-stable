@@ -88,7 +88,7 @@
       return;
     }
     try {
-      settingsData = await window.SchoolSafeSchoolAPI.getSettings();
+      settingsData = await window.SchoolSafeSchoolNativeAPI.getSettings();
       renderSchoolTab();
     } catch (e) {
       notify("Erreur chargement école : " + e.message);
@@ -690,22 +690,15 @@
       formField("primary_color", "Couleur principale", "color", s.brand.primary_color || "#071a3d") +
       formField("accent_color", "Couleur d\'accent", "color", s.brand.accent_color || "#e9a515") +
       formField("document_footer", "Pied de page", "text", s.brand.document_footer) +
-      '<div class="ss-field ss-field--wide"><label class="ss-label">Logo</label><label class="logo-upload" for="school-field-logo_file"><span><i data-lucide="image-up"></i><b>' + (s.brand.logo_path ? "Logo officiel chargé" : "Sélectionner le logo officiel") + '</b><span>PNG haute définition, fond transparent recommandé</span></span>' + window.ssInput({ name: "logo_file", id: "school-field-logo_file", type: "file", accept: "image/png,image/jpeg,image/webp", className: "sr-only" }) + '</label>' + formField("logo_path", "", "hidden", s.brand.logo_path) + (s.brand.logo_path ? '<img src="' + escapeMarkup(s.brand.logo_path) + '" alt="Logo" style="max-width:200px;max-height:100px;margin-top:var(--ss-space-3);">' : '') + "</div>" +
+      '<div class="ss-field ss-field--wide"><label class="ss-label">Logo</label><div class="logo-upload" aria-disabled="true"><span><i data-lucide="image-up"></i><b>' + (s.brand.logo_path ? "Logo officiel chargé" : "Logo non configuré") + '</b><span>Téléversement du logo indisponible pour le moment.</span></span></div>' + (s.brand.logo_path ? '<img src="' + escapeMarkup(s.brand.logo_path) + '" alt="Logo" style="max-width:200px;max-height:100px;margin-top:var(--ss-space-3);">' : '') + "</div>" +
       "</div></div>" +
-      renderAcademicYears() +
-      renderCycles() +
       '<div class="ss-field--wide">' + window.ssButton({ label: "Enregistrer", icon: "save", type: "submit" }) + '</div>' +
       "</form>";
 
     document.getElementById("schoolSettingsForm").addEventListener("submit", async function (e) {
       e.preventDefault();
       var form = e.target;
-      var logoPath = form.logo_path.value || null;
       try {
-        if (form.logo_file.files && form.logo_file.files[0]) {
-          var upload = await window.SchoolSafeSchoolAPI.uploadLogo(form.logo_file.files[0]);
-          logoPath = upload && upload.logo_path ? upload.logo_path : logoPath;
-        }
         var payload = {
           identity: {
             name: form.name.value,
@@ -734,10 +727,9 @@
             primary_color: form.primary_color.value,
             accent_color: form.accent_color.value,
             document_footer: form.document_footer.value || null,
-            logo_path: logoPath,
           },
         };
-        settingsData = await window.SchoolSafeSchoolAPI.updateSettings(payload);
+        settingsData = await window.SchoolSafeSchoolNativeAPI.updateSettings(payload);
         notify("Paramètres de l'école enregistrés.");
         renderSchoolTab();
       } catch (err) {

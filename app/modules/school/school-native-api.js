@@ -63,5 +63,24 @@
         },
       });
     },
+
+    getSettings: function () {
+      return request("/native/school/settings", { method: "GET" }).then(function (response) {
+        return response && Object.prototype.hasOwnProperty.call(response, "data")
+          ? response.data
+          : response;
+      });
+    },
+
+    updateSettings: function (payload) {
+      return request("/native/school/settings", {
+        method: "PUT",
+        body: payload,
+      }).then(function (response) {
+        return response && Object.prototype.hasOwnProperty.call(response, "data")
+          ? response.data
+          : response;
+      });
+    },
   };
 })();

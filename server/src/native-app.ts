@@ -27,6 +27,7 @@ import { createFamilyNativeService } from "./familynative/service.js";
 import { createFamilyImportService } from "./familynative/import.js";
 import { createDeviceHubService } from "./devicehub/service.js";
 import { createStudentRecordNativeService } from "./studentrecordnative/service.js";
+import { createSchoolNativeService } from "./schoolnative/service.js";
 
 /** Assemble uniquement les services qui utilisent les sessions et pools du VPS. */
 export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
@@ -137,6 +138,10 @@ export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
     studentRecordNative: {
       authService: authService,
       service: createStudentRecordNativeService(pools.businessPool),
+    },
+    schoolNative: {
+      authService: authService,
+      service: createSchoolNativeService(pools.businessPool),
     },
   });
   registerLicenseGate(app, {authService: authService, licenseService, pilotSchoolId: env.PILOT_SCHOOL_ID});

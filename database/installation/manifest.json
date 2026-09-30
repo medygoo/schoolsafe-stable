@@ -381,6 +381,14 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "school",
+      "file": "database/school/v1/01_school_native_settings.sql",
+      "manifest": "database/school/v1/manifest.json",
+      "orderInSet": 1,
+      "sha256": "7c6d1bf5209bfff16173de9363e2920b95510de722ac90fd81398f59be9e4550",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "devicehub",
       "file": "database/devicehub/v1/01_devicehub_core.sql",
       "manifest": "database/devicehub/v1/manifest.json",

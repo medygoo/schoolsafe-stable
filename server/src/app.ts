@@ -39,6 +39,7 @@ import { registerFamilyNativeRoutes, type FamilyNativeRouteDependencies } from "
 import { registerDeviceHubRoutes, type DeviceHubRouteDependencies } from "./devicehub/routes.js";
 import { registerDeviceHubMachineRoutes, type DeviceHubMachineRouteDependencies } from "./devicehub/machine-routes.js";
 import { registerStudentRecordNativeRoutes, type StudentRecordNativeRouteDependencies } from "./studentrecordnative/routes.js";
+import { registerSchoolNativeRoutes, type SchoolNativeRouteDependencies } from "./schoolnative/routes.js";
 import { registerDocumentRoutes, type DocumentRouteDependencies } from "./documents/routes.js";
 import { registerDashboardRoutes as registerLot5DashboardRoutes, type DashboardRouteDependencies as Lot5DashboardRouteDependencies } from "./dashboard/routes.js";
 
@@ -78,6 +79,7 @@ export type BuildAppOptions = {
   deviceHub?: DeviceHubRouteDependencies;
   deviceHubMachine?: DeviceHubMachineRouteDependencies;
   studentRecordNative?: StudentRecordNativeRouteDependencies;
+  schoolNative?: SchoolNativeRouteDependencies;
   documents?: DocumentRouteDependencies;
   lot5Dashboard?: Lot5DashboardRouteDependencies;
 };
@@ -261,6 +263,10 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   if (options.studentRecordNative) {
     registerStudentRecordNativeRoutes(app, options.studentRecordNative);
+  }
+
+  if (options.schoolNative) {
+    registerSchoolNativeRoutes(app, options.schoolNative);
   }
 
   if (options.testRoutes) {
