@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Watch Control Test</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;padding:18px;background:#0b1220;color:#fff}
+    .card{max-width:520px;margin:auto;background:#141e30;border-radius:16px;padding:18px}
+    h1{font-size:22px;margin:0 0 12px}
+    .ok{color:#6ee7b7;font-weight:700}
+    .warn{color:#fcd34d}
+    .row{margin:10px 0;word-break:break-word}
+    button{width:100%;padding:14px;border:0;border-radius:10px;font-size:16px}
+    small{color:#aab4c3}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>WATCH CONTROL TEST</h1>
+    <div class="row">Internet : <span class="ok">OK</span></div>
+    <div class="row">Heure appareil : <span id="time">...</span></div>
+    <div class="row">Navigateur : <span id="ua">...</span></div>
+    <div class="row">Écran : <span id="screen">...</span></div>
+    <div class="row">GPS : <span id="gps" class="warn">non testé</span></div>
+    <button id="gpsBtn" type="button">Tester la position GPS</button>
+    <div class="row"><small>Si cette page s'affiche sur la montre, sa connexion Internet peut joindre le serveur SchoolSafe.</small></div>
+  </div>
+<script>
+(function(){
+  function txt(id,v){document.getElementById(id).innerHTML=String(v);}
+  txt('time', new Date().toString());
+  txt('ua', navigator.userAgent || 'indisponible');
+  txt('screen', (screen && screen.width ? screen.width+'x'+screen.height : 'indisponible'));
+  document.getElementById('gpsBtn').onclick=function(){
+    if(!navigator.geolocation){txt('gps','API géolocalisation indisponible');return;}
+    txt('gps','demande en cours...');
+    navigator.geolocation.getCurrentPosition(
+      function(p){txt('gps',p.coords.latitude.toFixed(6)+', '+p.coords.longitude.toFixed(6)+' ±'+Math.round(p.coords.accuracy)+' m');},
+      function(e){txt('gps','échec : '+e.message);},
+      {enableHighAccuracy:true,timeout:15000,maximumAge:0}
+    );
+  };
+})();
+</script>
+</body>
+</html>
