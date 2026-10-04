@@ -1,0 +1,10 @@
+# Supabase local state
+.branches
+.temp
+
+# Secrets and local env files. Never commit them.
+.env
+.env.*
+.env.keys
+*.pem
+*.key
