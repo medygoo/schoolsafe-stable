@@ -8,6 +8,7 @@ import { clearSessionCookie, readSessionCookie, setSessionCookie, readOnboarding
 import { generateSessionToken, hashSessionToken } from "./tokens.js";
 import { authDatabaseFor, type AuthNativeService } from "./service.js";
 import { exchangeSupabasePrincipal, verifierFromEnv, type SupabasePrincipalVerifier } from "./supabase-exchange.js";
+import { createSupabasePrincipalSchool } from "../onboarding/supabase-school.js";
 import { generateAdminRecoveryCode } from './admin-recovery.js';
 import { isAcceptableRecoveryPassword } from './passwords.js';
 
@@ -112,6 +113,19 @@ export function registerAuthNativeRoutes(
         school_id: profile.schoolId,
       })),
     });
+  });
+
+  app.post("/auth/native/supabase/school", async (request, reply) => {
+    const header = request.headers.authorization;
+    const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
+    if (!token) throw new SchoolSafeError(401, "AUTH_REQUIRED", "Session requise", false);
+    const result = await createSupabasePrincipalSchool(
+      authDatabaseFor(service),
+      dependencies.supabaseVerifier ?? verifierFromEnv(),
+      token,
+      request.body,
+    );
+    return reply.code(201).send(result);
   });
 
   app.post("/auth/native/logout", async (request, reply) => {

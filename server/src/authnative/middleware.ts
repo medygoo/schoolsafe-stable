@@ -22,6 +22,9 @@ export function requireAuthSession(service: AuthNativeService) {
     if (!session) {
       throw new SchoolSafeError(401, "AUTH_REQUIRED", "Session invalide ou expirée", false);
     }
+    if (session.mustChange) {
+      throw new SchoolSafeError(403, "ACCESS_DENIED", "Changement de mot de passe requis", false);
+    }
     // Identité résolue côté serveur : le navigateur ne fournit jamais
     // user_id / profile_id / school_id — ils viennent de la session.
     request.authSession = session;

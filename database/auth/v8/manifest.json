@@ -7,6 +7,11 @@
       "order": 1,
       "file": "01_supabase_principal_link.sql",
       "sha256": "39328051638b3523ca8a869010a2f292993c1a3b87fc3b8354cee0a8c8c3b3e8"
+    },
+    {
+      "order": 2,
+      "file": "02_supabase_principal_school.sql",
+      "sha256": "9b5a6db3cb17d3176e54743f3782f9d928a1edb1eaafe41c728817af7206c570"
     }
   ]
 }
