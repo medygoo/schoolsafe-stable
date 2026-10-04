@@ -107,9 +107,15 @@ export interface AuthNativeDependencies {
   webauthnConfig?: { rpName: string; rpId: string; origin: string | string[] };
 }
 
+const authDatabases = new WeakMap<object, AuthDatabase>();
+
+export function authDatabaseFor(service: object): AuthDatabase | undefined {
+  return authDatabases.get(service);
+}
+
 export function createAuthNativeService(deps: AuthNativeDependencies) {
   const { db } = deps;
-  return {
+  const service = {
     async loginWithPassword(
       login: string,
       password: string,
@@ -502,5 +508,7 @@ export function createAuthNativeService(deps: AuthNativeDependencies) {
       return result.rows[0]?.auth_recover_profile_account === true;
     },
   };
+  authDatabases.set(service, db);
+  return service;
 };
 export type AuthNativeService = ReturnType<typeof createAuthNativeService>;

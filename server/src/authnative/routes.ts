@@ -6,7 +6,8 @@ import { SchoolSafeError } from "../http/errors.js";
 import { newRequestId } from "../http/request-id.js";
 import { clearSessionCookie, readSessionCookie, setSessionCookie, readOnboardingCookie, clearOnboardingCookie, setOnboardingCookie } from "./cookie.js";
 import { generateSessionToken, hashSessionToken } from "./tokens.js";
-import type { AuthNativeService } from "./service.js";
+import { authDatabaseFor, type AuthNativeService } from "./service.js";
+import { exchangeSupabasePrincipal, verifierFromEnv, type SupabasePrincipalVerifier } from "./supabase-exchange.js";
 import { generateAdminRecoveryCode } from './admin-recovery.js';
 import { isAcceptableRecoveryPassword } from './passwords.js';
 
@@ -20,6 +21,7 @@ const loginSchema = z.object({
 export type AuthNativeRouteDependencies = {
   service: AuthNativeService;
   cookieSecure: boolean;
+  supabaseVerifier?: SupabasePrincipalVerifier;
 };
 
 export function registerAuthNativeRoutes(
@@ -79,6 +81,36 @@ export function registerAuthNativeRoutes(
       must_change: result.session.mustChange,
       expires_at: result.session.expiresAt,
       request_id: newRequestId(),
+    });
+  });
+
+  app.post("/auth/native/supabase/exchange", async (request, reply) => {
+    const header = request.headers.authorization;
+    const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
+    if (!token) {
+      throw new SchoolSafeError(401, "AUTH_REQUIRED", "Session requise", false);
+    }
+    const result = await exchangeSupabasePrincipal(
+      authDatabaseFor(service),
+      dependencies.supabaseVerifier ?? verifierFromEnv(),
+      token,
+    );
+    if (result.status === "onboarding_required") {
+      return reply.code(200).send({ status: "onboarding_required" });
+    }
+    if (result.status === "profile_resolved") {
+      return reply.code(200).send({
+        status: "profile_resolved",
+        profile_id: result.profileId,
+        school_id: result.schoolId,
+      });
+    }
+    return reply.code(200).send({
+      status: "profile_choice_required",
+      profiles: result.profiles.map((profile) => ({
+        profile_id: profile.profileId,
+        school_id: profile.schoolId,
+      })),
     });
   });
 

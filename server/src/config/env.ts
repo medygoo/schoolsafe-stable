@@ -53,6 +53,17 @@ const envSchema = z.object({
   ACTIVATION_INSTALLATION_ID: z.string().uuid().optional(),
   ACTIVATION_INSTALLATION_PRIVATE_KEY_PATH: z.string().min(1).optional(),
   ACTIVATION_LICENSE_PUBLIC_KEYS_JSON: z.string().min(1).optional(),
+  // Pont Supabase Auth, serveur uniquement. Jamais de clé service-role ici.
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_ANON_KEY: z.string().min(20).optional(),
+}).superRefine((value, context) => {
+  if ((value.SUPABASE_URL === undefined) !== (value.SUPABASE_ANON_KEY === undefined)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["SUPABASE_URL"],
+      message: "SUPABASE_URL et SUPABASE_ANON_KEY vont ensemble",
+    });
+  }
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

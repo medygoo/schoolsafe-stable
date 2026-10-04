@@ -6,11 +6,20 @@ describe("parseEnv — VPS PostgreSQL", () => {
     const env = parseEnv({ NODE_ENV: "test" });
     expect(env.HOST).toBe("127.0.0.1");
     expect(env.PORT).toBe(8787);
-    expect(env).not.toHaveProperty("SUPABASE_URL");
+    expect(env.SUPABASE_URL).toBeUndefined();
+    expect(env.SUPABASE_ANON_KEY).toBeUndefined();
   });
-  it("ignore les anciennes variables Supabase même invalides", () => {
-    const env = parseEnv({ SUPABASE_URL: "retired", SUPABASE_ANON_KEY: "", SUPABASE_SERVICE_ROLE_KEY: "" });
-    expect(Object.keys(env).filter(key => key.startsWith("SUPABASE_"))).toEqual([]);
+  it("ignore la clé service-role et n'active le pont que par URL et clé anon", () => {
+    const ignored = parseEnv({ SUPABASE_SERVICE_ROLE_KEY: "service-role-must-stay-out" });
+    expect(ignored).not.toHaveProperty("SUPABASE_SERVICE_ROLE_KEY");
+    expect(ignored.SUPABASE_URL).toBeUndefined();
+    const local = parseEnv({
+      SUPABASE_URL: "http://127.0.0.1:54321",
+      SUPABASE_ANON_KEY: "local-anon-key-not-a-secret",
+    });
+    expect(local.SUPABASE_URL).toBe("http://127.0.0.1:54321");
+    expect(local.SUPABASE_ANON_KEY).toBe("local-anon-key-not-a-secret");
+    expect(() => parseEnv({ SUPABASE_URL: "retired", SUPABASE_ANON_KEY: "local-anon-key-not-a-secret" })).toThrow(/SUPABASE_URL/);
   });
   it("valide les ports avant de créer les pools", () => {
     expect(() => parseEnv({ PGPORT: "0" })).toThrow(/PGPORT/);

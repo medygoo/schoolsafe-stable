@@ -221,6 +221,14 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "auth",
+      "file": "database/auth/v8/01_supabase_principal_link.sql",
+      "manifest": "database/auth/v8/manifest.json",
+      "orderInSet": 1,
+      "sha256": "39328051638b3523ca8a869010a2f292993c1a3b87fc3b8354cee0a8c8c3b3e8",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "access",
       "file": "database/access/v1/01_role_templates.sql",
       "manifest": "database/access/v1/manifest.json",

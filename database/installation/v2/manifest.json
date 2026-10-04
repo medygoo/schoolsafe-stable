@@ -351,6 +351,11 @@
       "order": 70,
       "file": "database/license/v2/01_perpetual_license.sql",
       "sha256": "08177c9d8f3530783986b113043cdd5ce6ed72d2da7330febb2b558aa5db75e7"
+    },
+    {
+      "order": 71,
+      "file": "database/auth/v8/01_supabase_principal_link.sql",
+      "sha256": "39328051638b3523ca8a869010a2f292993c1a3b87fc3b8354cee0a8c8c3b3e8"
     }
   ],
   "superseded": [
