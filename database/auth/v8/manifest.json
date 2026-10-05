@@ -17,6 +17,11 @@
       "order": 3,
       "file": "03_supabase_principal_bootstrap.sql",
       "sha256": "2d80f52163e8655e5f53f9d8d3b7b5a9534d04327535e71e8ec133c9778aa7e1"
+    },
+    {
+      "order": 4,
+      "file": "04_supabase_password_state.sql",
+      "sha256": "99baa7a9f74e593ce974f161e7b65658cbf2b8b11ac39e6c29340ab21d93b9bd"
     }
   ]
 }

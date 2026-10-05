@@ -14,6 +14,7 @@ type StoredUser = {
   external_subject: string;
   email: string | null;
   phone: string | null;
+  must_change_password?: boolean;
 };
 
 type StoredProfile = { id: string; user_id: string; school_id: string };
@@ -26,6 +27,10 @@ const SCHOOL_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 function memoryDatabase(profiles: StoredProfile[] = []) {
   const users: StoredUser[] = [];
   const query = vi.fn(async (sql: string, params: unknown[]) => {
+    if (sql.includes("api.auth_supabase_password_pending")) {
+      const user = users.find((item) => item.id === params[0]);
+      return { rows: [{ pending: user?.must_change_password === true }] };
+    }
     if (!sql.includes("api.auth_link_supabase_principal")) return { rows: [] };
     expect(params).toHaveLength(3);
     const [subject, email, phone] = params as [string, string, string | null];
@@ -44,6 +49,7 @@ function memoryDatabase(profiles: StoredProfile[] = []) {
         external_subject: subject,
         email: email.toLowerCase(),
         phone,
+        must_change_password: true,
       });
     }
     const user = users.find((item) => item.auth_provider === "supabase" && item.external_subject === subject);
@@ -102,6 +108,7 @@ describe("POST /auth/native/supabase/exchange", () => {
       external_subject: SUBJECT,
       email: "principal@ecole.cd",
       phone: "+243812345678",
+      must_change_password: true,
     });
     await app.close();
   });
@@ -186,6 +193,25 @@ describe("POST /auth/native/supabase/exchange", () => {
       profile_id: "profile-a",
       school_id: SCHOOL_A,
     });
+    await app.close();
+  });
+
+  it("blocks normal profile access while a new Supabase principal must change password", async () => {
+    const userId = randomUUID();
+    const database = memoryDatabase([{ id: "profile-a", user_id: userId, school_id: SCHOOL_A }]);
+    database.users.push({
+      id: userId,
+      auth_provider: "supabase",
+      external_subject: SUBJECT,
+      email: "principal@ecole.cd",
+      phone: "+243812345678",
+      must_change_password: true,
+    });
+    const app = appFor(database, async () => verified());
+    const response = await exchange(app, "valid-token");
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ status: "password_change_required", password_change_required: true });
+    expect(response.json()).not.toHaveProperty("school_id");
     await app.close();
   });
 

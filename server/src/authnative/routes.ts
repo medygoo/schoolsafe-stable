@@ -9,6 +9,7 @@ import { generateSessionToken, hashSessionToken } from "./tokens.js";
 import { authDatabaseFor, type AuthNativeService } from "./service.js";
 import { exchangeSupabasePrincipal, verifierFromEnv, type SupabasePrincipalVerifier } from "./supabase-exchange.js";
 import { createSupabasePrincipalSchool } from "../onboarding/supabase-school.js";
+import { changeSupabasePrincipalPassword, supabasePasswordUpdaterFromEnv, type SupabasePasswordUpdater } from "./supabase-password.js";
 import { generateAdminRecoveryCode } from './admin-recovery.js';
 import { isAcceptableRecoveryPassword } from './passwords.js';
 
@@ -23,6 +24,7 @@ export type AuthNativeRouteDependencies = {
   service: AuthNativeService;
   cookieSecure: boolean;
   supabaseVerifier?: SupabasePrincipalVerifier;
+  supabasePasswordUpdater?: SupabasePasswordUpdater;
 };
 
 export function registerAuthNativeRoutes(
@@ -99,6 +101,9 @@ export function registerAuthNativeRoutes(
     if (result.status === "onboarding_required") {
       return reply.code(200).send({ status: "onboarding_required" });
     }
+    if (result.status === "password_change_required") {
+      return reply.code(200).send({ status: "password_change_required", password_change_required: true });
+    }
     if (result.status === "profile_resolved") {
       return reply.code(200).send({
         status: "profile_resolved",
@@ -113,6 +118,20 @@ export function registerAuthNativeRoutes(
         school_id: profile.schoolId,
       })),
     });
+  });
+
+  app.post("/auth/native/supabase/change-password", async (request, reply) => {
+    const header = request.headers.authorization;
+    const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
+    if (!token) throw new SchoolSafeError(401, "AUTH_REQUIRED", "Session requise", false);
+    const result = await changeSupabasePrincipalPassword(
+      authDatabaseFor(service),
+      dependencies.supabaseVerifier ?? verifierFromEnv(),
+      dependencies.supabasePasswordUpdater ?? supabasePasswordUpdaterFromEnv(),
+      token,
+      request.body,
+    );
+    return reply.code(200).send(result);
   });
 
   app.post("/auth/native/supabase/school", async (request, reply) => {

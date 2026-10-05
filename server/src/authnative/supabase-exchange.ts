@@ -6,6 +6,7 @@ export type SupabasePrincipalVerifier = (token: string) => Promise<SupabasePrinc
 
 export type SupabaseExchangeResult =
   | { status: "onboarding_required" }
+  | { status: "password_change_required" }
   | { status: "profile_resolved"; profileId: string; schoolId: string }
   | { status: "profile_choice_required"; profiles: Array<{ profileId: string; schoolId: string }> };
 
@@ -36,6 +37,11 @@ export async function exchangeSupabasePrincipal(
     );
     const profiles = result.rows.filter((row) => row.profile_id !== null && row.school_id !== null);
     if (profiles.length === 0) return { status: "onboarding_required" };
+    const gate = await db.query<{ pending: boolean }>(
+      "select api.auth_supabase_password_pending($1) as pending",
+      [profiles[0].user_id],
+    );
+    if (gate.rows[0]?.pending === true) return { status: "password_change_required" };
     if (profiles.length === 1) {
       return {
         status: "profile_resolved",
