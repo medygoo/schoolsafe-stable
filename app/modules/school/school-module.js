@@ -100,19 +100,24 @@
       renderDemoState("Démonstration", "L’équipe de l’école s’affiche avec les données réelles de l’établissement après connexion. Aucune donnée en mode démonstration.");
       return;
     }
+    staffData = [];
+    rolesData = [];
+    permissionsData = [];
     try {
       var results = await Promise.all([
         window.SchoolSafeSchoolAPI.listStaff(),
         window.SchoolSafeSchoolAPI.listRoles(),
         window.SchoolSafeSchoolAPI.listPermissions(),
       ]);
-      staffData = results[0];
-      rolesData = results[1];
-      permissionsData = results[2];
-      renderStaffTab();
+      staffData = results[0] || [];
+      rolesData = results[1] || [];
+      permissionsData = results[2] || [];
     } catch (e) {
-      notify("Erreur chargement équipe : " + e.message);
+      staffData = [];
+      rolesData = [];
+      permissionsData = [];
     }
+    renderStaffTab();
   }
 
   function canCreateStudent() {
@@ -877,7 +882,7 @@
     container.innerHTML =
       '<div class="school-staff-header">' +
       '<h3>Membres de l\'équipe</h3>' +
-      window.ssButton({ label: "Inviter", icon: "user-plus", attrs: { id: "inviteStaffBtn" } }) +
+      window.ssButton({ label: "Créer un enseignant", icon: "user-plus", attrs: { id: "createTeacherBtn" } }) +
       "</div>" +
       window.ssTable({
         headers: ["Nom", "Email", "Téléphone", "Rôles", "Statut", "Actions"],
@@ -898,7 +903,8 @@
       });
     });
 
-    document.getElementById("inviteStaffBtn").addEventListener("click", openInviteModal);
+    var createTeacherButton = document.getElementById("createTeacherBtn");
+    if (createTeacherButton) createTeacherButton.addEventListener("click", openTeacherModal);
 
     if (window.lucide) window.lucide.createIcons();
   }
@@ -931,6 +937,74 @@
     } catch (err) {
       notify("Erreur : " + err.message);
     }
+  }
+
+  function teacherCreatePayload(email, phone) {
+    return {
+      email: String(email || "").trim(),
+      phone: String(phone || "").trim(),
+      role_code: "teacher",
+    };
+  }
+
+  function openTeacherModal() {
+    var passwordNode = null;
+    var modal = window.ssModal({
+      title: "Créer un enseignant",
+      onClose: function () {
+        if (passwordNode) passwordNode.textContent = "";
+        passwordNode = null;
+      },
+      content:
+        '<form id="createTeacherForm" class="ss-form-grid">' +
+        formField("email", "Email", "email", "", { required: true }) +
+        formField("phone", "Téléphone", "tel", "+243", { required: true }) +
+        "</form>",
+      actions: [
+        { label: "Annuler", variant: "secondary" },
+        { label: "Créer", variant: "primary", type: "submit", closeOnClick: false, attrs: { form: "createTeacherForm" } },
+      ],
+    });
+    var form = modal.content.querySelector("#createTeacherForm");
+    var submitting = false;
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      if (submitting) return;
+      var payload = teacherCreatePayload(form.email.value, form.phone.value);
+      if (!payload.email || !/^\+243[0-9]{9}$/.test(payload.phone)) {
+        modal.setError("Indiquez un e-mail et un téléphone +243.");
+        return;
+      }
+      submitting = true;
+      modal.setLoading(true);
+      try {
+        var created = await window.SchoolSafeSchoolAPI.createTeacher(payload);
+        var temporary = created && created.data ? created.data.temporary_password : "";
+        if (!temporary) throw new Error("Mot de passe provisoire absent");
+        var content = modal.content.querySelector(".ss-modal__content") || modal.content;
+        content.textContent = "";
+        content.appendChild(document.createTextNode("Mot de passe provisoire, affiché une seule fois."));
+        passwordNode = document.createElement("p");
+        passwordNode.setAttribute("data-temporary-password", "true");
+        passwordNode.textContent = temporary;
+        var copy = document.createElement("button");
+        copy.type = "button";
+        copy.textContent = "Copier";
+        copy.addEventListener("click", function () {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(passwordNode.textContent || "").catch(function () {});
+          }
+        });
+        content.appendChild(passwordNode);
+        content.appendChild(copy);
+        if (modal.footer) modal.footer.textContent = "";
+      } catch (err) {
+        modal.setError(err.message);
+      } finally {
+        submitting = false;
+        modal.setLoading(false);
+      }
+    });
   }
 
   function openInviteModal() {

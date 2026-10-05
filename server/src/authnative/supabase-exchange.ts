@@ -7,7 +7,7 @@ export type SupabasePrincipalVerifier = (token: string) => Promise<SupabasePrinc
 export type SupabaseExchangeResult =
   | { status: "onboarding_required" }
   | { status: "password_change_required" }
-  | { status: "profile_resolved"; profileId: string; schoolId: string }
+  | { status: "profile_resolved"; userId: string; profileId: string; schoolId: string }
   | { status: "profile_choice_required"; profiles: Array<{ profileId: string; schoolId: string }> };
 
 export function verifierFromEnv(): SupabasePrincipalVerifier | undefined {
@@ -45,6 +45,7 @@ export async function exchangeSupabasePrincipal(
     if (profiles.length === 1) {
       return {
         status: "profile_resolved",
+        userId: profiles[0].user_id,
         profileId: profiles[0].profile_id as string,
         schoolId: profiles[0].school_id as string,
       };

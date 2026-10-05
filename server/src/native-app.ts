@@ -106,7 +106,17 @@ export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
       ratePerMinute: env.JASPE_RATE_PER_MINUTE,
     }) },
     licenseNative: licenseService ? { authService: authService, service: licenseService } : undefined,
-    setup: { service: createSetupNativeService(pools.authPool, pools.businessPool, undefined) },
+    setup: {
+      service: createSetupNativeService(
+        pools.authPool,
+        pools.businessPool,
+        undefined,
+        false,
+        env.SUPABASE_URL && env.SUPABASE_ANON_KEY
+          ? { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }
+          : undefined,
+      ),
+    },
     financeNative: { authService: authService, service: createFinanceNativeService(pools.businessPool) },
     pedagogyNative: { authService: authService, service: createPedagogyNativeService(pools.businessPool) },
     controlPrintNative: {

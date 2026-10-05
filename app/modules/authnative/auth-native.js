@@ -17,10 +17,11 @@
     var res = await fetch(apiBase() + path, {
       method: options && options.method ? options.method : "GET",
       credentials: "include",
-      headers: {
-        Accept: "application/json",
-        ...(options && options.body ? { "Content-Type": "application/json" } : {}),
-      },
+      headers: Object.assign(
+        { Accept: "application/json" },
+        options && options.headers ? options.headers : {},
+        options && options.body ? { "Content-Type": "application/json" } : {},
+      ),
       body: options && options.body ? JSON.stringify(options.body) : undefined,
     });
     var data = null;
@@ -61,6 +62,24 @@
 
   async function logout() {
     return request("/auth/native/logout", { method: "POST", body: {} });
+  }
+
+  async function exchangeSupabase(accessToken, remember) {
+    var body = {};
+    if (remember === true) body.remember = true;
+    return request("/auth/native/supabase/exchange", {
+      method: "POST",
+      body: body,
+      headers: { Authorization: "Bearer " + accessToken },
+    });
+  }
+
+  async function changeSupabasePassword(accessToken, newPassword) {
+    return request("/auth/native/supabase/change-password", {
+      method: "POST",
+      body: { new_password: newPassword },
+      headers: { Authorization: "Bearer " + accessToken },
+    });
   }
 
   // INC-7 : choix explicite du profil/école — jamais de sélection arbitraire.
@@ -155,6 +174,8 @@
     logoutOnboarding: function () { return request("/auth/onboarding/logout", {method:"POST", body:{}}); },
     isAvailable: isAvailable,
     login: login,
+    exchangeSupabase: exchangeSupabase,
+    changeSupabasePassword: changeSupabasePassword,
     me: me,
     sessionBootstrap: sessionBootstrap,
     logout: logout,

@@ -6,7 +6,7 @@ import { SchoolSafeError } from "../http/errors.js";
 import { newRequestId } from "../http/request-id.js";
 import { clearSessionCookie, readSessionCookie, setSessionCookie, readOnboardingCookie, clearOnboardingCookie, setOnboardingCookie } from "./cookie.js";
 import { generateSessionToken, hashSessionToken } from "./tokens.js";
-import { authDatabaseFor, type AuthNativeService } from "./service.js";
+import { authDatabaseFor, openResolvedSupabaseSession, REMEMBER_TTL_SECONDS, SESSION_TTL_SECONDS, type AuthNativeService } from "./service.js";
 import { exchangeSupabasePrincipal, verifierFromEnv, type SupabasePrincipalVerifier } from "./supabase-exchange.js";
 import { createSupabasePrincipalSchool } from "../onboarding/supabase-school.js";
 import { changeSupabasePrincipalPassword, supabasePasswordUpdaterFromEnv, type SupabasePasswordUpdater } from "./supabase-password.js";
@@ -17,6 +17,10 @@ const loginSchema = z.object({
   login: z.string().min(1).max(320),
   password: z.string().min(1).max(512),
   profileId: z.string().uuid().optional(),
+  remember: z.boolean().optional(),
+});
+
+const exchangeBodySchema = z.object({
   remember: z.boolean().optional(),
 });
 
@@ -74,7 +78,7 @@ export function registerAuthNativeRoutes(
       return reply.code(200).send({code: "ONBOARDING_REQUIRED"});
     }
     if (readOnboardingCookie(request)) clearOnboardingCookie(reply, {secure: cookieSecure});
-    const maxAge = remember ? 604800 : 43200;
+    const maxAge = remember ? REMEMBER_TTL_SECONDS : SESSION_TTL_SECONDS;
     setSessionCookie(reply, result.token, {
       secure: cookieSecure,
       maxAgeSeconds: maxAge,
@@ -93,6 +97,7 @@ export function registerAuthNativeRoutes(
     if (!token) {
       throw new SchoolSafeError(401, "AUTH_REQUIRED", "Session requise", false);
     }
+    const body = exchangeBodySchema.parse(request.body ?? {});
     const result = await exchangeSupabasePrincipal(
       authDatabaseFor(service),
       dependencies.supabaseVerifier ?? verifierFromEnv(),
@@ -104,19 +109,33 @@ export function registerAuthNativeRoutes(
     if (result.status === "password_change_required") {
       return reply.code(200).send({ status: "password_change_required", password_change_required: true });
     }
-    if (result.status === "profile_resolved") {
+    if (result.status === "profile_choice_required") {
       return reply.code(200).send({
-        status: "profile_resolved",
-        profile_id: result.profileId,
-        school_id: result.schoolId,
+        status: "profile_choice_required",
+        profiles: result.profiles.map((profile) => ({
+          profile_id: profile.profileId,
+          school_id: profile.schoolId,
+        })),
       });
     }
+    const database = authDatabaseFor(service);
+    if (!database) throw new SchoolSafeError(401, "AUTH_REQUIRED", "Session requise", false);
+    const userAgentHeader = request.headers["user-agent"];
+    const opened = await openResolvedSupabaseSession(database, {
+      userId: result.userId,
+      profileId: result.profileId,
+      remember: body.remember === true,
+      ip: request.ip,
+      userAgent: Array.isArray(userAgentHeader) ? userAgentHeader[0] : userAgentHeader,
+    });
+    setSessionCookie(reply, opened.token, {
+      secure: cookieSecure,
+      maxAgeSeconds: opened.maxAgeSeconds,
+    });
     return reply.code(200).send({
-      status: "profile_choice_required",
-      profiles: result.profiles.map((profile) => ({
-        profile_id: profile.profileId,
-        school_id: profile.schoolId,
-      })),
+      status: "profile_resolved",
+      profile_id: result.profileId,
+      school_id: result.schoolId,
     });
   });
 

@@ -78,4 +78,6 @@ export type ConfigResponse = {
   account_registration_available: boolean;
   setup_available: boolean;
   auth_mode: string;
+  supabase_url?: string;
+  supabase_anon_key?: string;
 };

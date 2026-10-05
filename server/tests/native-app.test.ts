@@ -20,6 +20,26 @@ describe("application VPS native", () => {
     } finally { await app.close(); }
   });
 
+  it("publie l'URL et la clé anonyme Supabase sans la clé service", async () => {
+    const { app } = fixture({
+      SUPABASE_URL: "https://supabase.example.test",
+      SUPABASE_ANON_KEY: "anon-public-key-value-123456",
+      SUPABASE_SERVICE_ROLE_KEY: "service-role-secret-value-123456",
+    });
+    try {
+      const response = await app.inject({ method: "GET", url: "/config" });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({
+        auth_mode: "native",
+        setup_available: false,
+        account_registration_available: false,
+        supabase_url: "https://supabase.example.test",
+        supabase_anon_key: "anon-public-key-value-123456",
+      });
+      expect(JSON.stringify(response.json())).not.toContain("service-role");
+    } finally { await app.close(); }
+  });
+
   it("protège les données élèves et le bootstrap avec la session du VPS", async () => {
     const { app, businessPool } = fixture();
     try {

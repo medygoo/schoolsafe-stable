@@ -4,8 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import { buildApp } from "../src/app.js";
-import type { AuthDatabase } from "../src/authnative/service.js";
-import { createAuthNativeService } from "../src/authnative/service.js";
+import { createAuthNativeService, type AuthDatabase } from "../src/authnative/service.js";
 import { createSupabasePrincipalVerifier } from "../src/authnative/supabase-verifier.js";
 
 type StoredUser = {
@@ -26,10 +25,23 @@ const SCHOOL_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 
 function memoryDatabase(profiles: StoredProfile[] = []) {
   const users: StoredUser[] = [];
+  const sessions: Array<{ hash: string; revoked: boolean }> = [];
   const query = vi.fn(async (sql: string, params: unknown[]) => {
     if (sql.includes("api.auth_supabase_password_pending")) {
       const user = users.find((item) => item.id === params[0]);
       return { rows: [{ pending: user?.must_change_password === true }] };
+    }
+    if (sql.includes("api.auth_supabase_session_identity")) {
+      return { rows: [{ identity_id: "identity-1" }] };
+    }
+    if (sql.includes("api.auth_create_session")) {
+      sessions.push({ hash: String(params[2]), revoked: false });
+      return { rows: [{ session_id: "session-1", expires_at: "2099-01-01T00:00:00.000Z" }] };
+    }
+    if (sql.includes("api.auth_revoke_session")) {
+      const session = sessions.find((item) => item.hash === params[0] && !item.revoked);
+      if (session) session.revoked = true;
+      return { rows: [{ auth_revoke_session: Boolean(session) }] };
     }
     if (!sql.includes("api.auth_link_supabase_principal")) return { rows: [] };
     expect(params).toHaveLength(3);
@@ -68,7 +80,18 @@ function memoryDatabase(profiles: StoredProfile[] = []) {
       })),
     };
   });
-  return { users, query: query as AuthDatabase["query"] };
+  return { users, sessions, query };
+}
+
+function setCookieHeader(response: { headers: { "set-cookie"?: unknown } }) {
+  const raw = response.headers["set-cookie"];
+  if (Array.isArray(raw)) return raw.map(String).join("\n");
+  return raw == null ? "" : String(raw);
+}
+
+function sessionCookieToken(header: string) {
+  const match = header.match(/schoolsafe_session=([^;]+)/);
+  return match?.[1] ?? "";
 }
 
 function verified(overrides: Partial<{ id: string; email: string; phone: string | null }> = {}) {
@@ -81,11 +104,11 @@ function verified(overrides: Partial<{ id: string; email: string; phone: string 
 }
 
 function appFor(database: ReturnType<typeof memoryDatabase>, verifier: (token: string) => Promise<{ id: string; email: string; phone: string | null } | null>) {
-  const service = createAuthNativeService({ db: { query: database.query } });
+  const service = createAuthNativeService({ db: { query: database.query as AuthDatabase["query"] } });
   return buildApp({ authNative: { service, cookieSecure: true, supabaseVerifier: verifier } });
 }
 
-async function exchange(app: ReturnType<typeof buildApp>, token: string, body: Record<string, string> = {}) {
+async function exchange(app: ReturnType<typeof buildApp>, token: string, body: Record<string, unknown> = {}) {
   return app.inject({
     method: "POST",
     url: "/auth/native/supabase/exchange",
@@ -102,6 +125,8 @@ describe("POST /auth/native/supabase/exchange", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ status: "onboarding_required" });
     expect(response.json()).not.toHaveProperty("school_id");
+    expect(sessionCookieToken(setCookieHeader(response))).toBe("");
+    expect(database.query.mock.calls.some((call) => String(call[0]).includes("api.auth_create_session"))).toBe(false);
     expect(database.users).toHaveLength(1);
     expect(database.users[0]).toMatchObject({
       auth_provider: "supabase",
@@ -172,6 +197,7 @@ describe("POST /auth/native/supabase/exchange", () => {
     const response = await exchange(app, "valid-token", { school_id: SCHOOL_A });
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ status: "onboarding_required" });
+    expect(sessionCookieToken(setCookieHeader(response))).toBe("");
     await app.close();
   });
 
@@ -193,6 +219,41 @@ describe("POST /auth/native/supabase/exchange", () => {
       profile_id: "profile-a",
       school_id: SCHOOL_A,
     });
+    expect(setCookieHeader(response)).toBe(
+      `schoolsafe_session=${sessionCookieToken(setCookieHeader(response))}; Path=/; HttpOnly; SameSite=Lax; Max-Age=43200; Secure`,
+    );
+    expect(sessionCookieToken(setCookieHeader(response)).length).toBeGreaterThan(20);
+    expect(database.query.mock.calls.some((call) => String(call[0]).includes("api.auth_supabase_session_identity"))).toBe(true);
+    expect(database.query.mock.calls.some((call) => String(call[0]).includes("api.auth_create_session"))).toBe(true);
+    const logout = await app.inject({
+      method: "POST",
+      url: "/auth/native/logout",
+      headers: { cookie: `schoolsafe_session=${sessionCookieToken(setCookieHeader(response))}` },
+    });
+    expect(logout.statusCode).toBe(200);
+    expect(database.sessions).toEqual([{ hash: expect.any(String), revoked: true }]);
+    expect(setCookieHeader(logout)).toContain("schoolsafe_session=;");
+    expect(setCookieHeader(logout)).toContain("Max-Age=0");
+    await app.close();
+  });
+
+  it("uses the seven-day cookie when remember is set", async () => {
+    const userId = randomUUID();
+    const database = memoryDatabase([{ id: "profile-a", user_id: userId, school_id: SCHOOL_A }]);
+    database.users.push({
+      id: userId,
+      auth_provider: "supabase",
+      external_subject: SUBJECT,
+      email: "principal@ecole.cd",
+      phone: "+243812345678",
+    });
+    const app = appFor(database, async () => verified());
+    const response = await exchange(app, "valid-token", { remember: true });
+    expect(response.statusCode).toBe(200);
+    expect(setCookieHeader(response)).toContain("Max-Age=604800");
+    expect(setCookieHeader(response)).toContain("HttpOnly");
+    expect(setCookieHeader(response)).toContain("SameSite=Lax");
+    expect(setCookieHeader(response)).toContain("Secure");
     await app.close();
   });
 
@@ -212,6 +273,9 @@ describe("POST /auth/native/supabase/exchange", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ status: "password_change_required", password_change_required: true });
     expect(response.json()).not.toHaveProperty("school_id");
+    expect(sessionCookieToken(setCookieHeader(response))).toBe("");
+    expect(database.query.mock.calls.some((call) => String(call[0]).includes("api.auth_create_session"))).toBe(false);
+    expect(database.query.mock.calls.some((call) => String(call[0]).includes("api.auth_supabase_session_identity"))).toBe(false);
     await app.close();
   });
 
@@ -238,6 +302,8 @@ describe("POST /auth/native/supabase/exchange", () => {
         { profile_id: "profile-b", school_id: SCHOOL_B },
       ],
     });
+    expect(sessionCookieToken(setCookieHeader(response))).toBe("");
+    expect(database.query.mock.calls.some((call) => String(call[0]).includes("api.auth_create_session"))).toBe(false);
     await app.close();
   });
 });
@@ -276,5 +342,19 @@ describe("additive Supabase link SQL", () => {
     expect(sql).toContain("auth.normalize_login");
     expect(sql.toLowerCase()).not.toContain("insert into app.schools");
     expect(sql.toLowerCase()).not.toContain("school_memberships");
+  });
+});
+
+describe("additive Supabase session identity SQL", () => {
+  it("inserts an identity without credentials and grants only schoolsafe_auth", () => {
+    const sqlPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../database/auth/v8/07_supabase_session_identity.sql");
+    const sql = readFileSync(sqlPath, "utf8");
+    expect(sql).toContain("api.auth_supabase_session_identity");
+    expect(sql.toLowerCase()).toContain("insert into auth.identities");
+    expect(sql.toLowerCase()).not.toContain("insert into auth.credentials");
+    expect(sql.toLowerCase()).not.toContain("bypassrls");
+    expect(sql).toContain("grant execute on function api.auth_supabase_session_identity(uuid, uuid) to schoolsafe_auth");
+    expect(sql).not.toContain("PILOT_SCHOOL_ID");
+    expect(sql).not.toContain("ACTIVATION_");
   });
 });

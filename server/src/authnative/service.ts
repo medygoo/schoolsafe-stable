@@ -63,8 +63,8 @@ type ProfileRow = {
   display_name: string;
 };
 
-const SESSION_TTL_SECONDS = 43200; // 12 h, glissantes (touch à mi-vie)
-const REMEMBER_TTL_SECONDS = 604800; // 7 jours, si remember coché
+export const SESSION_TTL_SECONDS = 43200; // 12 h, glissantes (touch à mi-vie)
+export const REMEMBER_TTL_SECONDS = 604800; // 7 jours, si remember coché
 
 export type RecoveryDelivery = (message: {email: string; token: string}) => Promise<void>;
 
@@ -113,6 +113,86 @@ export function authDatabaseFor(service: object): AuthDatabase | undefined {
   return authDatabases.get(service);
 }
 
+async function openDatabaseSession(
+  db: AuthDatabase,
+  input: {
+    identityId: string;
+    profileId: string;
+    userId: string;
+    ttlSeconds: number;
+    ip?: string;
+    userAgent?: string;
+    mustChange: boolean;
+    schoolId: string;
+  },
+): Promise<{ token: string; session: AuthSessionInfo } | null> {
+  const token = generateSessionToken();
+  const created = await db.query<{ session_id: string; expires_at: string }>(
+    "select * from api.auth_create_session($1, $2, $3, $4, $5, $6)",
+    [
+      input.identityId,
+      input.profileId,
+      hashSessionToken(token),
+      input.ttlSeconds,
+      input.ip ?? null,
+      input.userAgent ?? null,
+    ],
+  );
+  const row = created.rows[0];
+  if (!row?.session_id) return null;
+  return {
+    token,
+    session: {
+      sessionId: row.session_id,
+      identityId: input.identityId,
+      userId: input.userId,
+      profileId: input.profileId,
+      schoolId: input.schoolId,
+      mustChange: input.mustChange,
+      expiresAt: row.expires_at,
+    },
+  };
+}
+
+export async function openResolvedSupabaseSession(
+  db: AuthDatabase,
+  input: {
+    userId: string;
+    profileId: string;
+    remember?: boolean;
+    ip?: string;
+    userAgent?: string;
+  },
+): Promise<{ token: string; session: AuthSessionInfo; maxAgeSeconds: number }> {
+  let identityId = "";
+  try {
+    const found = await db.query<{ identity_id: string }>(
+      "select api.auth_supabase_session_identity($1, $2) as identity_id",
+      [input.userId, input.profileId],
+    );
+    identityId = found.rows[0]?.identity_id ?? "";
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    if (code === "23505") throw new SchoolSafeError(409, "VERSION_CONFLICT", "Conflit d'identité", false);
+    if (code === "23514" || code === "22023") throw new SchoolSafeError(400, "VALIDATION_INVALID", "Donnée invalide", false);
+    throw error;
+  }
+  if (!identityId) throw new SchoolSafeError(403, "ACCESS_DENIED", "Accès refusé", false);
+  const maxAgeSeconds = input.remember ? REMEMBER_TTL_SECONDS : SESSION_TTL_SECONDS;
+  const opened = await openDatabaseSession(db, {
+    identityId,
+    profileId: input.profileId,
+    userId: input.userId,
+    ttlSeconds: maxAgeSeconds,
+    ip: input.ip,
+    userAgent: input.userAgent,
+    mustChange: false,
+    schoolId: "",
+  });
+  if (!opened) throw new SchoolSafeError(403, "ACCESS_DENIED", "Accès refusé", false);
+  return { token: opened.token, session: opened.session, maxAgeSeconds };
+}
+
 export function createAuthNativeService(deps: AuthNativeDependencies) {
   const { db } = deps;
   const service = {
@@ -158,12 +238,19 @@ export function createAuthNativeService(deps: AuthNativeDependencies) {
             try {await deps.control.bind(verified.access_id,link.school_id);}
             catch(error) {if(!(error instanceof SchoolSafeError) || error.statusCode!==503)throw error;}
           }
-          const created=await db.query<{session_id:string;expires_at:string}>("select * from api.auth_create_session($1,$2,$3,$4,$5,$6)",
-           [link.identity_id,link.profile_id,hashSessionToken(token),remember?REMEMBER_TTL_SECONDS:SESSION_TTL_SECONDS,ip??null,userAgent??null]);
-          const row=created.rows[0];if(!row)throw controlUnavailable();
+          const opened = await openDatabaseSession(db, {
+            identityId: link.identity_id,
+            profileId: link.profile_id,
+            userId: link.user_id,
+            ttlSeconds: remember ? REMEMBER_TTL_SECONDS : SESSION_TTL_SECONDS,
+            ip,
+            userAgent,
+            mustChange: false,
+            schoolId: link.school_id ?? "",
+          });
+          if (!opened) throw controlUnavailable();
           await db.query("select * from api.auth_record_attempt($1,$2)",[normalized,true]);
-          return {ok:true,onboarding:false,token,session:{sessionId:row.session_id,identityId:link.identity_id,userId:link.user_id,
-           profileId:link.profile_id,schoolId:link.school_id,mustChange:false,expiresAt:row.expires_at}};
+          return {ok:true,onboarding:false,token:opened.token,session:opened.session};
         }
       }
 
@@ -218,34 +305,18 @@ export function createAuthNativeService(deps: AuthNativeDependencies) {
         chosenProfileId = profiles.rows[0].profile_id;
       }
 
-      const token = generateSessionToken();
-      const ttl = remember ? REMEMBER_TTL_SECONDS : SESSION_TTL_SECONDS;
-      const created = await db.query<{ session_id: string; expires_at: string }>(
-        "select * from api.auth_create_session($1, $2, $3, $4, $5, $6)",
-        [
-          identity.identity_id,
-          chosenProfileId,
-          hashSessionToken(token),
-          ttl,
-          ip ?? null,
-          userAgent ?? null,
-        ],
-      );
-      const row = created.rows[0];
-
-      return {
-        ok: true,
-        token,
-        session: {
-          sessionId: row.session_id,
-          identityId: identity.identity_id,
-          userId: identity.user_id,
-          profileId: chosenProfileId,
-          schoolId: "",
-          mustChange: identity.must_change,
-          expiresAt: row.expires_at,
-        },
-      };
+      const opened = await openDatabaseSession(db, {
+        identityId: identity.identity_id,
+        profileId: chosenProfileId,
+        userId: identity.user_id,
+        ttlSeconds: remember ? REMEMBER_TTL_SECONDS : SESSION_TTL_SECONDS,
+        ip,
+        userAgent,
+        mustChange: identity.must_change,
+        schoolId: "",
+      });
+      if (!opened) throw new SchoolSafeError(403, "ACCESS_DENIED", "Accès refusé", false);
+      return { ok: true, token: opened.token, session: opened.session };
     },
 
     async resolveSession(token: string): Promise<AuthSessionInfo | null> {
@@ -328,32 +399,18 @@ export function createAuthNativeService(deps: AuthNativeDependencies) {
 
       await this.logout(token); // l'ancien contexte meurt avec sa session
 
-      const newToken = generateSessionToken();
-      const created = await db.query<{ session_id: string; expires_at: string }>(
-        "select * from api.auth_create_session($1, $2, $3, $4, $5, $6)",
-        [
-          current.identityId,
-          profileId,
-          hashSessionToken(newToken),
-          SESSION_TTL_SECONDS,
-          ip ?? null,
-          userAgent ?? null,
-        ],
-      );
-      const row = created.rows[0];
-      return {
-        ok: true,
-        token: newToken,
-        session: {
-          sessionId: row.session_id,
-          identityId: current.identityId,
-          userId: current.userId,
-          profileId,
-          schoolId: "",
-          mustChange: current.mustChange,
-          expiresAt: row.expires_at,
-        },
-      };
+      const opened = await openDatabaseSession(db, {
+        identityId: current.identityId,
+        profileId,
+        userId: current.userId,
+        ttlSeconds: SESSION_TTL_SECONDS,
+        ip,
+        userAgent,
+        mustChange: current.mustChange,
+        schoolId: "",
+      });
+      if (!opened) return { ok: false };
+      return { ok: true, token: opened.token, session: opened.session };
     },
 
     async forgotPassword(login: string): Promise<void> {
