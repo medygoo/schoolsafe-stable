@@ -5,6 +5,7 @@ import type { AuthNativeService } from "../authnative/service.js";
 import { SchoolSafeError } from "../http/errors.js";
 import { newRequestId } from "../http/request-id.js";
 import type { AccessNativeService } from "./service.js";
+import type { AdultProvisioner } from "./provision.js";
 
 const pageSchema = z.object({
   query: z.string().trim().max(100).default(""),
@@ -22,6 +23,11 @@ const roleChangeSchema = z.object({
 }).strict();
 const roleLabel = z.string().trim().min(2).max(100).regex(/^[^\u0000-\u001f\u007f]+$/);
 const createRoleSchema = z.object({ label: roleLabel, templateId: z.string().uuid().nullable(), ...confirmationFields }).strict();
+const adultUserSchema = z.object({
+  email: z.string().trim().email().max(254),
+  phone: z.string().regex(/^\+243[0-9]{9}$/),
+  role_code: z.literal("teacher"),
+}).strict();
 const saveRoleSchema = z.object({ label: roleLabel, isActive: z.boolean(),
   grants: z.array(z.object({ permission: z.string().min(1).max(100), effect: z.enum(["allow", "deny"]),
     scope: z.enum(["school", "own", "own_children", "none"]).optional() }).strict()).max(64), ...confirmationFields,
@@ -31,7 +37,11 @@ function requireWriteIntent(request: FastifyRequest) {
     throw new SchoolSafeError(403, "PERMISSION_DENIED", "Requête de modification refusée", false);
   }
 }
-export type AccessNativeRouteDependencies = { authService: AuthNativeService; service: AccessNativeService };
+export type AccessNativeRouteDependencies = {
+  authService: AuthNativeService;
+  service: AccessNativeService;
+  provisioner: AdultProvisioner;
+};
 
 export function registerAccessNativeRoutes(app: FastifyInstance, deps: AccessNativeRouteDependencies): void {
   const requireSession = requireAuthSession(deps.authService);
@@ -100,5 +110,17 @@ export function registerAccessNativeRoutes(app: FastifyInstance, deps: AccessNat
     const input = roleChangeSchema.parse(request.body);
     const actor = context(request);
     return { data: await deps.service.changeRole(actor, profileId, input), request_id: actor.requestId };
+  });
+  app.post("/native/access/users", { preHandler: requireSession }, async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    requireWriteIntent(request);
+    const input = adultUserSchema.parse(request.body);
+    const actor = context(request);
+    const data = await deps.provisioner.provisionTeacher(actor, {
+      email: input.email.trim().toLowerCase(),
+      phone: input.phone,
+      role_code: input.role_code,
+    }, (message) => request.log.error(message));
+    return { data, request_id: actor.requestId };
   });
 }
