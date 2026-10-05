@@ -13,7 +13,7 @@ import { createTrialNativeService } from "./trialnative/service.js";
 import { createSessionNativeService } from "./sessionnative/service.js";
 import { createAccessNativeService } from "./accessnative/service.js";
 import { createAdultProvisioner } from "./accessnative/provision.js";
-import { createSupabaseIdentityAdmin } from "./accessnative/supabase-admin.js";
+import { createSupabaseIdentityAdmin, verifySupabaseSubject } from "./accessnative/supabase-admin.js";
 import { createJaspeNativeService } from "./jaspenative/service.js";
 import { createLicenseNativeService } from "./licensenative/service.js";
 import { createActivationServiceClient } from "./licensenative/activation-client.js";
@@ -97,6 +97,9 @@ export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
         pools.businessPool,
         env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
           ? createSupabaseIdentityAdmin(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
+          : null,
+        env.SUPABASE_URL && env.SUPABASE_ANON_KEY
+          ? verifySupabaseSubject(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
           : null,
       ),
     },

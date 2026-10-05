@@ -159,7 +159,7 @@
 
   function canUseTab(tabName) {
     if (tabName === "school") return hasScopedPermission("school.manage", ["school"]);
-    if (tabName === "staff") return hasScopedPermission("staff.read", ["school"]) || hasScopedPermission("staff.manage", ["school"]);
+    if (tabName === "staff") return hasScopedPermission("staff.read", ["school"]) || hasScopedPermission("staff.manage", ["school"]) || hasScopedPermission("school.guardian.manage", ["school"]);
     if (tabName === "students") return hasScopedPermission("school.student.read", ["school", "own_children", "assigned_classes", "assigned_subjects"]);
     if (tabName === "structure") return !!(window.SchoolSafeAcademicStructure && window.SchoolSafeAcademicStructure.canRead(currentUser));
     return false;
@@ -879,10 +879,19 @@
       );
     }).join("");
 
+    var canStaff = hasScopedPermission("staff.manage", ["school"]);
+    var canParent = hasScopedPermission("school.guardian.manage", ["school"]);
+    var createButton = canStaff || canParent
+      ? window.ssButton({
+        label: canStaff ? "Créer une personne" : "Créer un parent",
+        icon: "user-plus",
+        attrs: { id: "createPersonBtn" },
+      })
+      : "";
     container.innerHTML =
       '<div class="school-staff-header">' +
       '<h3>Membres de l\'équipe</h3>' +
-      window.ssButton({ label: "Créer un enseignant", icon: "user-plus", attrs: { id: "createTeacherBtn" } }) +
+      createButton +
       "</div>" +
       window.ssTable({
         headers: ["Nom", "Email", "Téléphone", "Rôles", "Statut", "Actions"],
@@ -903,8 +912,8 @@
       });
     });
 
-    var createTeacherButton = document.getElementById("createTeacherBtn");
-    if (createTeacherButton) createTeacherButton.addEventListener("click", openTeacherModal);
+    var createPersonButton = document.getElementById("createPersonBtn");
+    if (createPersonButton) createPersonButton.addEventListener("click", openPersonModal);
 
     if (window.lucide) window.lucide.createIcons();
   }
@@ -939,64 +948,116 @@
     }
   }
 
-  function teacherCreatePayload(email, phone) {
-    return {
-      email: String(email || "").trim(),
-      phone: String(phone || "").trim(),
-      role_code: "teacher",
+  var personRoles = [
+    { code: "teacher", label: "Enseignant", staff: true },
+    { code: "school_head", label: "Préfet", staff: true },
+    { code: "pedagogy", label: "Pédagogie", staff: true },
+    { code: "cashier", label: "Caissier", staff: true },
+    { code: "guard", label: "Gardien", staff: true },
+    { code: "fee_control", label: "Contrôle des frais", staff: true },
+    { code: "hr", label: "Ressources humaines", staff: true },
+    { code: "staff", label: "Personnel", staff: true },
+    { code: "parent", label: "Parent", staff: false },
+  ];
+
+  function personCreatePayload(form) {
+    var selected = Array.prototype.map.call(form.querySelectorAll("input[name='role_codes']:checked"), function (input) {
+      return input.value;
+    });
+    var staffSelected = selected.some(function (code) { return code !== "parent"; });
+    var payload = {
+      last_name: String(form.last_name.value || "").trim(),
+      middle_name: String(form.middle_name.value || "").trim(),
+      first_name: String(form.first_name.value || "").trim(),
+      email: String(form.email.value || "").trim(),
+      phone: String(form.phone.value || "").trim(),
+      role_codes: selected,
     };
+    if (staffSelected) {
+      payload.employee_number = String(form.employee_number.value || "").trim();
+      payload.job_title = String(form.job_title.value || "").trim();
+    }
+    return payload;
   }
 
-  function openTeacherModal() {
+  function openPersonModal() {
+    var canStaff = hasScopedPermission("staff.manage", ["school"]);
+    var canParent = hasScopedPermission("school.guardian.manage", ["school"]);
+    var roles = personRoles.filter(function (role) {
+      if (role.code === "parent") return canParent;
+      return canStaff;
+    });
     var passwordNode = null;
     var modal = window.ssModal({
-      title: "Créer un enseignant",
+      title: canStaff ? "Créer une personne" : "Créer un parent",
       onClose: function () {
         if (passwordNode) passwordNode.textContent = "";
         passwordNode = null;
       },
       content:
-        '<form id="createTeacherForm" class="ss-form-grid">' +
+        '<form id="createPersonForm" class="ss-form-grid">' +
+        formField("last_name", "Nom", "text", "", { required: true }) +
+        formField("middle_name", "Postnom", "text", "") +
+        formField("first_name", "Prénom", "text", "", { required: true }) +
         formField("email", "Email", "email", "", { required: true }) +
         formField("phone", "Téléphone", "tel", "+243", { required: true }) +
+        '<div class="ss-field ss-field--wide"><span class="ss-label">Rôles</span><div class="ss-checkbox-group">' +
+        roles.map(function (role) {
+          return '<label><input type="checkbox" name="role_codes" value="' + role.code + '"> ' + role.label + "</label>";
+        }).join("") +
+        "</div></div>" +
+        (canStaff
+          ? formField("employee_number", "Matricule", "text", "", { required: true }) +
+            formField("job_title", "Fonction", "text", "", { required: true })
+          : "") +
         "</form>",
       actions: [
         { label: "Annuler", variant: "secondary" },
-        { label: "Créer", variant: "primary", type: "submit", closeOnClick: false, attrs: { form: "createTeacherForm" } },
+        { label: "Créer", variant: "primary", type: "submit", closeOnClick: false, attrs: { form: "createPersonForm" } },
       ],
     });
-    var form = modal.content.querySelector("#createTeacherForm");
+    var form = modal.content.querySelector("#createPersonForm");
     var submitting = false;
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
       if (submitting) return;
-      var payload = teacherCreatePayload(form.email.value, form.phone.value);
-      if (!payload.email || !/^\+243[0-9]{9}$/.test(payload.phone)) {
-        modal.setError("Indiquez un e-mail et un téléphone +243.");
+      var payload = personCreatePayload(form);
+      var staffSelected = payload.role_codes.some(function (code) { return code !== "parent"; });
+      if (!payload.last_name || !payload.first_name || !payload.email || !/^\+243[0-9]{9}$/.test(payload.phone) || !payload.role_codes.length) {
+        modal.setError("Indiquez Nom, Prénom, e-mail, téléphone +243 et au moins un rôle.");
+        return;
+      }
+      if (staffSelected && (!payload.employee_number || !payload.job_title)) {
+        modal.setError("Le matricule et la fonction sont requis pour un membre du personnel.");
         return;
       }
       submitting = true;
       modal.setLoading(true);
       try {
-        var created = await window.SchoolSafeSchoolAPI.createTeacher(payload);
-        var temporary = created && created.data ? created.data.temporary_password : "";
-        if (!temporary) throw new Error("Mot de passe provisoire absent");
+        var created = await window.SchoolSafeSchoolAPI.createPerson(payload);
+        var data = created && created.data ? created.data : {};
         var content = modal.content.querySelector(".ss-modal__content") || modal.content;
         content.textContent = "";
-        content.appendChild(document.createTextNode("Mot de passe provisoire, affiché une seule fois."));
-        passwordNode = document.createElement("p");
-        passwordNode.setAttribute("data-temporary-password", "true");
-        passwordNode.textContent = temporary;
-        var copy = document.createElement("button");
-        copy.type = "button";
-        copy.textContent = "Copier";
-        copy.addEventListener("click", function () {
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(passwordNode.textContent || "").catch(function () {});
-          }
-        });
-        content.appendChild(passwordNode);
-        content.appendChild(copy);
+        if (data.reused) {
+          content.appendChild(document.createTextNode("Profil déjà présent dans cette école. Aucun second compte."));
+        } else if (data.temporary_password) {
+          content.appendChild(document.createTextNode("Mot de passe provisoire, affiché une seule fois."));
+          passwordNode = document.createElement("p");
+          passwordNode.setAttribute("data-temporary-password", "true");
+          passwordNode.textContent = data.temporary_password;
+          var copy = document.createElement("button");
+          copy.type = "button";
+          copy.textContent = "Copier";
+          copy.addEventListener("click", function () {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(passwordNode.textContent || "").catch(function () {});
+            }
+          });
+          content.appendChild(passwordNode);
+          content.appendChild(copy);
+        } else {
+          throw new Error("Mot de passe provisoire absent");
+        }
         if (modal.footer) modal.footer.textContent = "";
       } catch (err) {
         modal.setError(err.message);

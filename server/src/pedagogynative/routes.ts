@@ -75,6 +75,20 @@ export function registerPedagogyNativeRoutes(
     return { data: { id }, request_id: newRequestId() };
   });
 
+  app.post("/native/pedagogy/teacher-assignments/homeroom", { preHandler: requireSession }, async (request) => {
+    const body = z.object({
+      profile_id: z.string().uuid(),
+      class_id: z.string().uuid(),
+      subject_id: z.string().uuid(),
+      academic_year_id: z.string().uuid(),
+    }).parse(request.body);
+    const id = await dependencies.service.setHomeroom(
+      contextFrom(request),
+      body.profile_id, body.class_id, body.subject_id, body.academic_year_id,
+    );
+    return { data: { id }, request_id: newRequestId() };
+  });
+
   app.delete("/native/pedagogy/teacher-assignments/:id", { preHandler: requireSession }, async (request) => {
     const { id } = request.params as { id: string };
     const ok = await dependencies.service.deleteTeacherAssignment(contextFrom(request), id);

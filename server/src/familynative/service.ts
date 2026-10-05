@@ -10,6 +10,21 @@ import { withRequestContext, type RequestContext } from "../db/context.js";
 
 export function createFamilyNativeService(businessPool: BusinessPool) {
   return {
+    async linkGuardian(context: RequestContext, input: {
+      profile_id: string;
+      student_id: string;
+      guardian_type: "pere" | "mere" | "tuteur";
+      is_primary: boolean;
+    }): Promise<string> {
+      return withRequestContext(businessPool, context, async (client: PoolClient) => {
+        const r = await client.query(
+          "select api.family_guardian_link($1, $2, $3, $4) as result",
+          [input.profile_id, input.student_id, input.guardian_type, input.is_primary],
+        );
+        return r.rows[0].result as string;
+      });
+    },
+
     async pickupAuthorizationRequest(context: RequestContext, input: {
       student_id: string;
       guardian_id: string;

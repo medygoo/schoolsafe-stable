@@ -12,10 +12,13 @@ function source(relativePath: string) {
 describe("teacher Supabase screen", () => {
   it("creates a teacher through the native access route and shows the password once", () => {
     const moduleSource = source("app/modules/school/school-module.js");
-    const start = moduleSource.indexOf("function teacherCreatePayload");
+    const start = moduleSource.indexOf("function personCreatePayload");
     const end = moduleSource.indexOf("function openInviteModal");
     const form = moduleSource.slice(start, end);
-    expect(form).toContain('role_code: "teacher"');
+    expect(form).toContain('formField("last_name", "Nom"');
+    expect(form).toContain('formField("middle_name", "Postnom"');
+    expect(form).toContain('formField("first_name", "Prénom"');
+    expect(form).toContain("role_codes");
     expect(form).toContain("temporary_password");
     expect(form).toContain("navigator.clipboard");
     expect(form).toContain("data-temporary-password");
@@ -25,18 +28,19 @@ describe("teacher Supabase screen", () => {
     expect(form).not.toContain("localStorage");
     expect(form).not.toContain("sessionStorage");
     expect(form).not.toContain("console.log");
-    expect(moduleSource).toContain('id: "createTeacherBtn"');
-    expect(moduleSource).toContain('addEventListener("click", openTeacherModal)');
+    expect(form).not.toContain('"admin"');
+    expect(moduleSource).toContain('id: "createPersonBtn"');
+    expect(moduleSource).toContain('addEventListener("click", openPersonModal)');
     expect(moduleSource).not.toContain("PILOT_SCHOOL_ID");
     expect(moduleSource).not.toContain("ACTIVATION_");
 
     const api = source("app/modules/school/school-api.js");
-    const createStart = api.indexOf("createTeacher:");
+    const createStart = api.indexOf("createPerson:");
     const createBody = api.slice(createStart, api.indexOf("updateStaffRoles:"));
     expect(createBody).toContain('"/native/access/users"');
     expect(createBody).toContain('credentials: "include"');
     expect(createBody).toContain('"x-schoolsafe-action": "access-write"');
-    expect(createBody).toContain('role_code: "teacher"');
+    expect(createBody).toContain("role_codes: payload.role_codes");
     expect(createBody).not.toContain("role_ids");
     expect(createBody).not.toContain("school_id");
     expect(api).toContain('"/school/staff/invite"');

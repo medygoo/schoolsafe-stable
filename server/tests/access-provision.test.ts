@@ -22,7 +22,14 @@ const apps: ReturnType<typeof buildNativeApp>[] = [];
 afterEach(async () => { await Promise.all(apps.splice(0).map((app) => app.close())); });
 
 const headers = { cookie: "schoolsafe_session=synthetic-test-token", "x-schoolsafe-action": "access-write" };
-const body = { email: "Teacher.A@example.com", phone: "+243810000001", role_code: "teacher" as const };
+const body = {
+  first_name: "Amina", last_name: "Kabila", email: "Teacher.A@example.com", phone: "+243810000001",
+  role_codes: ["teacher"], employee_number: "EMP-1", job_title: "Enseignant",
+};
+const teacherInput = {
+  first_name: "Amina", last_name: "Kabila", email: "teacher.a@example.com", phone: "+243810000001",
+  role_codes: ["teacher" as const], employee_number: "EMP-1", job_title: "Enseignant",
+};
 
 function httpFixture(options: { allowed?: boolean } = {}) {
   const log: { sql: string; params?: unknown[] }[] = [];
@@ -40,7 +47,7 @@ function httpFixture(options: { allowed?: boolean } = {}) {
         gateBuffer.length = 0;
       }
       if (sql.includes("api.check_access")) return { rows: [{ allowed: options.allowed !== false }] };
-      if (sql.includes("provision_school_adult_prepare")) return { rows: [] };
+      if (sql.includes("provision_school_person_prepare")) return { rows: [{ data: { status: "create" } }] };
       return { rows: [] };
     },
     release() {},
@@ -66,20 +73,21 @@ function httpFixture(options: { allowed?: boolean } = {}) {
   return { app, log };
 }
 
-function memoryPool(options: { prepareCode?: string; writeCode?: string; schoolId?: string } = {}) {
+function memoryPool(options: { prepareCode?: string; prepareMessage?: string; writeCode?: string; schoolId?: string; prepareStatus?: string } = {}) {
   const log: { sql: string; params?: unknown[] }[] = [];
   const client = {
     async query(sql: string, params?: unknown[]) {
       log.push({ sql, params });
       if (sql.includes("api.check_access")) return { rows: [{ allowed: true }] };
-      if (sql.includes("provision_school_adult_prepare")) {
-        if (options.prepareCode) throw Object.assign(new Error("IDENTITY_CONFLICT"), { code: options.prepareCode });
-        return { rows: [] };
+      if (sql.includes("provision_school_person_prepare")) {
+        if (options.prepareCode) throw Object.assign(new Error(options.prepareMessage ?? "IDENTITY_CONFLICT"), { code: options.prepareCode });
+        return { rows: [{ data: { status: options.prepareStatus ?? "create" } }] };
       }
-      if (sql.includes("api.provision_school_adult($1")) {
+      if (sql.includes("api.provision_school_person(")) {
         if (options.writeCode) throw Object.assign(new Error("IDENTITY_CONFLICT"), { code: options.writeCode });
         return { rows: [{ data: {
-          user_id: teacherUser, profile_id: teacherProfile, school_id: options.schoolId ?? school, role_code: "teacher",
+          user_id: teacherUser, profile_id: teacherProfile, school_id: options.schoolId ?? school,
+          reused: options.prepareStatus === "reuse",
         } }] };
       }
       return { rows: [] };
@@ -115,10 +123,8 @@ describe("adult teacher provisioning", () => {
   it("creates one teacher and returns the temporary password once", async () => {
     const db = memoryPool();
     const identity = admin();
-    const result = await createAdultProvisioner(db.pool, identity.client).provisionTeacher(context, {
-      email: "teacher.a@example.com", phone: "+243810000001", role_code: "teacher",
-    });
-    expect(result.role_code).toBe("teacher");
+    const result = await createAdultProvisioner(db.pool, identity.client).provisionPerson(context, teacherInput);
+    expect(result.role_codes).toEqual(["teacher"]);
     expect(result.school_id).toBe(school);
     expect(result.temporary_password).toHaveLength(32);
     expect(identity.created).toEqual([{ email: "teacher.a@example.com", phone: "+243810000001", password: result.temporary_password }]);
@@ -126,8 +132,38 @@ describe("adult teacher provisioning", () => {
     const serialized = JSON.stringify(db.log);
     expect(serialized).not.toContain(result.temporary_password);
     expect(serialized).not.toContain("auth.credentials");
-    expect(db.log.some((entry) => entry.sql.includes("api.provision_school_adult($1"))).toBe(true);
-    expect(db.log.find((entry) => entry.sql.includes("api.provision_school_adult($1"))?.params?.[0]).toBe(subject);
+    expect(db.log.some((entry) => entry.sql.includes("api.provision_school_person("))).toBe(true);
+    expect(db.log.find((entry) => entry.sql.includes("api.provision_school_person("))?.params?.[0]).toBe(subject);
+  });
+
+  it("creates a parent without requiring staff.manage", async () => {
+    const db = memoryPool();
+    const identity = admin();
+    const result = await createAdultProvisioner(db.pool, identity.client).provisionPerson(context, {
+      first_name: "Amina", last_name: "Kabila", email: "parent.a@example.com", phone: "+243810000002",
+      role_codes: ["parent"],
+    });
+    expect(result.temporary_password).toHaveLength(32);
+    const permissions = db.log.filter((entry) => entry.sql.includes("api.check_access")).map((entry) => entry.params?.[0]);
+    expect(permissions).toContain("school.guardian.manage");
+    expect(permissions).not.toContain("staff.manage");
+  });
+
+  it("reuses a same-school profile without a new external identity", async () => {
+    const db = memoryPool({ prepareStatus: "reuse" });
+    const identity = admin();
+    const result = await createAdultProvisioner(db.pool, identity.client).provisionPerson(context, teacherInput);
+    expect(result.reused).toBe(true);
+    expect(result.temporary_password).toBeNull();
+    expect(identity.created).toEqual([]);
+  });
+
+  it("refuses an email that belongs to another school before creating an identity", async () => {
+    const db = memoryPool({ prepareCode: "23514", prepareMessage: "LINK_REQUIRED" });
+    const identity = admin();
+    await expect(createAdultProvisioner(db.pool, identity.client).provisionPerson(context, teacherInput))
+      .rejects.toMatchObject({ statusCode: 409, code: "LINK_REQUIRED" });
+    expect(identity.created).toEqual([]);
   });
 
   it("refuses a caller without staff.manage before any external identity", async () => {
@@ -135,14 +171,14 @@ describe("adult teacher provisioning", () => {
     const response = await app.inject({ method: "POST", url: "/native/access/users", headers, payload: body });
     expect(response.statusCode).toBe(403);
     expect(response.json().code).toBe("PERMISSION_DENIED");
-    expect(log.some((entry) => entry.sql.includes("provision_school_adult"))).toBe(false);
+    expect(log.some((entry) => entry.sql.includes("provision_school_person"))).toBe(false);
   });
 
   it("refuses another role and any client identity field", async () => {
     const { app, log } = httpFixture();
     for (const payload of [
-      { ...body, role_code: "admin" },
-      { ...body, role_code: "parent" },
+      { ...body, role_codes: ["admin"] },
+      { ...body, role_codes: ["hikvision_admin"] },
       { ...body, school_id: school },
       { ...body, user_id: user },
       { ...body, profile_id: actor },
@@ -160,18 +196,14 @@ describe("adult teacher provisioning", () => {
   it("returns 409 for a known email or phone without creating an external identity", async () => {
     const db = memoryPool({ prepareCode: "23505" });
     const identity = admin();
-    await expect(createAdultProvisioner(db.pool, identity.client).provisionTeacher(context, {
-      email: "teacher.a@example.com", phone: "+243810000001", role_code: "teacher",
-    })).rejects.toMatchObject({ statusCode: 409, code: "VERSION_CONFLICT" });
+    await expect(createAdultProvisioner(db.pool, identity.client).provisionPerson(context, teacherInput)).rejects.toMatchObject({ statusCode: 409, code: "VERSION_CONFLICT" });
     expect(identity.created).toEqual([]);
   });
 
   it("deletes the external identity when the school write fails", async () => {
     const db = memoryPool({ writeCode: "23505" });
     const identity = admin();
-    await expect(createAdultProvisioner(db.pool, identity.client).provisionTeacher(context, {
-      email: "teacher.a@example.com", phone: "+243810000001", role_code: "teacher",
-    })).rejects.toMatchObject({ statusCode: 409 });
+    await expect(createAdultProvisioner(db.pool, identity.client).provisionPerson(context, teacherInput)).rejects.toMatchObject({ statusCode: 409 });
     expect(identity.deleted).toEqual([subject]);
     expect(JSON.stringify(db.log)).not.toContain(identity.created[0]?.password);
   });
@@ -180,9 +212,7 @@ describe("adult teacher provisioning", () => {
     const db = memoryPool({ writeCode: "23505" });
     const identity = admin({ failDelete: true });
     const lines: string[] = [];
-    await expect(createAdultProvisioner(db.pool, identity.client).provisionTeacher(context, {
-      email: "teacher.a@example.com", phone: "+243810000001", role_code: "teacher",
-    }, (message) => lines.push(message))).rejects.toMatchObject({ statusCode: 503, code: "ORPHAN_COMPENSATION_FAILED" });
+    await expect(createAdultProvisioner(db.pool, identity.client).provisionPerson(context, teacherInput, (message) => lines.push(message))).rejects.toMatchObject({ statusCode: 503, code: "ORPHAN_COMPENSATION_FAILED" });
     expect(lines).toEqual(["ORPHAN_COMPENSATION=FAILED"]);
     expect(lines.join("")).not.toContain(identity.created[0]?.password);
   });
@@ -208,6 +238,12 @@ describe("adult teacher provisioning", () => {
     walk(path.join(root, "app"));
     expect(frontend.join("\n")).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
     const sql = readFileSync(path.join(root, "database/auth/v8/05_provision_school_adult.sql"), "utf8");
+    const people = readFileSync(path.join(root, "database/auth/v8/08_universal_people.sql"), "utf8");
+    expect(people).toContain("school.guardian.manage");
+    expect(people).toContain("LINK_REQUIRED");
+    expect(people).toContain("PRINCIPAL_ROLE_PROTECTED");
+    expect(people).toContain("app.staff_profiles");
+    expect(people).not.toContain("auth.credentials");
     expect(sql).toContain("must_change_password");
     expect(sql).toContain("true, true");
     expect(sql).not.toContain("auth.credentials");
@@ -224,16 +260,14 @@ describe("adult teacher provisioning", () => {
     expect((await app.inject({ method: "POST", url: "/native/access/users", payload: body })).statusCode).toBe(401);
     expect((await app.inject({ method: "POST", url: "/native/access/users", headers: { cookie: headers.cookie }, payload: body })).statusCode).toBe(403);
     expect((await app.inject({ method: "GET", url: "/native/access/users" })).statusCode).toBe(404);
-    expect(log.some((entry) => entry.sql.includes("provision_school_adult"))).toBe(false);
+    expect(log.some((entry) => entry.sql.includes("provision_school_person"))).toBe(false);
   });
 
   it("maps an existing external identity to 409", async () => {
     const db = memoryPool();
     const identity = admin({ conflict: true });
     try {
-      await createAdultProvisioner(db.pool, identity.client).provisionTeacher(context, {
-        email: "teacher.a@example.com", phone: "+243810000001", role_code: "teacher",
-      });
+      await createAdultProvisioner(db.pool, identity.client).provisionPerson(context, teacherInput);
       throw new Error("expected conflict");
     } catch (error) {
       expect(error).toBeInstanceOf(SchoolSafeError);

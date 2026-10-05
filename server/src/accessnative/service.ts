@@ -83,6 +83,10 @@ export function createAccessNativeService(pool: BusinessPool) {
       return read<{ schoolId: string; roleId: string; revision: string }>(context, "select api.access_role_create($1,$2,$3,$4,$5) as data",
         [input.label, input.templateId, input.revision, input.reason, input.confirmed]);
     },
+    grantException(context: RequestContext, profileId: string, input: { permission: string; effect: "allow" | "deny"; reason: string }) {
+      return read<string>(context, "select api.access_profile_exception($1,$2,$3,$4) as data",
+        [profileId, input.permission, input.effect, input.reason]);
+    },
     saveRole(context: RequestContext, roleId: string, input: RoleComposition) {
       return read<{ schoolId: string; roleId: string; revision: string }>(context, "select api.access_role_save($1,$2,$3,$4,$5,$6,$7) as data",
         [roleId, input.label, input.isActive, JSON.stringify(input.grants), input.revision, input.reason, input.confirmed]);

@@ -19,6 +19,18 @@ function isConflict(error: { status?: number; code?: string; message?: string })
     || /already|duplicate|exists/i.test(`${error.code ?? ""} ${message}`);
 }
 
+export function verifySupabaseSubject(url: string, anonKey: string): (token: string) => Promise<{ id: string; email: string } | null> {
+  return async (token) => {
+    const response = await fetch(`${url.replace(/\/$/, "")}/auth/v1/user`, {
+      headers: { apikey: anonKey, Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+    if (!response.ok) return null;
+    const body = await response.json() as { id?: string; email?: string };
+    if (!body.id || !body.email) return null;
+    return { id: body.id, email: body.email.trim().toLowerCase() };
+  };
+}
+
 export function createSupabaseIdentityAdmin(url: string, serviceRoleKey: string): ExternalIdentityAdmin {
   const client = createClient(url, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },

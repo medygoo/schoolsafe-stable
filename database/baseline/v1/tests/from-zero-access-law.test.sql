@@ -153,11 +153,11 @@ values
   ('b0000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000002', '60000000-0000-4000-8000-000000000002', '70000000-0000-4000-8000-000000000002', 'active', date '2026-09-01'),
   ('b0000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000003', '60000000-0000-4000-8000-000000000003', '70000000-0000-4000-8000-000000000003', 'active', date '2026-09-01');
 
-insert into app.student_guardians (id, school_id, student_id, profile_id, guardian_type, full_name)
+insert into app.student_guardians (id, school_id, student_id, profile_id, guardian_type, is_primary, full_name)
 values
-  ('c0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001', 'tuteur', 'Guardian A'),
-  ('c0000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000002', '30000000-0000-4000-8000-000000000002', 'tuteur', 'Guardian B'),
-  ('c0000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000003', '30000000-0000-4000-8000-000000000003', 'tuteur', 'Guardian C');
+  ('c0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001', 'tuteur', true, 'Guardian A'),
+  ('c0000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000002', '30000000-0000-4000-8000-000000000002', 'tuteur', true, 'Guardian B'),
+  ('c0000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000003', '30000000-0000-4000-8000-000000000003', 'tuteur', true, 'Guardian C');
 
 insert into app.fee_structures (
   id, school_id, academic_year_id, label, amount, currency
@@ -214,6 +214,11 @@ alter table iam.roles enable trigger iam_roles_audit;
 alter table iam.profile_roles enable trigger iam_profile_roles_audit;
 alter table iam.role_permission_grants enable trigger iam_role_permission_grants_audit;
 alter table iam.grant_scopes enable trigger iam_grant_scopes_audit;
+
+-- The deferred primary-guardian constraint is still pending from the seed.
+-- Check it now so ALTER TABLE can change triggers inside this transaction.
+set constraints app.student_guardians_primary_invariant immediate;
+set constraints app.student_guardians_primary_invariant deferred;
 
 -- Physical tenant isolation is independent from Access_Law and RLS. These
 -- writes run with baseline setup authority and must still fail at the FK layer.

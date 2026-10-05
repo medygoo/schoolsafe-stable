@@ -57,10 +57,20 @@
     inviteStaff: function (payload) {
       return request("POST", "/school/staff/invite", payload);
     },
-    createTeacher: function (payload) {
+    createPerson: function (payload) {
       var base = window.location && window.location.origin && window.location.protocol.indexOf("http") === 0
         ? window.location.origin
         : getApiBase();
+      var body = {
+        first_name: payload.first_name,
+        last_name: payload.last_name,
+        email: payload.email,
+        phone: payload.phone,
+        role_codes: payload.role_codes,
+      };
+      if (payload.middle_name) body.middle_name = payload.middle_name;
+      if (payload.employee_number) body.employee_number = payload.employee_number;
+      if (payload.job_title) body.job_title = payload.job_title;
       return fetch(base + "/native/access/users", {
         method: "POST",
         credentials: "include",
@@ -69,11 +79,7 @@
           "Content-Type": "application/json",
           "x-schoolsafe-action": "access-write",
         },
-        body: JSON.stringify({
-          email: payload.email,
-          phone: payload.phone,
-          role_code: "teacher",
-        }),
+        body: JSON.stringify(body),
       }).then(async function (res) {
         var data = null;
         try { data = await res.json(); } catch (e) { data = null; }
