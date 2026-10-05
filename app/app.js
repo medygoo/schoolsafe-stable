@@ -62,7 +62,16 @@
     window.schoolSafeBackendConfig = backendConfig;
     return backendConfig;
   }
-  var backendConfigPromise = loadBackendConfig().catch(function () { return null; });
+  var backendConfigPromise = null;
+
+  function ensureBackendConfig() {
+    if (!backendConfigPromise) {
+      backendConfigPromise = loadBackendConfig().catch(function () {
+        return null;
+      });
+    }
+    return backendConfigPromise;
+  }
 
   async function apiPost(path, body) {
     var res = await fetch(apiBase + path, {
@@ -3679,7 +3688,6 @@
 
     try {
       if (!window.SchoolSafeAuthNative) throw new Error("Service de connexion indisponible. Rechargez la page.");
-      await backendConfigPromise;
       var rememberMe = document.getElementById("remember")?.checked === true;
       if (form.getAttribute("data-supabase-password-change") === "true") {
         if (!pendingSupabaseAccessToken) throw new Error("Reconnectez-vous.");
@@ -3715,10 +3723,13 @@
       enterLiveSession();
     } catch (error) {
       var changingPassword = form.getAttribute("data-supabase-password-change") === "true";
-      if (!changingPassword && error && error.status === 401 && supabasePublicConfig()) {
+      if (!changingPassword && error && error.status === 401) {
         try {
-          var accessToken = await signInWithSupabase(identifier, password);
-          if (await finishSupabaseExchange(accessToken, rememberMe)) return;
+          await ensureBackendConfig();
+          if (supabasePublicConfig()) {
+            var accessToken = await signInWithSupabase(identifier, password);
+            if (await finishSupabaseExchange(accessToken, rememberMe)) return;
+          }
         } catch (supabaseError) {
           error = supabaseError;
         }
