@@ -361,6 +361,11 @@
       "order": 72,
       "file": "database/auth/v8/02_supabase_principal_school.sql",
       "sha256": "9b5a6db3cb17d3176e54743f3782f9d928a1edb1eaafe41c728817af7206c570"
+    },
+    {
+      "order": 73,
+      "file": "database/auth/v8/03_supabase_principal_bootstrap.sql",
+      "sha256": "2d80f52163e8655e5f53f9d8d3b7b5a9534d04327535e71e8ec133c9778aa7e1"
     }
   ],
   "superseded": [

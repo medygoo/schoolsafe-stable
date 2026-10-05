@@ -151,6 +151,16 @@ describe("Supabase principal school onboarding", () => {
     await app.close();
   });
 
+  it("rejects a client external subject before any query", async () => {
+    const database = memoryDatabase();
+    const app = appFor(database, async () => ({ id: SUBJECT, email: "principal@ecole.cd", phone: "+243812345678" }));
+    const response = await create(app, "valid-token", { ...school, external_subject: "forged-subject" });
+    expect(response.statusCode).toBe(400);
+    expect(database.query).not.toHaveBeenCalled();
+    expect(database.profiles).toHaveLength(0);
+    await app.close();
+  });
+
   it("rejects a client school_id and keeps the server school", async () => {
     const database = memoryDatabase();
     const app = appFor(database, async () => ({ id: SUBJECT, email: "principal@ecole.cd", phone: "+243812345678" }));
@@ -196,5 +206,25 @@ describe("additive Supabase school SQL", () => {
     expect(sql).not.toContain("insert into auth.credentials");
     expect(sql.match(/\bcommit\s*;/g)).toHaveLength(1);
     expect(sql).not.toContain("p_school_id");
+  });
+
+  it("gates the first Supabase school on a one-time bootstrap instead of legacy activation", () => {
+    const sqlPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../database/auth/v8/03_supabase_principal_bootstrap.sql");
+    const sql = readFileSync(sqlPath, "utf8").toLowerCase();
+    expect(sql).toContain("auth.supabase_principal_bootstrap_allows");
+    expect(sql).toContain("auth_provider = 'supabase'");
+    expect(sql).toContain("not exists (select 1 from iam.profiles");
+    expect(sql).toContain("force row level security");
+    expect(sql).toContain("schools_supabase_bootstrap_insert");
+    expect(sql).toContain("years_supabase_bootstrap_insert");
+    expect(sql).toContain("cycles_supabase_bootstrap_insert");
+    expect(sql).toContain("contacts_supabase_bootstrap_insert");
+    expect(sql).toContain("'external_subject'");
+    expect(sql).not.toContain("direct_activation_allows");
+    expect(sql).not.toContain("direct_onboarding_accounts");
+    expect(sql).not.toContain("bypassrls");
+    expect(sql).not.toContain("school_memberships");
+    expect(sql).not.toContain("drop policy");
+    expect(sql.match(/\bcommit\s*;/g)).toHaveLength(1);
   });
 });
