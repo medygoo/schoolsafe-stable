@@ -285,7 +285,7 @@ async function qualifyRecovery({admin,auth,connect,check,denied,a,b,hash,context
  await admin.query("update app.students set lifecycle_status='active' where id=$1",[a.student_id]);
  await admin.query("update app.student_enrollments set status='active',starts_on=current_date-1,ends_on=null where student_id=$1",[a.student_id]);
  const guardian=randomUUID();
- await admin.query("insert into app.student_guardians(id,school_id,student_id,profile_id,guardian_type,full_name,phone) values($1,$2,$3,$4,'pere','Deliberately different guardian name','unrelated')",[guardian,a.school_id,a.student_id,parent.profile]);
+ await admin.query("insert into app.student_guardians(id,school_id,student_id,profile_id,guardian_type,is_primary,full_name,phone) values($1,$2,$3,$4,'pere',true,'Deliberately different guardian name','unrelated')",[guardian,a.school_id,a.student_id,parent.profile]);
  const key=digest('recovery-parent-v1\n'+phone);
  const valid=['Synthetic Parent',phone,'Synthetic Student','Synthetic class'];
  async function proof(fields=valid,token=digest(randomBytes(32)),bucket=key) {
@@ -529,6 +529,14 @@ async function qualifyAdditiveUpgrade({admin,connectionString,passwords,check}){
    'database/studentrecord/v1/03_confirmations_permissions.sql',
    'database/studentrecord/v1/04_student_record_rpc.sql',
    'database/license/v2/01_perpetual_license.sql',
+   'database/auth/v8/01_supabase_principal_link.sql',
+   'database/auth/v8/02_supabase_principal_school.sql',
+   'database/auth/v8/03_supabase_principal_bootstrap.sql',
+   'database/auth/v8/04_supabase_password_state.sql',
+   'database/auth/v8/05_provision_school_adult.sql',
+   'database/auth/v8/06_supabase_school_access.sql',
+   'database/auth/v8/07_supabase_session_identity.sql',
+   'database/auth/v8/08_universal_people.sql',
  ]);
  assert.equal(additions.size,plan.units.length-48,'Additions must cover the current plan beyond historical 48');
  assert.ok(additions.has('database/auth/v3/01_inactive_school_auth_gate.sql'),'auth v3 gate must be in additions');
@@ -912,6 +920,8 @@ async function qualifyInstalled63Upgrade({admin,connectionString,passwords,check
   fs.writeFileSync(path.join(root,'database/studentrecord/v1/manifest.sha256'),'\n');
   fs.writeFileSync(path.join(root,'database/license/v2/manifest.json'),JSON.stringify({schema:'schoolsafe-migrations-v2',name:'license',version:2,units:[]}));
   fs.writeFileSync(path.join(root,'database/license/v2/manifest.sha256'),'\n');
+  fs.writeFileSync(path.join(root,'database/auth/v8/manifest.json'),JSON.stringify({schema:'schoolsafe-migrations-v8',name:'auth',version:8,units:[]}));
+  fs.writeFileSync(path.join(root,'database/auth/v8/manifest.sha256'),'\n');
   const initialPlan={...plan,units:plan.units.slice(0,63)};delete initialPlan.digest;
   fs.writeFileSync(path.join(root,'database/installation/v2/manifest.json'),JSON.stringify(initialPlan));
   await admin.query('create database "'+name+'"');created=true;target.pathname='/'+name;
@@ -933,7 +943,7 @@ async function qualifyInstalled63Upgrade({admin,connectionString,passwords,check
   const legacyBefore=(await owner.query('select * from auth.account_registration_requests order by id')).rows;
   const ledger=async()=> (await owner.query('select unit_order,file_name,sha256 from ops.installation_units order by unit_order')).rows;
   const initial=await ledger();assert.equal(initial.length,63);const sql=renderAdditiveUpgrade({installed:initial});
-  assert.equal((sql.match(/-- APPLY /g)??[]).length,7);
+  assert.equal((sql.match(/-- APPLY /g)??[]).length,15);
   await check('direct activation upgrade 63 rollback leaves all historical units and no new tables',async()=>{
    const faulty=sql.replace(/^commit;$/im,'select 1/0;\ncommit;');assert.ok(faulty!==sql,'Upgrade commit marker required');
    await assert.rejects(migrator.query(faulty),e=>e.code==='22012');await migrator.query('rollback');
@@ -989,6 +999,9 @@ async function qualifyInstalled64Upgrade({admin,connectionString,passwords,check
   fs.unlinkSync(path.join(root,'database/license/v2/01_perpetual_license.sql'));
   fs.writeFileSync(path.join(root,'database/license/v2/manifest.json'),JSON.stringify({schema:'schoolsafe-migrations-v2',name:'license',version:2,units:[]}));
   fs.writeFileSync(path.join(root,'database/license/v2/manifest.sha256'),'\n');
+  for(const unit of plan.units.slice(70))fs.unlinkSync(path.join(root,unit.file));
+  fs.writeFileSync(path.join(root,'database/auth/v8/manifest.json'),JSON.stringify({schema:'schoolsafe-migrations-v8',name:'auth',version:8,units:[]}));
+  fs.writeFileSync(path.join(root,'database/auth/v8/manifest.sha256'),'\n');
   const initialPlan={...plan,units:plan.units.slice(0,64)};delete initialPlan.digest;
   fs.writeFileSync(path.join(root,'database/installation/v2/manifest.json'),JSON.stringify(initialPlan));
   await admin.query('create database "'+name+'"');created=true;target.pathname='/'+name;
@@ -1000,7 +1013,7 @@ async function qualifyInstalled64Upgrade({admin,connectionString,passwords,check
   const old=(await auth.query('select * from api.auth_create_direct_identity($1,$2,$3)',['legacy-direct-'+randomUUID()+'@example.test',hash,'198.19.2.1'])).rows[0];assert.ok(old.identity_id);
   const credentials=(await owner.query('select * from auth.credentials order by identity_id')).rows;
   const ledger=async()=> (await owner.query('select unit_order,file_name,sha256 from ops.installation_units order by unit_order')).rows;
-  const initial=await ledger(),sql=renderAdditiveUpgrade({installed:initial});assert.equal(initial.length,64);assert.equal((sql.match(/-- APPLY /g)??[]).length,6);
+  const initial=await ledger(),sql=renderAdditiveUpgrade({installed:initial});assert.equal(initial.length,64);assert.equal((sql.match(/-- APPLY /g)??[]).length,14);
   await check('Control v7 plus B1 upgrade from production 64 rolls back completely on late failure',async()=>{
    await assert.rejects(migrator.query(sql.replace(/^commit;$/im,'select 1/0;\ncommit;')),e=>e.code==='22012');await migrator.query('rollback');
    assert.deepEqual(await ledger(),initial);assert.equal((await owner.query("select to_regclass('auth.control_admin_links') object")).rows[0].object,null);
