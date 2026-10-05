@@ -261,6 +261,14 @@
       "status": "DECLARED_IN_EXISTING_MANIFEST"
     },
     {
+      "set": "auth",
+      "file": "database/auth/v8/06_supabase_school_access.sql",
+      "manifest": "database/auth/v8/manifest.json",
+      "orderInSet": 6,
+      "sha256": "b716459016f1d957844814265463b3e363993b55adf209f9f470a2a7011504a2",
+      "status": "DECLARED_IN_EXISTING_MANIFEST"
+    },
+    {
       "set": "access",
       "file": "database/access/v1/01_role_templates.sql",
       "manifest": "database/access/v1/manifest.json",

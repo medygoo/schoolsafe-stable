@@ -26,9 +26,19 @@ const body = { email: "Teacher.A@example.com", phone: "+243810000001", role_code
 
 function httpFixture(options: { allowed?: boolean } = {}) {
   const log: { sql: string; params?: unknown[] }[] = [];
+  const gateBuffer: { sql: string; params?: unknown[] }[] = [];
   const client = {
     async query(sql: string, params?: unknown[]) {
-      log.push({ sql, params });
+      if (sql.includes("api.supabase_school_access_read")) {
+        gateBuffer.length = 0;
+        return { rows: [{ status: null }] };
+      }
+      if ((sql === "COMMIT" || sql === "ROLLBACK") && gateBuffer.length === 0) return { rows: [] };
+      gateBuffer.push({ sql, params });
+      if (sql === "COMMIT" || sql === "ROLLBACK") {
+        log.push(...gateBuffer);
+        gateBuffer.length = 0;
+      }
       if (sql.includes("api.check_access")) return { rows: [{ allowed: options.allowed !== false }] };
       if (sql.includes("provision_school_adult_prepare")) return { rows: [] };
       return { rows: [] };

@@ -164,7 +164,7 @@ describe("Supabase principal school onboarding", () => {
   it("rejects a client school_id and keeps the server school", async () => {
     const database = memoryDatabase();
     const app = appFor(database, async () => ({ id: SUBJECT, email: "principal@ecole.cd", phone: "+243812345678" }));
-    const response = await create(app, "valid-token", { ...school, school_id: OTHER_SCHOOL });
+    const response = await create(app, "valid-token", { ...school, school_id: OTHER_SCHOOL, access_status: "active" });
     expect(response.statusCode).toBe(400);
     expect(database.query).not.toHaveBeenCalled();
     expect(database.profiles).toHaveLength(0);
@@ -225,6 +225,24 @@ describe("additive Supabase school SQL", () => {
     expect(sql).not.toContain("bypassrls");
     expect(sql).not.toContain("school_memberships");
     expect(sql).not.toContain("drop policy");
+    expect(sql.match(/\bcommit\s*;/g)).toHaveLength(1);
+  });
+
+  it("opens school access only when the validated bootstrap completes", () => {
+    const sqlPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../database/auth/v8/06_supabase_school_access.sql");
+    const sql = readFileSync(sqlPath, "utf8").toLowerCase();
+    expect(sql).toContain("ops.supabase_school_access");
+    expect(sql).toContain("access_status in ('active', 'suspended', 'revoked')");
+    expect(sql).toContain("'supabase_principal_onboarding'");
+    expect(sql).toContain("force row level security");
+    expect(sql).toContain("old.completed_at is null");
+    expect(sql).toContain("old.bootstrap_school_id is not null");
+    expect(sql).toContain("on conflict (school_id) do nothing");
+    expect(sql).toContain("grant execute on function api.supabase_school_access_read() to schoolsafe_api");
+    expect(sql).not.toContain("bypassrls");
+    expect(sql).not.toContain("grant select");
+    expect(sql).not.toContain("grant insert");
+    expect(sql).not.toContain("grant update");
     expect(sql.match(/\bcommit\s*;/g)).toHaveLength(1);
   });
 });

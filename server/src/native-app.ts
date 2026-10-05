@@ -19,6 +19,7 @@ import { createLicenseNativeService } from "./licensenative/service.js";
 import { createActivationServiceClient } from "./licensenative/activation-client.js";
 import { loadInstallationKey } from "./licensenative/installation-key.js";
 import { registerLicenseGate } from "./licensenative/gate.js";
+import { createSupabaseSchoolAccessReader } from "./licensenative/school-access.js";
 import { createSetupNativeService } from "./setup/service.js";
 import { createFinanceNativeService } from "./financenative/service.js";
 import { createPedagogyNativeService } from "./pedagogynative/service.js";
@@ -150,7 +151,12 @@ export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
       service: createStudentRecordNativeService(pools.businessPool),
     },
   });
-  registerLicenseGate(app, {authService: authService, licenseService, pilotSchoolId: env.PILOT_SCHOOL_ID});
+  registerLicenseGate(app, {
+    authService: authService,
+    licenseService,
+    schoolAccess: createSupabaseSchoolAccessReader(pools.businessPool),
+    pilotSchoolId: env.PILOT_SCHOOL_ID,
+  });
   app.addHook("onClose", async () => {
     await Promise.allSettled([pools.authPool.end(), pools.businessPool.end()]);
   });

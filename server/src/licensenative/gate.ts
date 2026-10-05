@@ -11,6 +11,7 @@ import { newRequestId } from "../http/request-id.js";
 import { readSessionCookie } from "../authnative/cookie.js";
 import type { AuthNativeService } from "../authnative/service.js";
 import type { LicenseNativeService } from "./service.js";
+import type { SchoolAccessReader, SchoolAccessStatus } from "./school-access.js";
 
 const OPEN_PREFIXES = ["/native/license", "/native/trial", "/native/session"];
 const DEFAULT_CACHE_TTL_MS = 60_000;
@@ -18,6 +19,7 @@ const DEFAULT_CACHE_TTL_MS = 60_000;
 export type LicenseGateDependencies = {
   authService: AuthNativeService;
   licenseService: LicenseNativeService | undefined;
+  schoolAccess?: SchoolAccessReader;
   cacheTtlMs?: number;
   pilotSchoolId?: string;
 };
@@ -41,6 +43,15 @@ export function registerLicenseGate(
     if (!session) return;
 
     if (dependencies.pilotSchoolId && session.schoolId === dependencies.pilotSchoolId) return;
+
+    const access = await readSchoolAccess(dependencies.schoolAccess, session);
+    if (access === "active") return;
+    if (access === "suspended") {
+      throw new SchoolSafeError(403, "SCHOOL_SUSPENDED", "École suspendue", false);
+    }
+    if (access === "revoked") {
+      throw new SchoolSafeError(403, "SCHOOL_REVOKED", "École révoquée", false);
+    }
 
     if (!dependencies.licenseService) throw new SchoolSafeError(403, "LICENSE_INACTIVE", "License verification unavailable", false);
     const now = Date.now();
@@ -70,4 +81,22 @@ export function registerLicenseGate(
   return {
     clearCache: () => cache.clear(),
   };
+}
+
+async function readSchoolAccess(
+  reader: SchoolAccessReader | undefined,
+  session: { userId: string; profileId: string; schoolId: string },
+): Promise<SchoolAccessStatus | null> {
+  if (!reader) return null;
+  try {
+    return await reader.read({
+      userId: session.userId,
+      profileId: session.profileId,
+      schoolId: session.schoolId,
+      requestId: newRequestId(),
+    });
+  } catch (error) {
+    if (error instanceof SchoolSafeError) throw error;
+    throw new SchoolSafeError(403, "LICENSE_INACTIVE", "Accès école indisponible", false);
+  }
 }

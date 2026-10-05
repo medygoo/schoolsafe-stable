@@ -26,6 +26,8 @@ export type ApiErrorCode =
   | "FILE_MISSING"
   | "FILE_INVALID"
   | "LICENSE_INACTIVE"
+  | "SCHOOL_SUSPENDED"
+  | "SCHOOL_REVOKED"
   | "FILE_TOO_LARGE"
   | "NOT_FOUND"
   | "TRIAL_EXPIRED"

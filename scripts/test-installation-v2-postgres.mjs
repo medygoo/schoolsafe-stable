@@ -889,7 +889,7 @@ export async function qualifyAccountRegistrationOnboarding({admin,auth,api,conne
 async function qualifyInstalled63Upgrade({admin,connectionString,passwords,check}) {
  const plan=loadInstallationPlan();
  const controlUnit=plan.units.find(u=>u.file==='database/auth/v7/01_control_admin_links.sql');
- assert.ok(controlUnit);assert.equal(controlUnit.order,65);assert.equal(plan.units.length,75);
+ assert.ok(controlUnit);assert.equal(controlUnit.order,65);assert.equal(plan.units.length,76);
  const studentrecordFiles=[
   'database/studentrecord/v1/01_student_identity_emergency.sql',
   'database/studentrecord/v1/02_health_dietary.sql',
@@ -963,7 +963,7 @@ async function qualifyInstalled63Upgrade({admin,connectionString,passwords,check
 async function qualifyInstalled64Upgrade({admin,connectionString,passwords,check}) {
  const plan=loadInstallationPlan();
  const controlUnit=plan.units.find(u=>u.file==='database/auth/v7/01_control_admin_links.sql');
- assert.ok(controlUnit);assert.equal(controlUnit.order,65);assert.equal(plan.units.length,75);
+ assert.ok(controlUnit);assert.equal(controlUnit.order,65);assert.equal(plan.units.length,76);
  const studentrecordFiles=[
   'database/studentrecord/v1/01_student_identity_emergency.sql',
   'database/studentrecord/v1/02_health_dietary.sql',

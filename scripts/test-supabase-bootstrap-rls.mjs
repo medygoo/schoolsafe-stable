@@ -44,6 +44,16 @@ try {
   assert.equal(row.school_created, true);
   assert.equal(row.principal_profile_created, true);
   assert.equal(row.user_id, principal);
+  const access = await db.query("select access_status, source from ops.supabase_school_access where school_id=$1", [row.school_id]);
+  assert.equal(access.rows.length, 1);
+  assert.equal(access.rows[0].access_status, "active");
+  assert.equal(access.rows[0].source, "supabase_principal_onboarding");
+  const accessForced = await db.query("select c.relrowsecurity and c.relforcerowsecurity as forced from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='ops' and c.relname='supabase_school_access'");
+  assert.equal(accessForced.rows[0].forced, true);
+  const tablePrivilege = await db.query("select has_table_privilege('schoolsafe_api','ops.supabase_school_access','select') sel, has_table_privilege('schoolsafe_api','ops.supabase_school_access','insert') ins, has_table_privilege('schoolsafe_api','ops.supabase_school_access','update') upd");
+  assert.equal(tablePrivilege.rows[0].sel, false);
+  assert.equal(tablePrivilege.rows[0].ins, false);
+  assert.equal(tablePrivilege.rows[0].upd, false);
 
   const definition = await db.query("select pg_get_functiondef('api.auth_supabase_principal_create_school(uuid,jsonb)'::regprocedure) def");
   assert.equal(definition.rows[0].def.toLowerCase().includes("direct_activation_allows"), false);
@@ -71,7 +81,7 @@ try {
   await assert.rejects(asAuth("select api.auth_supabase_principal_create_school($1,$2::jsonb)", [existingSubject, JSON.stringify({ ...payload, identity: { name_fr: "Ne doit pas naitre" } })]), rejects("23505"));
   assert.equal((await db.query("select count(*)::int n from app.schools where name='Ne doit pas naitre'")).rows[0].n, 0);
 
-  await assert.rejects(asAuth("select api.auth_supabase_principal_create_school($1,$2::jsonb)", [principal, JSON.stringify({ ...payload, school_id: otherSchool })]), rejects("23514"));
+  await assert.rejects(asAuth("select api.auth_supabase_principal_create_school($1,$2::jsonb)", [principal, JSON.stringify({ ...payload, school_id: otherSchool, access_status: "active" })]), rejects("23514"));
   await assert.rejects(asAuth("select api.auth_supabase_principal_create_school($1,$2::jsonb)", [principal, JSON.stringify({ ...payload, external_subject: nativeSubject })]), rejects("23514"));
 
   await db.query("begin");
@@ -113,6 +123,29 @@ try {
   await db.query("select api.set_request_context($1,$2,$3,$4)", [row.user_id, row.profile_id, row.school_id, "99999999-9999-4999-8999-999999999999"]);
   assert.equal((await db.query("select count(*)::int n from app.schools where id=$1", [hidden])).rows[0].n, 0);
   assert.equal((await db.query("select count(*)::int n from app.schools where id=$1", [row.school_id])).rows[0].n, 1);
+  assert.equal((await db.query("select api.supabase_school_access_read() status")).rows[0].status, "active");
+  await db.query("reset role");
+  await db.query("insert into ops.supabase_school_access (school_id, access_status, source) values ($1, 'active', 'supabase_principal_onboarding')", [hidden]);
+  await db.query("set local role schoolsafe_owner");
+  assert.equal((await db.query("select count(*)::int n from ops.supabase_school_access where school_id=$1", [hidden])).rows[0].n, 0);
+  await db.query("reset role");
+  await db.query("set local role schoolsafe_api");
+  assert.equal((await db.query("select api.supabase_school_access_read() status")).rows[0].status, "active");
+  await db.query("savepoint denied_table_read");
+  await assert.rejects(db.query("select * from ops.supabase_school_access"), rejects("42501"));
+  await db.query("rollback to savepoint denied_table_read");
+  await db.query("reset role");
+  await db.query("update ops.supabase_school_access set access_status='suspended' where school_id=$1", [row.school_id]);
+  await db.query("set local role schoolsafe_api");
+  assert.equal((await db.query("select api.supabase_school_access_read() status")).rows[0].status, "suspended");
+  await db.query("reset role");
+  await db.query("update ops.supabase_school_access set access_status='revoked' where school_id=$1", [row.school_id]);
+  await db.query("set local role schoolsafe_api");
+  assert.equal((await db.query("select api.supabase_school_access_read() status")).rows[0].status, "revoked");
+  await db.query("reset role");
+  await db.query("delete from ops.supabase_school_access where school_id=$1", [row.school_id]);
+  await db.query("set local role schoolsafe_api");
+  assert.equal((await db.query("select api.supabase_school_access_read() status")).rows[0].status, null);
   await db.query("rollback");
 
   console.log("SUPABASE_BOOTSTRAP_RLS PASS");
