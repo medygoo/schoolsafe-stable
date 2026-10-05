@@ -32,7 +32,18 @@ export function registerFamilyNativeRoutes(
     };
   }
 
-  // Demander une accréditation — principal seul (V05)
+  app.post("/native/family/guardians", { preHandler: requireSession }, async (request) => {
+    const body = z.object({
+      profile_id: z.string().uuid(),
+      student_id: z.string().uuid(),
+      guardian_type: z.enum(["pere", "mere", "tuteur"]),
+      is_primary: z.boolean().default(false),
+    }).parse(request.body);
+    const data = await dependencies.service.linkGuardian(contextFrom(request), body);
+    return { data: { id: data }, request_id: newRequestId() };
+  });
+
+  // Demander une accréditation — principal ou permission administrative (V05)
   app.post("/native/family/pickup-authorizations", { preHandler: requireSession }, async (request) => {
     const body = z.object({
       student_id: z.string().uuid(),

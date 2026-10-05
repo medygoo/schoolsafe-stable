@@ -6,7 +6,10 @@ import { SchoolSafeError } from "../http/errors.js";
 import { newRequestId } from "../http/request-id.js";
 import { clearSessionCookie, readSessionCookie, setSessionCookie, readOnboardingCookie, clearOnboardingCookie, setOnboardingCookie } from "./cookie.js";
 import { generateSessionToken, hashSessionToken } from "./tokens.js";
-import type { AuthNativeService } from "./service.js";
+import { authDatabaseFor, openResolvedSupabaseSession, REMEMBER_TTL_SECONDS, SESSION_TTL_SECONDS, type AuthNativeService } from "./service.js";
+import { exchangeSupabasePrincipal, verifierFromEnv, type SupabasePrincipalVerifier } from "./supabase-exchange.js";
+import { createSupabasePrincipalSchool } from "../onboarding/supabase-school.js";
+import { changeSupabasePrincipalPassword, supabasePasswordUpdaterFromEnv, type SupabasePasswordUpdater } from "./supabase-password.js";
 import { generateAdminRecoveryCode } from './admin-recovery.js';
 import { isAcceptableRecoveryPassword } from './passwords.js';
 
@@ -17,9 +20,15 @@ const loginSchema = z.object({
   remember: z.boolean().optional(),
 });
 
+const exchangeBodySchema = z.object({
+  remember: z.boolean().optional(),
+});
+
 export type AuthNativeRouteDependencies = {
   service: AuthNativeService;
   cookieSecure: boolean;
+  supabaseVerifier?: SupabasePrincipalVerifier;
+  supabasePasswordUpdater?: SupabasePasswordUpdater;
 };
 
 export function registerAuthNativeRoutes(
@@ -69,7 +78,7 @@ export function registerAuthNativeRoutes(
       return reply.code(200).send({code: "ONBOARDING_REQUIRED"});
     }
     if (readOnboardingCookie(request)) clearOnboardingCookie(reply, {secure: cookieSecure});
-    const maxAge = remember ? 604800 : 43200;
+    const maxAge = remember ? REMEMBER_TTL_SECONDS : SESSION_TTL_SECONDS;
     setSessionCookie(reply, result.token, {
       secure: cookieSecure,
       maxAgeSeconds: maxAge,
@@ -80,6 +89,81 @@ export function registerAuthNativeRoutes(
       expires_at: result.session.expiresAt,
       request_id: newRequestId(),
     });
+  });
+
+  app.post("/auth/native/supabase/exchange", async (request, reply) => {
+    const header = request.headers.authorization;
+    const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
+    if (!token) {
+      throw new SchoolSafeError(401, "AUTH_REQUIRED", "Session requise", false);
+    }
+    const body = exchangeBodySchema.parse(request.body ?? {});
+    const result = await exchangeSupabasePrincipal(
+      authDatabaseFor(service),
+      dependencies.supabaseVerifier ?? verifierFromEnv(),
+      token,
+    );
+    if (result.status === "onboarding_required") {
+      return reply.code(200).send({ status: "onboarding_required" });
+    }
+    if (result.status === "password_change_required") {
+      return reply.code(200).send({ status: "password_change_required", password_change_required: true });
+    }
+    if (result.status === "profile_choice_required") {
+      return reply.code(200).send({
+        status: "profile_choice_required",
+        profiles: result.profiles.map((profile) => ({
+          profile_id: profile.profileId,
+          school_id: profile.schoolId,
+        })),
+      });
+    }
+    const database = authDatabaseFor(service);
+    if (!database) throw new SchoolSafeError(401, "AUTH_REQUIRED", "Session requise", false);
+    const userAgentHeader = request.headers["user-agent"];
+    const opened = await openResolvedSupabaseSession(database, {
+      userId: result.userId,
+      profileId: result.profileId,
+      remember: body.remember === true,
+      ip: request.ip,
+      userAgent: Array.isArray(userAgentHeader) ? userAgentHeader[0] : userAgentHeader,
+    });
+    setSessionCookie(reply, opened.token, {
+      secure: cookieSecure,
+      maxAgeSeconds: opened.maxAgeSeconds,
+    });
+    return reply.code(200).send({
+      status: "profile_resolved",
+      profile_id: result.profileId,
+      school_id: result.schoolId,
+    });
+  });
+
+  app.post("/auth/native/supabase/change-password", async (request, reply) => {
+    const header = request.headers.authorization;
+    const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
+    if (!token) throw new SchoolSafeError(401, "AUTH_REQUIRED", "Session requise", false);
+    const result = await changeSupabasePrincipalPassword(
+      authDatabaseFor(service),
+      dependencies.supabaseVerifier ?? verifierFromEnv(),
+      dependencies.supabasePasswordUpdater ?? supabasePasswordUpdaterFromEnv(),
+      token,
+      request.body,
+    );
+    return reply.code(200).send(result);
+  });
+
+  app.post("/auth/native/supabase/school", async (request, reply) => {
+    const header = request.headers.authorization;
+    const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
+    if (!token) throw new SchoolSafeError(401, "AUTH_REQUIRED", "Session requise", false);
+    const result = await createSupabasePrincipalSchool(
+      authDatabaseFor(service),
+      dependencies.supabaseVerifier ?? verifierFromEnv(),
+      token,
+      request.body,
+    );
+    return reply.code(201).send(result);
   });
 
   app.post("/auth/native/logout", async (request, reply) => {

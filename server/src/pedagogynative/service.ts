@@ -166,6 +166,16 @@ export function createPedagogyNativeService(businessPool: BusinessPool) {
       });
     },
 
+    async setHomeroom(context: RequestContext, profileId: string, classId: string, subjectId: string, academicYearId: string): Promise<string> {
+      return withRequestContext(businessPool, context, async (client: PoolClient) => {
+        const r = await client.query<{ teacher_homeroom_set: string }>(
+          "select api.teacher_homeroom_set($1, $2, $3, $4) as teacher_homeroom_set",
+          [profileId, classId, subjectId, academicYearId],
+        );
+        return r.rows[0].teacher_homeroom_set;
+      });
+    },
+
     async deleteTeacherAssignment(context: RequestContext, id: string): Promise<boolean> {
       return withRequestContext(businessPool, context, async (client: PoolClient) => {
         const r = await client.query<{ teacher_assignment_delete: boolean }>(

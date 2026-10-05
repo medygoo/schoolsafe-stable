@@ -16,10 +16,20 @@ afterEach(async () => { await Promise.all(apps.splice(0).map(app => app.close())
 
 function fixture(options: { allowed?: boolean; invalidSession?: boolean; data?: unknown; error?: string } = {}) {
   const log: { sql: string; params?: unknown[] }[] = [];
+  const gateBuffer: { sql: string; params?: unknown[] }[] = [];
   let released = false;
   const client = {
     async query(sql: string, params?: unknown[]) {
-      log.push({ sql, params });
+      if (sql.includes("api.supabase_school_access_read")) {
+        gateBuffer.length = 0;
+        return { rows: [{ status: null }] };
+      }
+      if ((sql === "COMMIT" || sql === "ROLLBACK") && gateBuffer.length === 0) return { rows: [] };
+      gateBuffer.push({ sql, params });
+      if (sql === "COMMIT" || sql === "ROLLBACK") {
+        log.push(...gateBuffer);
+        gateBuffer.length = 0;
+      }
       if (sql.includes("api.check_access")) return { rows: [{ allowed: options.allowed !== false }] };
       if (sql.includes("api.access_")) {
         if (options.error) throw Object.assign(new Error("private SQL details"), { code: options.error });

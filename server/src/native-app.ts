@@ -12,11 +12,14 @@ import { createStudentsNativeService } from "./studentsnative/service.js";
 import { createTrialNativeService } from "./trialnative/service.js";
 import { createSessionNativeService } from "./sessionnative/service.js";
 import { createAccessNativeService } from "./accessnative/service.js";
+import { createAdultProvisioner } from "./accessnative/provision.js";
+import { createSupabaseIdentityAdmin, verifySupabaseSubject } from "./accessnative/supabase-admin.js";
 import { createJaspeNativeService } from "./jaspenative/service.js";
 import { createLicenseNativeService } from "./licensenative/service.js";
 import { createActivationServiceClient } from "./licensenative/activation-client.js";
 import { loadInstallationKey } from "./licensenative/installation-key.js";
 import { registerLicenseGate } from "./licensenative/gate.js";
+import { createSupabaseSchoolAccessReader } from "./licensenative/school-access.js";
 import { createSetupNativeService } from "./setup/service.js";
 import { createFinanceNativeService } from "./financenative/service.js";
 import { createPedagogyNativeService } from "./pedagogynative/service.js";
@@ -87,14 +90,36 @@ export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
     studentsNative: { authService: authService, service: createStudentsNativeService(pools.businessPool) },
     trialNative: { authService: authService, service: createTrialNativeService(pools.businessPool) },
     sessionNative: { authService: authService, service: createSessionNativeService(pools.businessPool) },
-    accessNative: { authService: authService, service: createAccessNativeService(pools.businessPool) },
+    accessNative: {
+      authService: authService,
+      service: createAccessNativeService(pools.businessPool),
+      provisioner: createAdultProvisioner(
+        pools.businessPool,
+        env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY
+          ? createSupabaseIdentityAdmin(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
+          : null,
+        env.SUPABASE_URL && env.SUPABASE_ANON_KEY
+          ? verifySupabaseSubject(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
+          : null,
+      ),
+    },
     jaspeNative: { authService: authService, businessPool: pools.businessPool, service: createJaspeNativeService({
       workerUrl: env.JASPE_WORKER_URL,
       timeoutMs: env.JASPE_CHAT_TIMEOUT_MS,
       ratePerMinute: env.JASPE_RATE_PER_MINUTE,
     }) },
     licenseNative: licenseService ? { authService: authService, service: licenseService } : undefined,
-    setup: { service: createSetupNativeService(pools.authPool, pools.businessPool, undefined) },
+    setup: {
+      service: createSetupNativeService(
+        pools.authPool,
+        pools.businessPool,
+        undefined,
+        false,
+        env.SUPABASE_URL && env.SUPABASE_ANON_KEY
+          ? { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }
+          : undefined,
+      ),
+    },
     financeNative: { authService: authService, service: createFinanceNativeService(pools.businessPool) },
     pedagogyNative: { authService: authService, service: createPedagogyNativeService(pools.businessPool) },
     controlPrintNative: {
@@ -139,7 +164,12 @@ export function buildNativeApp(env: AppEnv, pools: VerifiedPools) {
       service: createStudentRecordNativeService(pools.businessPool),
     },
   });
-  registerLicenseGate(app, {authService: authService, licenseService, pilotSchoolId: env.PILOT_SCHOOL_ID});
+  registerLicenseGate(app, {
+    authService: authService,
+    licenseService,
+    schoolAccess: createSupabaseSchoolAccessReader(pools.businessPool),
+    pilotSchoolId: env.PILOT_SCHOOL_ID,
+  });
   app.addHook("onClose", async () => {
     await Promise.allSettled([pools.authPool.end(), pools.businessPool.end()]);
   });

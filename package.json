@@ -12,6 +12,7 @@
     "check:migration-versions": "node scripts/check-migration-versions.mjs",
     "build:auth-sdk": "esbuild frontend/vendor/supabase-entry.js --bundle --format=iife --global-name=SchoolSafeSupabaseSDK --outfile=app/vendor/supabase-sdk.js",
     "check:auth-sdk": "node scripts/check-auth-bundle.mjs",
+    "check:supabase-foundation": "node scripts/check-supabase-foundation.mjs",
     "test:qa": "npx vitest run tests/qa/unit tests/qa/rls tests/qa/integration && npx playwright test tests/qa/e2e",
     "test:qa:rls": "npx vitest run tests/qa/rls",
     "test:e2e:profiles": "playwright test tests/qa/e2e",

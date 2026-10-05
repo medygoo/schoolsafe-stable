@@ -299,3 +299,152 @@ describe("license gate — one explicit pilot school", () => {
     }
   });
 });
+
+describe("license gate — Supabase school access", () => {
+  function reader(status: "active" | "suspended" | "revoked" | null, seen: { schoolId?: string } = {}) {
+    return {
+      async read(context: { schoolId: string }) {
+        seen.schoolId = context.schoolId;
+        return status;
+      },
+    };
+  }
+
+  async function inject(options: {
+    schoolId?: string;
+    access: ReturnType<typeof reader>;
+    licenseService?: ReturnType<typeof makeService>;
+    url?: string;
+  }) {
+    const authService = fakeAuthForGate(options.schoolId ?? SCHOOL_A);
+    const app = buildApp({
+      studentsNative: {
+        authService,
+        service: { listStudents: async () => [] } as any,
+      },
+    });
+    registerLicenseGate(app, {
+      authService,
+      licenseService: options.licenseService,
+      schoolAccess: options.access,
+    });
+    try {
+      return await app.inject({
+        method: "GET",
+        url: options.url ?? "/native/students",
+        headers: { cookie: "schoolsafe_session=token-valide" },
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  it("allows an active Supabase school without a pilot id or activation service", async () => {
+    const seen: { schoolId?: string } = {};
+    const response = await inject({
+      access: reader("active", seen),
+      url: `/native/students?school_id=${SCHOOL_B}&access_status=active`,
+    });
+    expect(response.statusCode).toBe(200);
+    expect(seen.schoolId).toBe(SCHOOL_A);
+  });
+
+  it("refuses a suspended Supabase school", async () => {
+    const response = await inject({ access: reader("suspended") });
+    expect(response.statusCode).toBe(403);
+    expect(response.json().code).toBe("SCHOOL_SUSPENDED");
+  });
+
+  it("refuses a revoked Supabase school", async () => {
+    const response = await inject({ access: reader("revoked") });
+    expect(response.statusCode).toBe(403);
+    expect(response.json().code).toBe("SCHOOL_REVOKED");
+  });
+
+  it("fail-closes when the new school has no access row and no signed license", async () => {
+    const response = await inject({ access: reader(null) });
+    expect(response.statusCode).toBe(403);
+    expect(response.json().code).toBe("LICENSE_INACTIVE");
+  });
+
+  it("fail-closes when the access reader is unavailable", async () => {
+    const response = await inject({
+      access: {
+        async read() {
+          throw new Error("database unavailable");
+        },
+      },
+    });
+    expect(response.statusCode).toBe(403);
+    expect(response.json().code).toBe("LICENSE_INACTIVE");
+  });
+
+  it("keeps a valid signed license when the school has no Supabase access row", async () => {
+    const store: Store = new Map();
+    const service = makeService(store, fakeActivationClient(makeEnvelope(makePayload())));
+    await service.redeem(CTX, "legacy-code");
+    const response = await inject({ access: reader(null), licenseService: service });
+    expect(response.statusCode).toBe(200);
+  });
+
+  it("keeps refusing an expired signed license", async () => {
+    const store: Store = new Map();
+    const service = makeService(store, fakeActivationClient(makeEnvelope(makePayload({
+      expires_at: new Date(Date.now() - 20 * 86_400_000).toISOString(),
+    }))));
+    await service.redeem(CTX, "legacy-code");
+    const response = await inject({ access: reader(null), licenseService: service });
+    expect(response.statusCode).toBe(403);
+    expect(response.json().code).toBe("LICENSE_INACTIVE");
+  });
+
+  it("keeps refusing an invalid signed license", async () => {
+    const store: Store = new Map();
+    store.set(SCHOOL_A, {
+      signed_token: "not-a-license",
+      license_id: "x",
+      status: "active",
+      issued_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+      grace_days: 0,
+      last_seen_at: new Date().toISOString(),
+    });
+    const service = makeService(store);
+    const response = await inject({ access: reader(null), licenseService: service });
+    expect(response.statusCode).toBe(403);
+    expect(response.json().code).toBe("LICENSE_INACTIVE");
+  });
+
+  it("keeps a valid perpetual signed license", async () => {
+    const store: Store = new Map();
+    const service = makeService(store, fakeActivationClient(makeEnvelope(makePayload({
+      perpetual: true,
+      expires_at: null,
+    }))));
+    await service.redeem(CTX, "legacy-code");
+    const response = await inject({ access: reader(null), licenseService: service });
+    expect(response.statusCode).toBe(200);
+  });
+
+  it("does not let school B inherit school A access", async () => {
+    const response = await inject({
+      schoolId: SCHOOL_B,
+      access: {
+        async read(context) {
+          return context.schoolId === SCHOOL_A ? "active" : "suspended";
+        },
+      },
+    });
+    expect(response.statusCode).toBe(403);
+    expect(response.json().code).toBe("SCHOOL_SUSPENDED");
+  });
+
+  it("does not let a suspended access row fall through to a signed license", async () => {
+    const store: Store = new Map();
+    const service = makeService(store, fakeActivationClient(makeEnvelope(makePayload())));
+    await service.redeem(CTX, "legacy-code");
+    const response = await inject({ access: reader("suspended"), licenseService: service });
+    expect(response.statusCode).toBe(403);
+    expect(response.json().code).toBe("SCHOOL_SUSPENDED");
+  });
+});

@@ -5,6 +5,7 @@ import type { AuthNativeService } from "../authnative/service.js";
 import { SchoolSafeError } from "../http/errors.js";
 import { newRequestId } from "../http/request-id.js";
 import type { AccessNativeService } from "./service.js";
+import { PERSON_ROLE_CODES, type AdultProvisioner } from "./provision.js";
 
 const pageSchema = z.object({
   query: z.string().trim().max(100).default(""),
@@ -22,6 +23,25 @@ const roleChangeSchema = z.object({
 }).strict();
 const roleLabel = z.string().trim().min(2).max(100).regex(/^[^\u0000-\u001f\u007f]+$/);
 const createRoleSchema = z.object({ label: roleLabel, templateId: z.string().uuid().nullable(), ...confirmationFields }).strict();
+const personFields = {
+  first_name: z.string().trim().min(1).max(100),
+  last_name: z.string().trim().min(1).max(100),
+  middle_name: z.string().trim().max(100).optional(),
+  email: z.string().trim().email().max(254),
+  phone: z.string().regex(/^\+243[0-9]{9}$/),
+  photo_path: z.string().trim().max(500).optional(),
+  role_codes: z.array(z.enum(PERSON_ROLE_CODES)).min(1).max(8),
+  employee_number: z.string().trim().min(1).max(80).optional(),
+  job_title: z.string().trim().min(1).max(120).optional(),
+  hired_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+};
+const adultUserSchema = z.object(personFields).strict();
+const linkUserSchema = z.object({ ...personFields, confirmation_token: z.string().trim().min(20).max(4000) }).strict();
+const exceptionSchema = z.object({
+  permission: z.string().trim().min(3).max(100),
+  effect: z.enum(["allow", "deny"]),
+  reason: z.string().trim().min(5).max(500),
+}).strict();
 const saveRoleSchema = z.object({ label: roleLabel, isActive: z.boolean(),
   grants: z.array(z.object({ permission: z.string().min(1).max(100), effect: z.enum(["allow", "deny"]),
     scope: z.enum(["school", "own", "own_children", "none"]).optional() }).strict()).max(64), ...confirmationFields,
@@ -31,7 +51,11 @@ function requireWriteIntent(request: FastifyRequest) {
     throw new SchoolSafeError(403, "PERMISSION_DENIED", "Requête de modification refusée", false);
   }
 }
-export type AccessNativeRouteDependencies = { authService: AuthNativeService; service: AccessNativeService };
+export type AccessNativeRouteDependencies = {
+  authService: AuthNativeService;
+  service: AccessNativeService;
+  provisioner: AdultProvisioner;
+};
 
 export function registerAccessNativeRoutes(app: FastifyInstance, deps: AccessNativeRouteDependencies): void {
   const requireSession = requireAuthSession(deps.authService);
@@ -100,5 +124,35 @@ export function registerAccessNativeRoutes(app: FastifyInstance, deps: AccessNat
     const input = roleChangeSchema.parse(request.body);
     const actor = context(request);
     return { data: await deps.service.changeRole(actor, profileId, input), request_id: actor.requestId };
+  });
+  app.post("/native/access/users", { preHandler: requireSession }, async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    requireWriteIntent(request);
+    const input = adultUserSchema.parse(request.body);
+    const actor = context(request);
+    const data = await deps.provisioner.provisionPerson(actor, {
+      ...input,
+      email: input.email.trim().toLowerCase(),
+    }, (message) => request.log.error(message));
+    return { data, request_id: actor.requestId };
+  });
+  app.post("/native/access/users/link", { preHandler: requireSession }, async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    requireWriteIntent(request);
+    const input = linkUserSchema.parse(request.body);
+    const actor = context(request);
+    const data = await deps.provisioner.linkPerson(actor, {
+      ...input,
+      email: input.email.trim().toLowerCase(),
+    }, input.confirmation_token);
+    return { data, request_id: actor.requestId };
+  });
+  app.post("/native/access/profiles/:profileId/exceptions", { preHandler: requireSession }, async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    requireWriteIntent(request);
+    const { profileId } = profileSchema.parse(request.params);
+    const input = exceptionSchema.parse(request.body);
+    const actor = context(request);
+    return { data: await deps.service.grantException(actor, profileId, input), request_id: actor.requestId };
   });
 }

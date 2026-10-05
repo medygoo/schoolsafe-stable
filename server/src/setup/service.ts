@@ -10,14 +10,31 @@ export interface SetupService {
   createAdmin(payload: SetupAdminPayload): Promise<AdminSetupResult>;
 }
 /** The migrator authorizes a one-use capability; auth RPCs bind its school in PostgreSQL. */
-export function createSetupNativeService(authPool: AuthPool, _businessPool: BusinessPool, setupToken: string | undefined, accountRegistrationAvailable = false): SetupService {
+export function createSetupNativeService(
+  authPool: AuthPool,
+  _businessPool: BusinessPool,
+  setupToken: string | undefined,
+  accountRegistrationAvailable = false,
+  publicSupabase?: { url: string; anonKey: string },
+): SetupService {
   const allowed = (token: string) => Boolean(setupToken && timingSafeEqual(digest(token), digest(setupToken)));
   function tokenHash(token: string) {
     if (!allowed(token)) throw new Error("Setup authorization required");
     return digest(token).toString("hex");
   }
   return {
-    getConfig: () => ({setup_available: false, auth_mode: "native", account_registration_available: accountRegistrationAvailable}),
+    getConfig: () => {
+      const config: ConfigResponse = {
+        setup_available: false,
+        auth_mode: "native",
+        account_registration_available: accountRegistrationAvailable,
+      };
+      if (publicSupabase?.url && publicSupabase.anonKey) {
+        config.supabase_url = publicSupabase.url;
+        config.supabase_anon_key = publicSupabase.anonKey;
+      }
+      return config;
+    },
     validateToken: allowed,
     async createSchool({token, ...payload}) {
       const result = await authPool.query<{result: SetupResult}>(

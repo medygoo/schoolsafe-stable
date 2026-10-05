@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#071a3d">
   <!-- Repli pour les hébergements statiques. Les protections frame-ancestors
        et autres en-têtes sont servies par la couche HTTP lorsque disponible. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob: http://127.0.0.1:8787 http://localhost:8787; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob: http://127.0.0.1:8787 http://localhost:8787 https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="description" content="SchoolSafe V2">
   <title>SchoolSafe V2</title>
   <link rel="icon" href="./schoolsafe-logo.png" type="image/png">
@@ -126,7 +126,7 @@
   <script src="./modules/safe/safe-assistant.js" defer></script>
   <script src="./modules/jaspe2d/seated-companion.js" defer></script>
   <script src="./modules/jaspe2d/dashboard-companion.js?v=jaspe-desktop-r1" defer></script>
-  <script src="./app.js?v=jaspe-dashboard-01" defer></script>
+  <script src="./app.js?v=teacher-supabase-session" defer></script>
 </head>
 <body>
 <!--

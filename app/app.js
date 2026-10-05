@@ -62,6 +62,16 @@
     window.schoolSafeBackendConfig = backendConfig;
     return backendConfig;
   }
+  var backendConfigPromise = null;
+
+  function ensureBackendConfig() {
+    if (!backendConfigPromise) {
+      backendConfigPromise = loadBackendConfig().catch(function () {
+        return null;
+      });
+    }
+    return backendConfigPromise;
+  }
 
   async function apiPost(path, body) {
     var res = await fetch(apiBase + path, {
@@ -3393,6 +3403,73 @@
   // ─── INC-7 : choix explicite du profil/école ───
   // pendingNativeLogin : identifiants en MÉMOIRE seulement, jamais stockés.
   var pendingNativeLogin = null;
+  var pendingSupabaseAccessToken = null;
+
+  function supabasePublicConfig() {
+    var config = window.schoolSafeBackendConfig || {};
+    var url = String(config.supabase_url || "").replace(/\/$/, "");
+    var anon = config.supabase_anon_key || "";
+    if (!url || !anon) return null;
+    return { url: url, anon: anon };
+  }
+
+  async function signInWithSupabase(identifier, password) {
+    var config = supabasePublicConfig();
+    if (!config) throw new Error("Connexion indisponible");
+    var body = { password: password };
+    if (identifier.indexOf("@") >= 0) body.email = identifier;
+    else body.phone = identifier;
+    var response = await fetch(config.url + "/auth/v1/token?grant_type=password", {
+      method: "POST",
+      headers: {
+        apikey: config.anon,
+        Authorization: "Bearer " + config.anon,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    var payload = null;
+    try { payload = await response.json(); } catch (e) { payload = null; }
+    if (!response.ok || !payload || !payload.access_token) {
+      var failure = new Error("Échec de connexion");
+      failure.status = response.status || 401;
+      throw failure;
+    }
+    return payload.access_token;
+  }
+
+  async function finishSupabaseExchange(accessToken, remember) {
+    var result = await window.SchoolSafeAuthNative.exchangeSupabase(accessToken, remember);
+    if (!result || result.status === "password_change_required") {
+      pendingSupabaseAccessToken = accessToken;
+      var pendingPassword = document.getElementById("password");
+      if (pendingPassword) pendingPassword.value = "";
+      document.getElementById("loginForm").setAttribute("data-supabase-password-change", "true");
+      notify("Choisissez un nouveau mot de passe, puis reconnectez-vous.");
+      return true;
+    }
+    pendingSupabaseAccessToken = null;
+    if (result.status === "profile_resolved") {
+      var nativeBootstrap = await window.SchoolSafeAuthNative.sessionBootstrap();
+      if (!nativeBootstrap || !nativeBootstrap.data) throw new Error("Profil incomplet");
+      currentSession = { token: null, native: true };
+      applyBootstrap(nativeBootstrap.data);
+      var resolvedPassword = document.getElementById("password");
+      if (resolvedPassword) resolvedPassword.value = "";
+      enterLiveSession();
+      return true;
+    }
+    if (result.status === "onboarding_required") {
+      notify("L'établissement n'est pas encore prêt. Aucune session n'a été ouverte.");
+      return true;
+    }
+    if (result.status === "profile_choice_required") {
+      notify("Plusieurs profils existent. Aucune session n'a été ouverte.");
+      return true;
+    }
+    return false;
+  }
   var profileChoiceMode = "login"; // "login" | "switch"
 
   function renderProfileChoice(profiles, mode) {
@@ -3612,6 +3689,15 @@
     try {
       if (!window.SchoolSafeAuthNative) throw new Error("Service de connexion indisponible. Rechargez la page.");
       var rememberMe = document.getElementById("remember")?.checked === true;
+      if (form.getAttribute("data-supabase-password-change") === "true") {
+        if (!pendingSupabaseAccessToken) throw new Error("Reconnectez-vous.");
+        await window.SchoolSafeAuthNative.changeSupabasePassword(pendingSupabaseAccessToken, password);
+        pendingSupabaseAccessToken = null;
+        form.removeAttribute("data-supabase-password-change");
+        passwordInput.value = "";
+        notify("Mot de passe mis à jour. Reconnectez-vous avec le nouveau mot de passe.");
+        return;
+      }
       var nativeResult = await window.SchoolSafeAuthNative.login(identifier, password, undefined, rememberMe);
       if (!nativeResult) throw new Error("Réponse de connexion incomplète. Réessayez.");
       if (nativeResult.code === "ONBOARDING_REQUIRED") {
@@ -3636,6 +3722,19 @@
       passwordInput.value = "";
       enterLiveSession();
     } catch (error) {
+      var changingPassword = form.getAttribute("data-supabase-password-change") === "true";
+      if (!changingPassword && error && error.status === 401) {
+        try {
+          await ensureBackendConfig();
+          if (supabasePublicConfig()) {
+            var accessToken = await signInWithSupabase(identifier, password);
+            if (await finishSupabaseExchange(accessToken, rememberMe)) return;
+          }
+        } catch (supabaseError) {
+          error = supabaseError;
+        }
+      }
+      if (!changingPassword) pendingSupabaseAccessToken = null;
       clearSession();
       notify("Échec de connexion : " + (error.message || error.statusText || "erreur inconnue"));
     } finally {

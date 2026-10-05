@@ -351,6 +351,46 @@
       "order": 70,
       "file": "database/license/v2/01_perpetual_license.sql",
       "sha256": "08177c9d8f3530783986b113043cdd5ce6ed72d2da7330febb2b558aa5db75e7"
+    },
+    {
+      "order": 71,
+      "file": "database/auth/v8/01_supabase_principal_link.sql",
+      "sha256": "39328051638b3523ca8a869010a2f292993c1a3b87fc3b8354cee0a8c8c3b3e8"
+    },
+    {
+      "order": 72,
+      "file": "database/auth/v8/02_supabase_principal_school.sql",
+      "sha256": "9b5a6db3cb17d3176e54743f3782f9d928a1edb1eaafe41c728817af7206c570"
+    },
+    {
+      "order": 73,
+      "file": "database/auth/v8/03_supabase_principal_bootstrap.sql",
+      "sha256": "2d80f52163e8655e5f53f9d8d3b7b5a9534d04327535e71e8ec133c9778aa7e1"
+    },
+    {
+      "order": 74,
+      "file": "database/auth/v8/04_supabase_password_state.sql",
+      "sha256": "99baa7a9f74e593ce974f161e7b65658cbf2b8b11ac39e6c29340ab21d93b9bd"
+    },
+    {
+      "order": 75,
+      "file": "database/auth/v8/05_provision_school_adult.sql",
+      "sha256": "7cdd3d6c85062e5f34bfb29c69ef4172d570bd91200842465d4422ad078120d6"
+    },
+    {
+      "order": 76,
+      "file": "database/auth/v8/06_supabase_school_access.sql",
+      "sha256": "b716459016f1d957844814265463b3e363993b55adf209f9f470a2a7011504a2"
+    },
+    {
+      "order": 77,
+      "file": "database/auth/v8/07_supabase_session_identity.sql",
+      "sha256": "c0dd3cfefaea99f089c585ea0aeec5b2e1d4b807efca44d69355d1dad1a76297"
+    },
+    {
+      "order": 78,
+      "file": "database/auth/v8/08_universal_people.sql",
+      "sha256": "088b5706e1a22d06a1ec4a729efa3a0505435782b210a69003ec0330c7d933b5"
     }
   ],
   "superseded": [
