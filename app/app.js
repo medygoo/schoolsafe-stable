@@ -3396,6 +3396,7 @@
       if (setupLogoPreview) URL.revokeObjectURL(setupLogoPreview);
       setupLogoPreview = null;
       document.getElementById("stepContent").replaceChildren();
+      restoreLoginPanel();
       showScreen("auth");
     } catch (error) { notify("Déconnexion indisponible. Réessayez."); }
   }
@@ -3448,16 +3449,64 @@
     return payload.access_token;
   }
 
+  function restoreLoginPanel() {
+    var form = document.getElementById("loginForm");
+    if (!form) return;
+    form.removeAttribute("data-supabase-password-change");
+    var identifierInput = document.getElementById("emailIdentifier");
+    if (identifierInput) identifierInput.readOnly = false;
+    var passwordInput = document.getElementById("password");
+    if (passwordInput) {
+      passwordInput.placeholder = "Votre mot de passe";
+      passwordInput.setAttribute("autocomplete", "current-password");
+    }
+    var heading = form.querySelector(".panel-brand div");
+    var title = heading && heading.querySelector("b");
+    var subtitle = heading && heading.querySelector("span");
+    if (title) title.textContent = "Connexion";
+    if (subtitle) subtitle.textContent = "Accédez à votre établissement";
+    var help = form.querySelector(".ss-help-text");
+    if (help) help.textContent = "Première visite ? Votre compte sera créé avec ces identifiants. Choisissez un mot de passe d’au moins 8 caractères.";
+    var submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton) submitButton.innerHTML = 'Continuer <i data-lucide="arrow-right"></i>';
+  }
+
+  function presentSupabasePasswordChange(message) {
+    var form = document.getElementById("loginForm");
+    form.setAttribute("data-supabase-password-change", "true");
+    var identifierInput = document.getElementById("emailIdentifier");
+    if (identifierInput && !String(identifierInput.value || "").trim() && pendingSupabaseIdentifier) {
+      identifierInput.value = pendingSupabaseIdentifier;
+    }
+    if (identifierInput) identifierInput.readOnly = true;
+    var passwordInput = document.getElementById("password");
+    if (passwordInput) {
+      passwordInput.value = "";
+      passwordInput.placeholder = "Nouveau mot de passe";
+      passwordInput.setAttribute("autocomplete", "new-password");
+    }
+    var heading = form.querySelector(".panel-brand div");
+    var title = heading && heading.querySelector("b");
+    var subtitle = heading && heading.querySelector("span");
+    if (title) title.textContent = "Nouveau mot de passe";
+    if (subtitle) subtitle.textContent = "Il ouvre votre espace SchoolSafe";
+    var help = form.querySelector(".ss-help-text");
+    if (help) help.textContent = message;
+    var submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton) submitButton.innerHTML = 'Enregistrer et ouvrir <i data-lucide="arrow-right"></i>';
+    showScreen("auth");
+    notify(message);
+    icons();
+    if (passwordInput) passwordInput.focus();
+  }
+
   async function finishSupabaseExchange(accessToken, remember, identifier) {
     var result = await window.SchoolSafeAuthNative.exchangeSupabase(accessToken, remember);
     if (!result || result.status === "password_change_required") {
       pendingSupabaseAccessToken = accessToken;
       pendingSupabaseIdentifier = identifier || pendingSupabaseIdentifier;
       pendingSupabaseRemember = remember === true;
-      var pendingPassword = document.getElementById("password");
-      if (pendingPassword) pendingPassword.value = "";
-      document.getElementById("loginForm").setAttribute("data-supabase-password-change", "true");
-      notify("Choisissez un nouveau mot de passe, puis reconnectez-vous.");
+      presentSupabasePasswordChange("Choisissez un nouveau mot de passe, puis votre espace s'ouvre.");
       return true;
     }
     if (result.status === "profile_resolved") {
@@ -3478,7 +3527,7 @@
       pendingSupabaseAccessToken = accessToken;
       pendingSupabaseIdentifier = onboardingIdentifier || null;
       pendingSupabaseRemember = remember === true;
-      document.getElementById("loginForm").removeAttribute("data-supabase-password-change");
+      restoreLoginPanel();
       onboardingIdentity = {
         status: "onboarding",
         email: onboardingIdentifier.indexOf("@") >= 0 ? onboardingIdentifier : null,
@@ -3721,13 +3770,38 @@
       var rememberMe = document.getElementById("remember")?.checked === true;
       if (form.getAttribute("data-supabase-password-change") === "true") {
         if (!pendingSupabaseAccessToken) throw new Error("Reconnectez-vous.");
-        await window.SchoolSafeAuthNative.changeSupabasePassword(pendingSupabaseAccessToken, password);
-        pendingSupabaseAccessToken = null;
-        pendingSupabaseIdentifier = null;
-        pendingSupabaseRemember = false;
-        form.removeAttribute("data-supabase-password-change");
-        passwordInput.value = "";
-        notify("Mot de passe mis à jour. Reconnectez-vous avec le nouveau mot de passe.");
+        var nextIdentifier = pendingSupabaseIdentifier || identifier;
+        var nextPassword = password;
+        var nextRemember = pendingSupabaseRemember === true || rememberMe === true;
+        try {
+          await window.SchoolSafeAuthNative.changeSupabasePassword(pendingSupabaseAccessToken, nextPassword);
+        } catch (changeError) {
+          var passwordUnavailable = changeError && changeError.status === 503;
+          notify(passwordUnavailable
+            ? "Service temporairement indisponible"
+            : "Choisissez un nouveau mot de passe, différent du mot de passe temporaire.");
+          return;
+        }
+        try {
+          await ensureBackendConfig();
+          var renewedToken = await signInWithSupabase(nextIdentifier, nextPassword);
+          pendingSupabaseAccessToken = null;
+          pendingSupabaseIdentifier = null;
+          pendingSupabaseRemember = false;
+          restoreLoginPanel();
+          passwordInput.value = "";
+          submitContent = submitButton.innerHTML;
+          var opened = await finishSupabaseExchange(renewedToken, nextRemember, nextIdentifier);
+          if (!opened) notify("Mot de passe mis à jour. Reconnectez-vous avec le nouveau mot de passe.");
+        } catch (reopenError) {
+          pendingSupabaseAccessToken = null;
+          pendingSupabaseIdentifier = null;
+          pendingSupabaseRemember = false;
+          restoreLoginPanel();
+          passwordInput.value = "";
+          submitContent = submitButton.innerHTML;
+          notify("Mot de passe mis à jour. Reconnectez-vous avec le nouveau mot de passe.");
+        }
         return;
       }
       var nativeResult = await window.SchoolSafeAuthNative.login(identifier, password, undefined, rememberMe);
@@ -4140,7 +4214,7 @@
       '</section><section class="review-block"><h3>Administrateur principal</h3>',
       row("Nom", [onboardingAdmin.first_name, onboardingAdmin.last_name].filter(Boolean).join(" ")), row("E-mail", (onboardingIdentity || {}).email), row("Téléphone", (onboardingIdentity || {}).phone),
       '</section></div>',
-      '<div class="warning-note"><i data-lucide="shield-alert"></i><span>L’activation ouvre directement votre espace de travail.</span></div>'
+      '<div class="warning-note"><i data-lucide="shield-alert"></i><span>L’activation demande ensuite votre nouveau mot de passe, puis ouvre votre espace.</span></div>'
     ].join("");
   }
 
@@ -4180,10 +4254,6 @@
     document.querySelectorAll('input[name="cycles"]').forEach(function (control) {
       control.addEventListener("change", function () {
         collectFields();
-        if (!state.cycles.length) {
-          state.cycles = [control.value];
-          control.checked = true;
-        }
         renderStep();
       });
     });
@@ -4203,65 +4273,68 @@
   }
 
 function validateStep(index) {
-    if (index === 0) {
-      if (!state.schoolName.trim()) return "Le nom de l'école est obligatoire.";
-    }
-    if (index === 1) {
-      if (!state.cycles.length) return "Sélectionnez au moins un cycle.";
-    }
-    if (index === 2) {
-      if (!state.yearLabel.trim()) return "Le libellé de l'année est obligatoire.";
-      if (!state.yearStart) return "La date de début d'année est obligatoire.";
-      if (!state.yearEnd) return "La date de fin d'année est obligatoire.";
-      if (state.yearStart >= state.yearEnd) return "La fin de l’année doit suivre sa date de début.";
-    }
-    if (index === 3) {
-      if (!state.email.trim()) return "L'e-mail officiel est obligatoire.";
-      if (!state.phone.trim()) return "Le téléphone officiel est obligatoire.";
-      if (state.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email.trim())) return "L'e-mail saisi n'est pas valide.";
-    }
     if (index === 5 && (!onboardingIdentity || onboardingIdentity.status !== "onboarding")) {
       return "Reconnectez-vous pour continuer la création de votre école.";
     }
-    if (index === 5 && (!onboardingAdmin.first_name || !onboardingAdmin.last_name)) return "Renseignez le prénom et le nom de l’administrateur.";
     return null;
   }
 
   async function submitSetup() {
     if (!onboardingIdentity) throw new Error("Session d’onboarding requise.");
 
+    function filled(value) {
+      return String(value || "").trim();
+    }
+    var schoolName = filled(state.schoolName) || "Mon école";
+    var cycles = state.cycles && state.cycles.length ? state.cycles.slice() : ["primary"];
+    var yearLabel = filled(state.yearLabel) || "2026-2027";
+    var yearStart = filled(state.yearStart) || "2026-09-01";
+    var yearEnd = filled(state.yearEnd) || "2027-07-15";
+    if (yearStart >= yearEnd) {
+      yearStart = "2026-09-01";
+      yearEnd = "2027-07-15";
+    }
+    var email = filled(state.email);
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) email = "";
+    var phone = filled(state.phone).replace(/\s+/g, "");
+    if (phone === "+243") phone = "";
+    var contact = {
+      country: filled(state.country) || defaults.country,
+      province: filled(state.province) || defaults.province,
+      city: filled(state.city) || defaults.city,
+      address: state.address,
+      website_url: state.websiteAddress || state.website,
+      website_mode: filled(state.websiteMode) || defaults.websiteMode,
+      public_news: filled(state.publicNews) || defaults.publicNews,
+      public_gallery: filled(state.publicGallery) || defaults.publicGallery,
+      public_honors: filled(state.publicHonors) || defaults.publicHonors
+    };
+    if (email) contact.email = email;
+    if (phone) contact.phone = phone;
+
     var schoolPayload = {
-      admin: onboardingAdmin,
+      admin: {
+        first_name: filled(onboardingAdmin.first_name) || "Administrateur",
+        last_name: filled(onboardingAdmin.last_name) || "Principal"
+      },
       identity: {
-        name_fr: state.schoolName,
-        name_en: state.name_en || state.schoolName,
+        name_fr: schoolName,
+        name_en: filled(state.name_en) || schoolName,
         legal_name: state.legalName,
-        school_type: state.schoolType,
+        school_type: filled(state.schoolType) || defaults.schoolType,
         approval_code: state.schoolCode
       },
-      cycles: state.cycles,
+      cycles: cycles,
       academic_year: {
-        label: state.yearLabel,
-        starts_on: state.yearStart,
-        ends_on: state.yearEnd,
-        periods: state.periods
+        label: yearLabel,
+        starts_on: yearStart,
+        ends_on: yearEnd,
+        periods: filled(state.periods) || defaults.periods
       },
-      contact: {
-        country: state.country,
-        province: state.province,
-        city: state.city,
-        address: state.address,
-        email: state.email,
-        phone: state.phone,
-        website_url: state.websiteAddress || state.website,
-        website_mode: state.websiteMode,
-        public_news: state.publicNews,
-        public_gallery: state.publicGallery,
-        public_honors: state.publicHonors
-      },
+      contact: contact,
       brand: {
-        primary_color: state.primaryColor,
-        accent_color: state.accentColor,
+        primary_color: filled(state.primaryColor) || defaults.primaryColor,
+        accent_color: filled(state.accentColor) || defaults.accentColor,
         document_footer: state.documentFooter
       }
     };
@@ -4370,11 +4443,7 @@ function validateStep(index) {
         var completedSupabaseIdentifier = pendingSupabaseIdentifier;
         var completedSupabaseRemember = pendingSupabaseRemember;
         if (setupResult.must_change === true) {
-          var passwordInput = document.getElementById("password");
-          if (passwordInput) passwordInput.value = "";
-          document.getElementById("loginForm").setAttribute("data-supabase-password-change", "true");
-          showScreen("auth");
-          notify("Votre école est activée. Choisissez maintenant votre nouveau mot de passe.");
+          presentSupabasePasswordChange("Votre école est activée. Choisissez maintenant votre nouveau mot de passe.");
           return;
         }
         await finishSupabaseExchange(
@@ -4392,6 +4461,10 @@ function validateStep(index) {
         notify("Votre école est activée. Reconnectez-vous pour ouvrir votre espace.");
       }
     } catch (error) {
+      if (error && error.status === 409 && pendingSupabaseAccessToken) {
+        presentSupabasePasswordChange("Votre école est déjà activée. Choisissez maintenant votre nouveau mot de passe.");
+        return;
+      }
       notify(error.message || "Échec de la configuration.");
       button.disabled = false;
       button.innerHTML = 'ACTIVER MON ÉCOLE <i data-lucide="check"></i>';
