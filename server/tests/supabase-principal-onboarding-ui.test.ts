@@ -63,19 +63,28 @@ describe("Supabase principal seven-step onboarding UI", () => {
     const nextEnd = app.indexOf("restoreSession();", nextStart);
     const completion = app.slice(nextStart, nextEnd);
     expect(completion).toContain("setupResult.must_change === true");
-    expect(completion).toContain('setAttribute("data-supabase-password-change", "true")');
-    expect(completion).toContain('showScreen("auth")');
-    expect(completion).toContain("Votre école est activée. Choisissez maintenant votre nouveau mot de passe.");
+    expect(completion).toContain('presentSupabasePasswordChange("Votre école est activée. Choisissez maintenant votre nouveau mot de passe.")');
     expect(completion).toContain("await finishSupabaseExchange(");
+    expect(completion).toContain('presentSupabasePasswordChange("Votre école est déjà activée. Choisissez maintenant votre nouveau mot de passe.")');
+
+    const passwordStart = app.indexOf("function presentSupabasePasswordChange");
+    const passwordEnd = app.indexOf("async function finishSupabaseExchange", passwordStart);
+    const passwordScreen = app.slice(passwordStart, passwordEnd);
+    expect(passwordScreen).toContain('setAttribute("data-supabase-password-change", "true")');
+    expect(passwordScreen).toContain('showScreen("auth")');
+    expect(passwordScreen).toContain("Nouveau mot de passe");
 
     const loginStart = app.indexOf('document.getElementById("loginForm").addEventListener');
     const loginEnd = app.indexOf('document.getElementById("forgotPassword")', loginStart);
     const login = app.slice(loginStart, loginEnd);
-    expect(login).toContain("changeSupabasePassword(pendingSupabaseAccessToken, password)");
+    expect(login).toContain("changeSupabasePassword(pendingSupabaseAccessToken, nextPassword)");
+    expect(login).toContain("signInWithSupabase(nextIdentifier, nextPassword)");
+    expect(login).toContain("await finishSupabaseExchange(renewedToken, nextRemember, nextIdentifier)");
     expect(login).toContain("pendingSupabaseAccessToken = null");
     expect(login).toContain("pendingSupabaseIdentifier = null");
     expect(login).toContain("pendingSupabaseRemember = false");
     expect(login).toContain("Reconnectez-vous avec le nouveau mot de passe");
+    expect(login).toContain("différent du mot de passe temporaire");
 
     const leaveStart = app.indexOf("async function leaveOnboarding()");
     const leaveEnd = app.indexOf('document.getElementById("setupHome")', leaveStart);
@@ -91,5 +100,30 @@ describe("Supabase principal seven-step onboarding UI", () => {
     expect(auth).toContain('onboardingMe: function () { return request("/auth/onboarding/me"');
     expect(auth).toContain('createOnboardingSchool: function (payload) { return request("/auth/onboarding/school"');
     expect(auth).toContain('logoutOnboarding: function () { return request("/auth/onboarding/logout"');
+  });
+
+  it("lets every onboarding question stay empty without blocking activation", () => {
+    const app = source("app/app.js");
+    const validateStart = app.indexOf("function validateStep");
+    const validateEnd = app.indexOf("async function submitSetup()", validateStart);
+    const validate = app.slice(validateStart, validateEnd);
+    expect(validate).not.toContain("obligatoire");
+    expect(validate).not.toContain("Sélectionnez au moins un cycle");
+    expect(validate).not.toContain("Renseignez le prénom et le nom");
+    expect(validate).toContain("Reconnectez-vous pour continuer la création de votre école.");
+
+    const eventsStart = app.indexOf("function bindStepEvents");
+    const eventsEnd = app.indexOf("function validateStep", eventsStart);
+    expect(app.slice(eventsStart, eventsEnd)).not.toContain("state.cycles = [control.value]");
+
+    const setupStart = app.indexOf("async function submitSetup()");
+    const setupEnd = app.indexOf("function renderStep()", setupStart);
+    const setup = app.slice(setupStart, setupEnd);
+    expect(setup).toContain("Mon école");
+    expect(setup).toContain('"primary"');
+    expect(setup).toContain("Administrateur");
+    expect(setup).toContain("Principal");
+    expect(setup).toContain("2026-09-01");
+    expect(setup).toContain("2027-07-15");
   });
 });
