@@ -74,6 +74,14 @@
     });
   }
 
+  async function createSupabasePrincipalSchool(accessToken, payload) {
+    return request("/auth/native/supabase/school", {
+      method: "POST",
+      body: payload,
+      headers: { Authorization: "Bearer " + accessToken },
+    });
+  }
+
   async function changeSupabasePassword(accessToken, newPassword) {
     return request("/auth/native/supabase/change-password", {
       method: "POST",
@@ -175,6 +183,7 @@
     isAvailable: isAvailable,
     login: login,
     exchangeSupabase: exchangeSupabase,
+    createSupabasePrincipalSchool: createSupabasePrincipalSchool,
     changeSupabasePassword: changeSupabasePassword,
     me: me,
     sessionBootstrap: sessionBootstrap,
